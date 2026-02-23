@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Inter } from 'next/font/google'
 const inter = Inter({
   subsets: ['latin'],
@@ -25,15 +26,53 @@ import {
   MapPin, 
   Bell, 
   FolderOpen, 
-  UserCog 
+  UserCog,
+  ChevronDown
 } from 'lucide-react'
 
 const menuItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { name: 'Property Registry', path: '/property-registry', icon: Building2, subtitle: '(Assessor)' },
-  { name: 'Taxpayer Records', path: '/taxpayer-records', icon: Users },
-  { name: 'Assessment & Billing', path: '/assessment-billing', icon: FileText, subtitle: '(Treasurer)' },
-  { name: 'Payments & QR Monitoring', path: '/payments-qr-monitoring', icon: CreditCard },
+  { 
+    name: 'Property Registry', 
+    path: '/property-registry', 
+    icon: Building2, 
+    subtitle: '(Assessor)',
+    submenu: [
+      { name: 'Add Property', path: '/property-registry/add' },
+      { name: 'View Properties', path: '/property-registry/view' },
+      { name: 'Edit Property', path: '/property-registry/edit' },
+    ]
+  },
+  { 
+    name: 'Taxpayer Records', 
+    path: '/taxpayer-records', 
+    icon: Users,
+    submenu: [
+      { name: 'Active Taxpayers', path: '/taxpayer-records/active' },
+      { name: 'Inactive Taxpayers', path: '/taxpayer-records/inactive' },
+      { name: 'New Registration', path: '/taxpayer-records/new' },
+    ]
+  },
+  { 
+    name: 'Assessment & Billing', 
+    path: '/assessment-billing', 
+    icon: FileText, 
+    subtitle: '(Treasurer)',
+    submenu: [
+      { name: 'Create Assessment', path: '/assessment-billing/create' },
+      { name: 'Generate Bills', path: '/assessment-billing/generate' },
+      { name: 'View Bills', path: '/assessment-billing/view' },
+    ]
+  },
+  { 
+    name: 'Payments & QR Monitoring', 
+    path: '/payments-qr-monitoring', 
+    icon: CreditCard,
+    submenu: [
+      { name: 'Payment Logs', path: '/payments-qr-monitoring/logs' },
+      { name: 'QR Code Status', path: '/payments-qr-monitoring/qr' },
+    ]
+  },
   { name: 'Barangay Performance', path: '/barangay-performance', icon: MapPin },
   { name: 'Delinquencies & Notices', path: '/delinquencies-notices', icon: Bell },
   { name: 'Document Tracking', path: '/document-tracking', icon: FolderOpen },
@@ -42,6 +81,15 @@ const menuItems = [
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const [openSubmenus, setOpenSubmenus] = useState<string[]>([])
+
+  const toggleSubmenu = (path: string) => {
+    setOpenSubmenus(prev =>
+      prev.includes(path)
+        ? prev.filter(p => p !== path)
+        : [...prev, path]
+    )
+  }
 
   return (
     <aside className={`${inter.className} h-screen w-64 bg-white border-r border-gray-200 flex flex-col`}>
@@ -66,29 +114,75 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1">
         {menuItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.path
+          const isSubmenuOpen = openSubmenus.includes(item.path)
+          const hasSubmenu = item.submenu && item.submenu.length > 0
           
           return (
-            <Link
-              key={item.path}
-              href={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition group ${
-                isActive
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900'
-              }`}
-            >
-              <Icon className="w-5 h-5 flex-shrink-0 text-[#00154A]" />
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate">{item.name}</div>
-                {item.subtitle && (
-                  <div className="text-xs text-gray-500">{item.subtitle}</div>
-                )}
-              </div>
-            </Link>
+            <div key={item.path}>
+              {hasSubmenu ? (
+                <button
+                  onClick={() => toggleSubmenu(item.path)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition group ${
+                    isActive
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon className="w-5 h-5 flex-shrink-0 text-[#00154A]" />
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="text-sm font-medium truncate">{item.name}</div>
+                    {item.subtitle && (
+                      <div className="text-xs text-gray-500">{item.subtitle}</div>
+                    )}
+                  </div>
+                  <ChevronDown
+                    className={`w-4 h-4 flex-shrink-0 transition-transform ${
+                      isSubmenuOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+              ) : (
+                <Link
+                  href={item.path}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition group ${
+                    isActive
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon className="w-5 h-5 flex-shrink-0 text-[#00154A]" />
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="text-sm font-medium truncate">{item.name}</div>
+                    {item.subtitle && (
+                      <div className="text-xs text-gray-500">{item.subtitle}</div>
+                    )}
+                  </div>
+                </Link>
+              )}
+
+              {/* Submenu */}
+              {hasSubmenu && isSubmenuOpen && (
+                <div className="ml-2 mt-1 space-y-1 pl-4 border-l border-gray-200">
+                  {item.submenu.map((subitem) => (
+                    <Link
+                      key={subitem.path}
+                      href={subitem.path}
+                      className={`flex items-center px-4 py-2 text-sm rounded-lg transition ${
+                        pathname === subitem.path
+                          ? 'bg-blue-50 text-blue-600 font-medium'
+                          : 'text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      {subitem.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           )
         })}
       </nav>

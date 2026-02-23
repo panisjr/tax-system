@@ -1,6 +1,6 @@
 // app/page.tsx
 
-import AnalyticsCard from './component/AnalyticsCard';
+import AnalyticsCard from "@/components/AnalyticsCard";
 
 export default function HomePage() {
   return (
