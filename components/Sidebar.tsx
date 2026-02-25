@@ -114,7 +114,7 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className={`flex-1 p-4 space-y-1 max-h-[calc(100vh-140px)] ${openSubmenus.length > 0 ? 'overflow-y-auto' : 'overflow-y-hidden'}`}>
         {menuItems.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.path
