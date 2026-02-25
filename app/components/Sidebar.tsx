@@ -128,7 +128,7 @@ export default function Sidebar() {
                   <AccordionItem value={item.name}>
                     <AccordionTrigger className='text-[#A0A5B2] hover:text-gray-900 hover:bg-gray-50 px-2 rounded-lg py-3 cursor-pointer overflow-hidden'>
                       <div className='flex items-center gap-3 flex-1 overflow-hidden'>
-                        <Icon className='w-5 h-5 flex-shrink-0 text-[#00154A]' />
+                        <Icon className='w-5 h-5 shrink-0 text-[#00154A]' />
                         <div className='flex-1 min-w-0 text-left overflow-hidden'>
                           <div className='text-sm font-medium truncate'>{item.name}</div>
                           {item.subtitle && (
@@ -160,7 +160,7 @@ export default function Sidebar() {
                     href={item.path}
                     className='flex items-center gap-3 px-4 py-3 rounded-lg transition text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900 block cursor-pointer [text-decoration:none] overflow-hidden'
                   >
-                    <Icon className='w-5 h-5 flex-shrink-0 text-[#00154A]' />
+                    <Icon className='w-5 h-5 shrink-0 text-[#00154A]' />
                     <div className='flex-1 min-w-0 text-left overflow-hidden'>
                       <div className='text-sm font-medium truncate'>{item.name}</div>
                       {item.subtitle && (
