@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Inter } from 'next/font/google';
 
 const inter = Inter({
@@ -30,8 +29,13 @@ import {
   Bell,
   FolderOpen,
   UserCog,
-  ChevronDown,
 } from 'lucide-react';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui/accordion';
 
 const menuItems = [
   { name: 'Dashboard', path: '#', icon: LayoutDashboard },
@@ -84,15 +88,6 @@ const menuItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [openSubmenus, setOpenSubmenus] = useState<string[]>([]);
-
-  const toggleSubmenu = (name: string) => {
-    setOpenSubmenus((prev) =>
-      prev.includes(name)
-        ? prev.filter((p) => p !== name)
-        : [...prev, name]
-    );
-  };
 
   return (
     <aside
@@ -121,81 +116,63 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav
-        className={`flex-1 p-4 space-y-1 max-h-[calc(100vh-140px)] ${
-          openSubmenus.length > 0 ? 'overflow-y-auto' : 'overflow-y-hidden'
-        }`}
-      >
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.path;
-          const isSubmenuOpen = openSubmenus.includes(item.name);
-          const hasSubmenu = item.submenu && item.submenu.length > 0;
+      <nav className='flex-1 p-4 max-h-[calc(100vh-140px)] overflow-y-auto'>
+        <Accordion type='single' collapsible>
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const hasSubmenu = item.submenu && item.submenu.length > 0;
 
-          return (
-            <div key={item.path}>
-              {hasSubmenu ? (
-                <button
-                  onClick={() => toggleSubmenu(item.name)}
-                  className={`w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg transition group ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-600'
-                      : 'text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
-                  <Icon className='w-5 h-5 flex-shrink-0 text-[#00154A]' />
-                  <div className='flex-1 min-w-0 text-left'>
-                    <div className='text-sm font-medium truncate'>{item.name}</div>
-                    {item.subtitle && (
-                      <div className='text-xs text-gray-500'>{item.subtitle}</div>
-                    )}
-                  </div>
-                  <ChevronDown
-                    className={`w-4 h-4 flex-shrink-0 transition-transform ${
-                      isSubmenuOpen ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
-              ) : (
-                <Link
-                  href={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition group ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-600'
-                      : 'text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
-                  <Icon className='w-5 h-5 flex-shrink-0 text-[#00154A]' />
-                  <div className='flex-1 min-w-0 text-left'>
-                    <div className='text-sm font-medium truncate'>{item.name}</div>
-                    {item.subtitle && (
-                      <div className='text-xs text-gray-500'>{item.subtitle}</div>
-                    )}
-                  </div>
-                </Link>
-              )}
-
-              {/* Submenu */}
-              {hasSubmenu && isSubmenuOpen && (
-                <div className='ml-2 mt-1 space-y-1 pl-4 border-l border-gray-200'>
-                  {item.submenu.map((subitem) => (
-                    <Link
-                      key={subitem.path}
-                      href={subitem.path}
-                      className={`flex items-center px-4 py-2 text-sm rounded-lg transition ${
-                        pathname === subitem.path
-                          ? 'bg-blue-50 text-blue-600 font-medium'
-                          : 'text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900'
-                      }`}
-                    >
-                      {subitem.name}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
+            return (
+              <div key={item.name}>
+                {hasSubmenu ? (
+                  <AccordionItem value={item.name}>
+                    <AccordionTrigger className='text-[#A0A5B2] hover:text-gray-900 hover:bg-gray-50 px-2 rounded-lg py-3 cursor-pointer overflow-hidden'>
+                      <div className='flex items-center gap-3 flex-1 overflow-hidden'>
+                        <Icon className='w-5 h-5 flex-shrink-0 text-[#00154A]' />
+                        <div className='flex-1 min-w-0 text-left overflow-hidden'>
+                          <div className='text-sm font-medium truncate'>{item.name}</div>
+                          {item.subtitle && (
+                            <div className='text-xs text-gray-500 truncate'>{item.subtitle}</div>
+                          )}
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className='pl-11 pt-0 pb-2'>
+                      <div className='space-y-1'>
+                        {item.submenu?.map((subitem) => (
+                          <Link
+                            key={subitem.name}
+                            href={subitem.path}
+                            className={`flex items-center px-4 py-2 text-sm rounded-lg transition block cursor-pointer [text-decoration:none] ${
+                              pathname === subitem.path
+                                ? 'bg-blue-50 text-blue-600 font-medium'
+                                : 'text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900'
+                            }`}
+                          >
+                            {subitem.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ) : (
+                  <Link
+                    href={item.path}
+                    className='flex items-center gap-3 px-4 py-3 rounded-lg transition text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900 block cursor-pointer [text-decoration:none] overflow-hidden'
+                  >
+                    <Icon className='w-5 h-5 flex-shrink-0 text-[#00154A]' />
+                    <div className='flex-1 min-w-0 text-left overflow-hidden'>
+                      <div className='text-sm font-medium truncate'>{item.name}</div>
+                      {item.subtitle && (
+                        <div className='text-xs text-gray-500 truncate'>{item.subtitle}</div>
+                      )}
+                    </div>
+                  </Link>
+                )}
+              </div>
+            );
+          })}
+        </Accordion>
       </nav>
     </aside>
   );
