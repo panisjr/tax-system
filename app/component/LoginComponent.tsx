@@ -41,9 +41,11 @@ export default function LoginComponent() {
           {/* Header */}
           <div className="text-center space-y-2">
             <div className="flex justify-center mb-4">
-              <div className="bg-indigo-600 p-3 rounded-full">
-                <LogIn className="w-8 h-8 text-white" />
-              </div>
+              <img 
+                src="/img/sta.rita_logo.png" 
+                alt="Sta. Rita Logo" 
+                className="w-24 h-24 object-contain"
+              />
             </div>
             <h1 className={`${lexend.className} text-3xl font-bold text-gray-900`}>Welcome Back</h1>
             <p className={`${lexend.className} text-gray-500`}>Sign in to your tax system account</p>
@@ -64,7 +66,7 @@ export default function LoginComponent() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter your username"
-                  className={`${inter.className} w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
+                  className={`${inter.className} w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#061e4a] focus:border-transparent`}
                   required
                 />
               </div>
@@ -83,7 +85,7 @@ export default function LoginComponent() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className={`${inter.className} w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
+                  className={`${inter.className} w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#061e4a] focus:border-transparent`}
                   required
                 />
                 <button
@@ -105,11 +107,11 @@ export default function LoginComponent() {
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 border cursor-pointer border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  className="w-4 h-4 border cursor-pointer border-gray-300 rounded focus:ring-2 focus:ring-[#061e4a]"
                 />
                 <span className={`${inter.className} text-sm text-gray-600 cursor-pointer`}>Remember me</span>
               </label>
-              <a href="#" className={`${inter.className} text-sm text-indigo-600 hover:text-indigo-700 font-medium`}>
+              <a href="#" className={`${inter.className} text-sm text-[#061e4a] hover:text-[#061e4a]/80 font-medium`}>
                 Forgot password?
               </a>
             </div>
@@ -118,7 +120,7 @@ export default function LoginComponent() {
             <button
               type="submit"
               disabled={isLoading}
-              className={`${inter.className} w-full cursor-pointer bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center space-x-2`}
+              className={`${inter.className} w-full cursor-pointer bg-[#061e4a] hover:bg-[#061e4a]/90 disabled:bg-[#061e4a]/50 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center space-x-2`}
             >
               <LogIn className={`w-5 h-5 ${inter.className}`} />
               <span>{isLoading ? 'Signing in...' : 'Sign In'}</span>
