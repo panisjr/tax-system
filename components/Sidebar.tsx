@@ -126,7 +126,7 @@ export default function Sidebar() {
               {hasSubmenu ? (
                 <button
                   onClick={() => toggleSubmenu(item.path)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition group ${
+                  className={`w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg transition group ${
                     isActive
                       ? 'bg-blue-50 text-blue-600'
                       : 'text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900'
