@@ -3,7 +3,7 @@
 export default function AnalyticsCard() {
   return (
     <main>
-      <div className='bg-gray-100 p-6 min-h-screen font-sans'>
+      <div className='bg-gray-100 p-6 font-sans'>
         <div className='max-w-7xl mx-auto'>
           <div className='flex justify-between items-center mb-6'>
             <h1 className='text-2xl font-semibold text-gray-800'>Dashboard Overview</h1>
