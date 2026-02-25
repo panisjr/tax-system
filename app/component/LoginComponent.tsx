@@ -123,7 +123,7 @@ export default function LoginComponent() {
               className={`${inter.className} w-full cursor-pointer bg-[#061e4a] hover:bg-[#061e4a]/90 disabled:bg-[#061e4a]/50 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center space-x-2`}
             >
               <LogIn className={`w-5 h-5 ${inter.className}`} />
-              <span>{isLoading ? 'Signing in...' : 'Sign In'}</span>
+              <span>{isLoading ? 'Signing in...' : 'Log In'}</span>
             </button>
           </form>
         </div>
