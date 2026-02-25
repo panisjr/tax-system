@@ -126,7 +126,7 @@ export default function Sidebar() {
               <div key={item.name}>
                 {hasSubmenu ? (
                   <AccordionItem value={item.name}>
-                    <AccordionTrigger className='text-[#A0A5B2] hover:bg-gray-50 px-2 rounded-lg py-3 cursor-pointer overflow-hidden'>
+                    <AccordionTrigger className='text-[#A0A5B2] hover:bg-gray-50 hover:no-underline px-2 rounded-lg py-3 cursor-pointer overflow-hidden'>
                       <div className='flex items-center gap-3 flex-1 overflow-hidden'>
                         <Icon className='w-5 h-5 shrink-0 text-[#00154A]' />
                         <div className='flex-1 min-w-0 text-left overflow-hidden'>
