@@ -108,7 +108,7 @@ export default function Sidebar() {
             <h1 className={`${lexend.className} text-lg font-bold text-[#666D7D]`}>
               Sta. Rita, Samar
             </h1>
-            <p className='text-xs text-gray-600 text-[#000000]'>
+            <p className='text-xs text-gray-600'>
               Real Property Tax Monitoring
             </p>
           </div>
@@ -143,7 +143,7 @@ export default function Sidebar() {
                           <Link
                             key={subitem.name}
                             href={subitem.path}
-                            className={`flex items-center px-4 py-2 text-sm rounded-lg transition block cursor-pointer [text-decoration:none] ${
+                            className={`flex items-center px-4 py-2 text-sm rounded-lg transition cursor-pointer [text-decoration:none] ${
                               pathname === subitem.path
                                 ? 'bg-blue-50 text-blue-600 font-medium'
                                 : 'text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900'
@@ -158,7 +158,7 @@ export default function Sidebar() {
                 ) : (
                   <Link
                     href={item.path}
-                    className='flex items-center gap-3 px-4 py-3 rounded-lg transition text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900 block cursor-pointer [text-decoration:none] overflow-hidden'
+                    className='flex items-center gap-3 px-4 py-3 rounded-lg transition text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900 cursor-pointer [text-decoration:none] overflow-hidden'
                   >
                     <Icon className='w-5 h-5 shrink-0 text-[#00154A]' />
                     <div className='flex-1 min-w-0 text-left overflow-hidden'>
