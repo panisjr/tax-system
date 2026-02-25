@@ -86,11 +86,11 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [openSubmenus, setOpenSubmenus] = useState<string[]>([]);
 
-  const toggleSubmenu = (path: string) => {
+  const toggleSubmenu = (name: string) => {
     setOpenSubmenus((prev) =>
-      prev.includes(path)
-        ? prev.filter((p) => p !== path)
-        : [...prev, path]
+      prev.includes(name)
+        ? prev.filter((p) => p !== name)
+        : [...prev, name]
     );
   };
 
@@ -129,14 +129,14 @@ export default function Sidebar() {
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.path;
-          const isSubmenuOpen = openSubmenus.includes(item.path);
+          const isSubmenuOpen = openSubmenus.includes(item.name);
           const hasSubmenu = item.submenu && item.submenu.length > 0;
 
           return (
             <div key={item.path}>
               {hasSubmenu ? (
                 <button
-                  onClick={() => toggleSubmenu(item.path)}
+                  onClick={() => toggleSubmenu(item.name)}
                   className={`w-full cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg transition group ${
                     isActive
                       ? 'bg-blue-50 text-blue-600'
