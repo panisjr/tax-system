@@ -1,5 +1,19 @@
 'use client';
 
+import { Inter } from 'next/font/google'
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-inter',
+})
+
+import { Lexend } from 'next/font/google'
+const lexend = Lexend({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-lexend',
+})
+
 import { useState } from 'react';
 import { User, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
 
@@ -31,15 +45,15 @@ export default function LoginComponent() {
                 <LogIn className="w-8 h-8 text-white" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
-            <p className="text-gray-500">Sign in to your tax system account</p>
+            <h1 className={`${lexend.className} text-3xl font-bold text-gray-900`}>Welcome Back</h1>
+            <p className={`${lexend.className} text-gray-500`}>Sign in to your tax system account</p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Username Field */}
             <div className="space-y-2">
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="username" className={`${inter.className} block text-sm font-medium text-gray-700`}>
                 Username
               </label>
               <div className="relative">
@@ -50,7 +64,7 @@ export default function LoginComponent() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter your username"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className={`${inter.className} w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
                   required
                 />
               </div>
@@ -58,7 +72,7 @@ export default function LoginComponent() {
 
             {/* Password Field */}
             <div className="space-y-2">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className={`${inter.className} block text-sm font-medium text-gray-700`}>
                 Password
               </label>
               <div className="relative">
@@ -69,7 +83,7 @@ export default function LoginComponent() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className={`${inter.className} w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
                   required
                 />
                 <button
@@ -93,9 +107,9 @@ export default function LoginComponent() {
                   type="checkbox"
                   className="w-4 h-4 border cursor-pointer border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
                 />
-                <span className="text-sm text-gray-600 cursor-pointer">Remember me</span>
+                <span className={`${inter.className} text-sm text-gray-600 cursor-pointer`}>Remember me</span>
               </label>
-              <a href="#" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+              <a href="#" className={`${inter.className} text-sm text-indigo-600 hover:text-indigo-700 font-medium`}>
                 Forgot password?
               </a>
             </div>
@@ -104,22 +118,12 @@ export default function LoginComponent() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full cursor-pointer bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center space-x-2"
+              className={`${inter.className} w-full cursor-pointer bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center space-x-2`}
             >
-              <LogIn className="w-5 h-5 " />
+              <LogIn className={`w-5 h-5 ${inter.className}`} />
               <span>{isLoading ? 'Signing in...' : 'Sign In'}</span>
             </button>
           </form>
-
-          {/* Footer */}
-          <div className="text-center">
-            <p className="text-gray-600">
-              Don't have an account?{' '}
-              <a href="#" className="text-indigo-600 hover:text-indigo-700 font-medium">
-                Sign up here
-              </a>
-            </p>
-          </div>
         </div>
 
         {/* Footer Text */}
