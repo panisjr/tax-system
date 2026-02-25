@@ -1,18 +1,18 @@
 'use client';
 
-import { Inter } from 'next/font/google'
+import { Inter } from 'next/font/google';
 const inter = Inter({
   subsets: ['latin'],
   weight: ['400', '600', '700'],
   variable: '--font-inter',
-})
+});
 
-import { Lexend } from 'next/font/google'
+import { Lexend } from 'next/font/google';
 const lexend = Lexend({
   subsets: ['latin'],
   weight: ['400', '600', '700'],
   variable: '--font-lexend',
-})
+});
 
 import { useState } from 'react';
 import { User, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
@@ -29,6 +29,7 @@ export default function LoginComponent() {
     // Simulate login process
     setTimeout(() => {
       setIsLoading(false);
+      //Re routing 
       alert('Login attempt with: ' + username);
     }, 1000);
   };
