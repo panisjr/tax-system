@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import AnalyticsCard from '../component/AnalyticsCard';
+import AnalyticsCard from '../components/AnalyticsCard';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
