@@ -1,11 +1,11 @@
 // app/page.tsx
 
-import AnalyticsCard from './components/AnalyticsCard';
+import LoginComponent from '../components/LoginComponent';
 
 export default function HomePage() {
   return (
     <main>
-      <AnalyticsCard />
+      <LoginComponent />
     </main>
   );
 }

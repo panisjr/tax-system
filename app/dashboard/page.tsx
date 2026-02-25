@@ -9,7 +9,8 @@ import {
   Tooltip,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import AnalyticsCard from '../components/AnalyticsCard';
+import AnalyticsCard from '@/components/AnalyticsCard';
+
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
@@ -105,9 +106,9 @@ export default function Dashboard() {
       <div className="max-w-5xl w-full mx-auto flex flex-col md:flex-row gap-4">
         
         {/* Left Card: Monthly Collections Graph */}
-        <div className="bg-white border border-gray-200 p-6 flex-grow md:w-2/3 shadow-sm">
+        <div className="bg-white border border-gray-200 p-6 grow md:w-2/3 shadow-sm">
           <h2 className="text-gray-500 text-sm font-medium mb-6">Monthly Collections</h2>
-          <div className="relative h-[300px] w-full flex items-center justify-center">
+          <div className="relative h-75 w-full flex items-center justify-center">
             {/* Show a simple loading state while waiting for the API */}
             {chartData ? (
               <Bar data={chartData} options={chartOptions} />
