@@ -47,7 +47,7 @@ const menuItems = [
     icon: Building2, // The tall building
     subtitle: '(Assessor)',
     submenu: [
-      { name: 'Add Property', path: '#' },
+      { name: 'Add Property', path: '/add_property' },
       { name: 'View Properties', path: '#' },
       { name: 'Edit Property', path: '#' },
     ],

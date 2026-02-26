@@ -17,12 +17,13 @@ export default function Dashboard() {
       <AnalyticsCard />
   
       {/* Main Container */}
-      <div className="max-w-5xl w-full mx-auto flex flex-col md:flex-row gap-4">
+
+      <div className="w-full flex flex-col md:flex-row gap-4 m-0">
 
         <MonthlyCollectionComponent /> 
 
        {/* Right Card: Delinquent Accounts Stats */}
-        <div className="bg-white border border-gray-200 p-8 flex flex-col md:w-2/5 shadow-sm rounded-sm">
+        <div className="bg-white border border-gray-200 p-8 flex flex-col mx-auto md:w-3/5 shadow-sm rounded-sm">
           <h2 className={`${inter.className} text-[#80838f] text-sm font-bold mb-6`}>Delinquent Accounts</h2>
           
           <ul className="text-gray-500 text-sm space-y-4">

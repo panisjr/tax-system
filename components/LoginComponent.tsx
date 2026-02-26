@@ -33,7 +33,6 @@ export default function LoginComponent() {
       setIsLoading(false);
       //Re routing 
       alert('Login attempt with: ' + username);
-      // The quick and dirty way for now
       router.push('/dashboard');
     }, 1000);
   };
