@@ -23,13 +23,15 @@ import {
   LayoutDashboard,
   Building2,
   Users,
+  Wallet,
   FileText,
   CreditCard,
   MapPin,
   Bell,
-  FolderOpen,
-  UserCog,
+  Folder,
+  UserCog
 } from 'lucide-react';
+
 import {
   Accordion,
   AccordionItem,
@@ -38,11 +40,11 @@ import {
 } from '@/components/ui/accordion';
 
 const menuItems = [
-  { name: 'Dashboard', path: '#', icon: LayoutDashboard },
+  { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   {
     name: 'Property Registry',
     path: '#',
-    icon: Building2,
+    icon: Building2, // The tall building
     subtitle: '(Assessor)',
     submenu: [
       { name: 'Add Property', path: '#' },
@@ -53,7 +55,7 @@ const menuItems = [
   {
     name: 'Taxpayer Records',
     path: '#',
-    icon: Users,
+    icon: Users, // The two people
     submenu: [
       { name: 'Active Taxpayers', path: '#' },
       { name: 'Inactive Taxpayers', path: '#' },
@@ -63,7 +65,7 @@ const menuItems = [
   {
     name: 'Assessment & Billing',
     path: '#',
-    icon: FileText,
+    icon: Wallet, // The document with lines
     subtitle: '(Treasurer)',
     submenu: [
       { name: 'Create Assessment', path: '#' },
@@ -74,7 +76,7 @@ const menuItems = [
   {
     name: 'Payments & QR Monitoring',
     path: '#',
-    icon: CreditCard,
+    icon: FileText, // The credit card with the magnetic stripe
     submenu: [
       { name: 'Payment Logs', path: '#' },
       { name: 'QR Code Status', path: '#' },
@@ -82,8 +84,8 @@ const menuItems = [
   },
   { name: 'Barangay Performance', path: '#', icon: MapPin },
   { name: 'Delinquencies & Notices', path: '#', icon: Bell },
-  { name: 'Document Tracking', path: '#', icon: FolderOpen },
-  { name: 'User & Role Management', path: '#', icon: UserCog },
+  { name: 'Document Tracking', path: '#', icon: FileText }, // The folder
+  { name: 'User & Role Management', path: '#', icon: FileText }, // The user with the gear
 ];
 
 export default function Sidebar() {
