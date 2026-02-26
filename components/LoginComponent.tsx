@@ -16,12 +16,14 @@ const lexend = Lexend({
 
 import { useState } from 'react';
 import { User, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
+import { useRouter } from "next/navigation";
 
 export default function LoginComponent() {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +33,8 @@ export default function LoginComponent() {
       setIsLoading(false);
       //Re routing 
       alert('Login attempt with: ' + username);
+      // The quick and dirty way for now
+      router.push('/dashboard');
     }, 1000);
   };
 
