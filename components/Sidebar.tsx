@@ -84,8 +84,8 @@ const menuItems = [
   },
   { name: 'Barangay Performance', path: '#', icon: MapPin },
   { name: 'Delinquencies & Notices', path: '#', icon: Bell },
-  { name: 'Document Tracking', path: '#', icon: FileText }, // The folder
-  { name: 'User & Role Management', path: '#', icon: FileText }, // The user with the gear
+  { name: 'Document Tracking', path: '#', icon: Folder }, // The folder
+  { name: 'User & Role Management', path: '#', icon: UserCog }, // The user with the gear
 ];
 
 export default function Sidebar() {
