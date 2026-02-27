@@ -31,13 +31,6 @@ import {
   UserCog
 } from 'lucide-react';
 
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from '@/components/ui/accordion';
-
 type SubmenuItem = {
   name: string;
   path: string;
@@ -53,32 +46,14 @@ type MenuItem = {
 
 const menuItems: MenuItem[] = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  {
-    name: 'Property Registry',
-    path: '/property/registry',
-    icon: Building2, // The tall building
-    subtitle: '(Assessor)'
-  },
-  {
-    name: 'Taxpayer Records',
-    path: '/taxpayers',
-    icon: Users, // The two people  
-  },
-  {
-    name: 'Assessment & Billing',
-    path: '#',
-    icon: Wallet, // The document with lines
-    subtitle: '(Treasurer)',
-  },
-  {
-    name: 'Payments & QR Monitoring',
-    path: '#',
-    icon: FileText, // The credit card with the magnetic stripe
-  },
-  { name: 'Barangay Performance', path: '#', icon: MapPin },
+  { name: 'Property Registry', path: '/property/registry', icon: Building2, subtitle: '(Assessor)' },
+  { name: 'Taxpayer Records', path: '/taxpayers', icon: Users },
+  { name: 'Assessment & Billing', path: '#', icon: Wallet, subtitle: '(Treasurer)' }, 
+  { name: 'Payments & QR Monitoring', path: '#', icon: FileText },
+  { name: 'Barangay Performance', path: '/barangay', icon: MapPin },
   { name: 'Delinquencies & Notices', path: '#', icon: Bell },
-  { name: 'Document Tracking', path: '#', icon: Folder }, // The folder
-  { name: 'User & Role Management', path: '#', icon: UserCog }, // The user with the gear
+  { name: 'Document Tracking', path: '#', icon: Folder },
+  { name: 'User & Role Management', path: '#', icon: UserCog },
 ];
 
 export default function Sidebar() {
