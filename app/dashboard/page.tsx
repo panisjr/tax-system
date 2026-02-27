@@ -3,7 +3,6 @@
 import AnalyticsCard from '@/components/AnalyticsCard';
 import MonthlyCollectionComponent from '@/components/MonthlyCollectionComponent';
 
-
 export default function Dashboard() {
   return (
     <main className="bg-[#f0f4f8]">
@@ -12,7 +11,7 @@ export default function Dashboard() {
               <h1 className={`font-lexend gi text-2xl font-bold text-[#595a5d]`}>
                 Dashboard Overview
               </h1>
-              <button className={`font-inter bg-[#0f1729] text-[#9fa2aa] px-4 py-2 rounded text-sm font-medium hover:bg-gray-700 transition-colors`}>
+              <button className={`font-inter bg-[#0f1729] text-[#9fa2aa] px-4 py-2 rounded text-sm font-medium hover:bg-gray-700 transition-colors cursor-pointer`}>
                 Generate Report
               </button>
             </div>
@@ -45,7 +44,7 @@ export default function Dashboard() {
           </ul>
 
           <div className="mt-10">
-            <button className={`font-inter w-full bg-[#0f1729] hover:bg-slate-800 text-[#949ba3] text-xs font-semibold py-2 px-4 rounded-sm transition-colors shadow-sm`}>
+            <button className={`font-inter w-full bg-[#0f1729] hover:bg-slate-800 text-[#949ba3] text-xs font-semibold py-2 px-4 rounded-sm transition-colors shadow-sm cursor-pointer `}>
               View Delinquencies
             </button>
           </div>
