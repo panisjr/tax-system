@@ -51,7 +51,7 @@ export default function DashboardGraph() {
     <div className="bg-white p-6 w-full max-w-3xl rounded-sm shadow-sm border border-gray-100">
       <h2 className={`${inter.className} text-[#94a3b8] text-sm font-medium mb-8`}>Monthly Collections</h2>
       
-      <div className="relative h-[250px] w-full flex items-center justify-center">
+      <div className="relative h-62.5 w-full flex items-center justify-center">
         {chartData ? (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 0, right: 10, left: -10, bottom: 0 }} barCategoryGap="15%">
@@ -60,7 +60,7 @@ export default function DashboardGraph() {
                 axisLine={{ stroke: '#e2e8f0' }} // Light slate border
                 tickLine={false} // No ticks on the bottom axis
                 tick={{ fill: '#94a3b8', fontSize: 13 }} // Slate text
-                dy={12} // Pushes text down slightly from the line
+                dy={12} // Pushes text down slightly from the  line
               />
               <YAxis 
                 domain={[0, 1800000]} 
