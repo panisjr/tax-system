@@ -37,6 +37,7 @@ export default function UserRoleManagementPage() {
 						title='User Accounts'
 						description='Manage system users from Assessor, Treasurer, and Admin'
 						buttonText='View Users'
+						onButtonClick={() => router.push('/user/view')}
 					/>
 					<RegistryCard
 						icon={UserRoundPlus}
