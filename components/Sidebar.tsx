@@ -55,7 +55,7 @@ const menuItems: MenuItem[] = [
   { name: "Taxpayer Records", path: "/taxpayers", icon: Users },
   {
     name: "Assessment & Billing",
-    path: "assessment-billing",
+    path: "assessment",//path dont have slash but still working,considered -paramz
     icon: Wallet,
     subtitle: "(Treasurer)",
   },
@@ -63,7 +63,7 @@ const menuItems: MenuItem[] = [
   { name: "Barangay Performance", path: "/barangay", icon: MapPin },
   { name: "Delinquencies & Notices", path: "/deliquencies", icon: Bell },
   { name: "Document Tracking", path: "#", icon: Folder },
-  { name: "User & Role Management", path: "#", icon: UserCog },
+  { name: "User & Role Management", path: "/user", icon: UserCog },
 ];
 
 export default function Sidebar() {
