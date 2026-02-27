@@ -93,7 +93,7 @@ export default function TaxPayersCard() {
 
 						<button
 							type='button'
-							className={`${inter.className} mt-auto h-10 w-full border text-xs font-medium transition-colors ${
+							className={`${inter.className} mt-auto h-10 w-full border text-xs font-medium transition-colors cursor-pointer ${
 								variant === 'primary'
 									? 'border-[#0f1729] bg-[#0f1729] text-[#949ba3] hover:bg-slate-900'
 									: 'border-[#E5E7EB] bg-white text-[#B7BCC6] hover:bg-gray-50'
