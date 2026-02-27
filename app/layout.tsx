@@ -1,7 +1,17 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ConditionalLayout from "@/components/ConditionalLayout";
-import { Lexend } from "next/font/google";
+import { Inter, Lexend } from "next/font/google";
+
+const lexend = Lexend({
+  subsets: ["latin"],
+  variable: "--font-lexend",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -10,21 +20,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body className="antialiased h-screen overflow-hidden">
+      <body className={`${lexend.variable} ${inter.variable} antialiased h-screen overflow-hidden font-sans`}>
         <ConditionalLayout>{children}</ConditionalLayout>
       </body>
     </html>
   );
 }
-
-
-
-const lexend = Lexend({
-  subsets: ["latin"],
-  variable: "--font-lexend",
-});

@@ -1,9 +1,4 @@
-import { Lexend } from 'next/font/google';
-import { Inter } from 'next/font/google';
 import StatBox from './StatBox';
-
-const lexend = Lexend({ subsets: ['latin'], weight: ['700'] });
-const inter = Inter({ subsets: ['latin'], weight: ['600'] });
 
 export default function AnalyticsCard() {
   return (

@@ -1,11 +1,5 @@
-
 import RegistryCard from '@/components/RegistryCard';
-
 import { Building2, FilePlusCorner, RefreshCcw, MapPinned, ListChecks, FileText } from 'lucide-react';
-import { Lexend, Inter } from 'next/font/google';
-
-const lexend = Lexend({ subsets: ['latin'], weight: ['700'] });
-const inter = Inter({ subsets: ['latin'], weight: ['400', '600'] });
 
 export default function PropertyRegistryPage() {
   return (
@@ -13,8 +7,8 @@ export default function PropertyRegistryPage() {
       
       <main className="flex-1">
         <header className="mb-10">
-          <h1 className={`${lexend.className} text-2xl font-bold text-[#595a5d]`}>Property Registry</h1>
-          <p className={`${inter.className} text-xs text-slate-400 mt-1`}>Assessor Module - Municipality of Sta. Rita, Samar</p>
+          <h1 className={`font-lexend text-2xl font-bold text-[#595a5d]`}>Property Registry</h1>
+          <p className={`font-inter text-xs text-slate-400 mt-1`}>Assessor Module - Municipality of Sta. Rita, Samar</p>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

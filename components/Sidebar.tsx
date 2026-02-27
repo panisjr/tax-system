@@ -38,7 +38,20 @@ import {
   AccordionContent,
 } from '@/components/ui/accordion';
 
-const menuItems = [
+type SubmenuItem = {
+  name: string;
+  path: string;
+};
+
+type MenuItem = {
+  name: string;
+  path: string;
+  icon: React.ComponentType<{ className?: string }>;
+  subtitle?: string;
+  submenu?: SubmenuItem[];
+};
+
+const menuItems: MenuItem[] = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   {
     name: 'Property Registry',
@@ -48,7 +61,7 @@ const menuItems = [
   },
   {
     name: 'Taxpayer Records',
-    path: '#',
+    path: '/taxpayers',
     icon: Users, // The two people  
   },
   {
