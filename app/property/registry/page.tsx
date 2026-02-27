@@ -1,7 +1,7 @@
 
 import RegistryCard from '@/components/RegistryCard';
 
-import { Building, FilePlus, RefreshCcw, MapPin, ListChecks, FileSearch } from 'lucide-react';
+import { Building2, FilePlusCorner, RefreshCcw, MapPinned, ListChecks, FileText } from 'lucide-react';
 import { Lexend, Inter } from 'next/font/google';
 
 const lexend = Lexend({ subsets: ['latin'], weight: ['700'] });
@@ -19,13 +19,13 @@ export default function PropertyRegistryPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <RegistryCard
-            icon={Building} 
+            icon={Building2} 
             title="Property Listing" 
             description="View and manage all registered real properties" 
             buttonText="Open Registry" 
           />
           <RegistryCard 
-            icon={FilePlus} 
+            icon={FilePlusCorner} 
             title="New Tax Declaration" 
             description="Create Tax Declaration for newly declared properties" 
             buttonText="Create TD" 
@@ -37,7 +37,7 @@ export default function PropertyRegistryPage() {
             buttonText="Start Reassessment" 
           />
           <RegistryCard 
-            icon={MapPin} 
+            icon={MapPinned} 
             title="Tax Mapping" 
             description="View properties by barangay and location" 
             buttonText="Open Map" 
@@ -51,7 +51,7 @@ export default function PropertyRegistryPage() {
             variant="secondary"
           />
           <RegistryCard 
-            icon={FileSearch} 
+            icon={FileText} 
             title="Reports & Certifications" 
             description="Generate assessor reports and certifications" 
             buttonText="Generate" 
