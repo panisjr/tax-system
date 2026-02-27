@@ -47,18 +47,18 @@ export default function ManageRolePage() {
   const router = useRouter();
 
   const handleBack = () => router.push('/user'); // adjust if you have a settings/admin route
-  const handleAddRole = () => router.push('/roles/create');
+  const handleAddRole = () => router.push('/user/create');
 
   const handleEditRole = (roleName: string) => {
-    router.push(`/roles/edit?name=${encodeURIComponent(roleName)}`);
+    router.push(`/user/edit?name=${encodeURIComponent(roleName)}`);
   };
 
   const handleViewRole = (roleName: string) => {
-    router.push(`/roles/view?name=${encodeURIComponent(roleName)}`);
+    router.push(`/user/view?name=${encodeURIComponent(roleName)}`);
   };
 
   const handleViewRoleUsers = (roleName: string) => {
-    router.push(`/roles/users?role=${encodeURIComponent(roleName)}`);
+    router.push(`/user/users?role=${encodeURIComponent(roleName)}`);
   };
 
   const handleDeleteRole = (roleName: string) => {
