@@ -55,7 +55,7 @@ const menuItems: MenuItem[] = [
   { name: "Taxpayer Records", path: "/taxpayers", icon: Users },
   {
     name: "Assessment & Billing",
-    path: "assessment",
+    path: "assessment",//path dont have slash but still working,considered -paramz
     icon: Wallet,
     subtitle: "(Treasurer)",
   },
