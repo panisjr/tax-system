@@ -76,7 +76,7 @@ const menuItems: MenuItem[] = [
     icon: FileText, // The credit card with the magnetic stripe
   },
   { name: 'Barangay Performance', path: '#', icon: MapPin },
-  { name: 'Delinquencies & Notices', path: '#', icon: Bell },
+  { name: 'Delinquencies & Notices', path: '/deliquencies', icon: Bell },
   { name: 'Document Tracking', path: '#', icon: Folder }, // The folder
   { name: 'User & Role Management', path: '#', icon: UserCog }, // The user with the gear
 ];
