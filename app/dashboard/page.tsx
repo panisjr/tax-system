@@ -18,7 +18,7 @@ export default function Dashboard() {
     <main className="bg-[#f0f4f8]">
       <div className="w-full mb-6">
             <div className="flex justify-between items-center mb-6">
-              <h1 className={`${lexend.className} text-2xl font-bold text-[#595a5d]`}>
+              <h1 className={`font-lexend text-2xl font-bold text-[#595a5d]`}>
                 Dashboard Overview
               </h1>
               <button className={`${inter.className} bg-[#0f1729] text-[#9fa2aa] px-4 py-2 rounded text-sm font-medium hover:bg-gray-700 transition-colors`}>
@@ -27,7 +27,7 @@ export default function Dashboard() {
             </div>
       <AnalyticsCard />
     </div>
-    
+
       {/* Main Container */}
 
       <div className="w-full flex flex-col md:flex-row gap-4 m-0">
