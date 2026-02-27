@@ -43,6 +43,7 @@ export default function UserRoleManagementPage() {
 						title='Add New User'
 						description='Create new user accounts with assigned roles'
 						buttonText='Create User'
+						onClick={() => router.push("/user/create")}
 					/>
 					<RegistryCard
 						icon={Shield}
