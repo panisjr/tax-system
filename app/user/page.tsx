@@ -50,6 +50,7 @@ export default function UserRoleManagementPage() {
 						title='Role Management'
 						description='Define roles and access permissions per module'
 						buttonText='Manage Roles'
+						onButtonClick={() => router.push('/user/manage')}
 					/>
 					<RegistryCard
 						icon={KeyRound}
