@@ -28,4 +28,4 @@ export default function RegistryCard({ icon: Icon, title, description, buttonTex
       </button>
     </div>
   );
-}
+} 
