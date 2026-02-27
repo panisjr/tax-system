@@ -39,48 +39,42 @@ import {
   AccordionContent,
 } from '@/components/ui/accordion';
 
-const menuItems = [
+type SubmenuItem = {
+  name: string;
+  path: string;
+};
+
+type MenuItem = {
+  name: string;
+  path: string;
+  icon: React.ComponentType<{ className?: string }>;
+  subtitle?: string;
+  submenu?: SubmenuItem[];
+};
+
+const menuItems: MenuItem[] = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   {
     name: 'Property Registry',
-    path: '#',
+    path: '/property/registry',
     icon: Building2, // The tall building
-    subtitle: '(Assessor)',
-    submenu: [
-      { name: 'Add Property', path: '#' },
-      { name: 'View Properties', path: '#' },
-      { name: 'Edit Property', path: '#' },
-    ],
+    subtitle: '(Assessor)'
   },
   {
     name: 'Taxpayer Records',
-    path: '#',
-    icon: Users, // The two people
-    submenu: [
-      { name: 'Active Taxpayers', path: '#' },
-      { name: 'Inactive Taxpayers', path: '#' },
-      { name: 'New Registration', path: '#' },
-    ],
+    path: '/taxpayers',
+    icon: Users, // The two people  
   },
   {
     name: 'Assessment & Billing',
     path: '#',
     icon: Wallet, // The document with lines
     subtitle: '(Treasurer)',
-    submenu: [
-      { name: 'Create Assessment', path: '#' },
-      { name: 'Generate Bills', path: '#' },
-      { name: 'View Bills', path: '#' },
-    ],
   },
   {
     name: 'Payments & QR Monitoring',
     path: '#',
     icon: FileText, // The credit card with the magnetic stripe
-    submenu: [
-      { name: 'Payment Logs', path: '#' },
-      { name: 'QR Code Status', path: '#' },
-    ],
   },
   { name: 'Barangay Performance', path: '#', icon: MapPin },
   { name: 'Delinquencies & Notices', path: '#', icon: Bell },
@@ -145,7 +139,7 @@ export default function Sidebar() {
                     </AccordionTrigger>
                     <AccordionContent className='pl-2 pt-0 pb-2'>
                       <div className='space-y-1'>
-                        {item.submenu?.map((subitem) => (
+                        {item.submenu?.map((subitem: SubmenuItem) => (
                           <Link
                             key={subitem.name}
                             href={subitem.path}
