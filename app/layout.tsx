@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ConditionalLayout from "@/components/ConditionalLayout";
+import { Inter, Lexend } from "next/font/google";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const lexend = Lexend({
   subsets: ["latin"],
+  variable: "--font-lexend",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
   subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
@@ -20,12 +20,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen overflow-hidden`}>
+      <body className={`${lexend.variable} ${inter.variable} antialiased h-screen overflow-hidden font-sans`}>
         <ConditionalLayout>{children}</ConditionalLayout>
       </body>
     </html>

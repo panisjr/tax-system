@@ -1,19 +1,4 @@
 'use client';
-
-import { Inter } from 'next/font/google';
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  variable: '--font-inter',
-});
-
-import { Lexend } from 'next/font/google';
-const lexend = Lexend({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  variable: '--font-lexend',
-});
-
 import { useState } from 'react';
 import { User, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
 import { useRouter } from "next/navigation";
@@ -33,7 +18,6 @@ export default function LoginComponent() {
       setIsLoading(false);
       //Re routing 
       alert('Login attempt with: ' + username);
-      // The quick and dirty way for now
       router.push('/dashboard');
     }, 1000);
   };
@@ -52,15 +36,15 @@ export default function LoginComponent() {
                 className="w-24 h-24 object-contain"
               />
             </div>
-            <h1 className={`${lexend.className} text-3xl font-bold text-gray-900`}>Welcome Back</h1>
-            <p className={`${lexend.className} text-gray-500`}>Sign in to your tax system account</p>
+            <h1 className={`font-lexend text-3xl font-bold text-gray-900`}>Welcome Back</h1>
+            <p className={`font-lexend text-gray-500`}>Sign in to your tax system account</p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Username Field */}
             <div className="space-y-2">
-              <label htmlFor="username" className={`${inter.className} block text-sm font-medium text-gray-700`}>
+              <label htmlFor="username" className={`font-inter block text-sm font-medium text-gray-700`}>
                 Username
               </label>
               <div className="relative">
@@ -71,7 +55,7 @@ export default function LoginComponent() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter your username"
-                  className={`${inter.className} w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#061e4a] focus:border-transparent`}
+                  className={`font-inter w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#061e4a] focus:border-transparent`}
                   required
                 />
               </div>
@@ -79,7 +63,7 @@ export default function LoginComponent() {
 
             {/* Password Field */}
             <div className="space-y-2">
-              <label htmlFor="password" className={`${inter.className} block text-sm font-medium text-gray-700`}>
+              <label htmlFor="password" className={`font-inter block text-sm font-medium text-gray-700`}>
                 Password
               </label>
               <div className="relative">
@@ -90,7 +74,7 @@ export default function LoginComponent() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className={`${inter.className} w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#061e4a] focus:border-transparent`}
+                  className={`font-inter w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#061e4a] focus:border-transparent`}
                   required
                 />
                 <button
@@ -114,9 +98,9 @@ export default function LoginComponent() {
                   type="checkbox"
                   className="w-4 h-4 border cursor-pointer border-gray-300 rounded focus:ring-2 focus:ring-[#061e4a]"
                 />
-                <span className={`${inter.className} text-sm text-gray-600 cursor-pointer`}>Remember me</span>
+                <span className={`font-inter text-sm text-gray-600 cursor-pointer`}>Remember me</span>
               </label>
-              <a href="#" className={`${inter.className} text-sm text-[#061e4a] hover:text-[#061e4a]/80 font-medium`}>
+              <a href="#" className={`font-inter text-sm text-[#061e4a] hover:text-[#061e4a]/80 font-medium`}>
                 Forgot password?
               </a>
             </div>
@@ -125,9 +109,9 @@ export default function LoginComponent() {
             <button
               type="submit"
               disabled={isLoading}
-              className={`${inter.className} w-full cursor-pointer bg-[#061e4a] hover:bg-[#061e4a]/90 disabled:bg-[#061e4a]/50 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center space-x-2`}
+              className={`font-inter w-full cursor-pointer bg-[#061e4a] hover:bg-[#061e4a]/90 disabled:bg-[#061e4a]/50 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center justify-center space-x-2`}
             >
-              <LogIn className={`w-5 h-5 ${inter.className}`} />
+              <LogIn className={`w-5 h-5 font-inter`} />
               <span>{isLoading ? 'Signing in...' : 'Log In'}</span>
             </button>
           </form>
