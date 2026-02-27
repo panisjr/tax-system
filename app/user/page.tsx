@@ -1,6 +1,7 @@
 "use client";
+
 import RegistryCard from '@/components/RegistryCard';
-import { useRouter } from "next/navigation";
+import { useRouter } from 'next/navigation';
 
 import {
 	UsersRound,
@@ -16,7 +17,6 @@ const lexend = Lexend({ subsets: ['latin'], weight: ['700'] });
 const inter = Inter({ subsets: ['latin'], weight: ['400', '600'] });
 
 export default function UserRoleManagementPage() {
-
 	const router = useRouter();
 
 	return (
@@ -43,7 +43,7 @@ export default function UserRoleManagementPage() {
 						title='Add New User'
 						description='Create new user accounts with assigned roles'
 						buttonText='Create User'
-						onClick={() => router.push("/user/create")}
+						onButtonClick={() => router.push('/user/create')}
 					/>
 					<RegistryCard
 						icon={Shield}
