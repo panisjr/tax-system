@@ -48,10 +48,10 @@ const menuItems: MenuItem[] = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { name: 'Property Registry', path: '/property/registry', icon: Building2, subtitle: '(Assessor)' },
   { name: 'Taxpayer Records', path: '/taxpayers', icon: Users },
-  { name: 'Assessment & Billing', path: '#', icon: Wallet, subtitle: '(Treasurer)' }, 
-  { name: 'Payments & QR Monitoring', path: '#', icon: FileText },
+  { name: 'Assessment & Billing', path: 'assessment-billing', icon: Wallet, subtitle: '(Treasurer)' }, 
+  { name: 'Payments & QR Monitoring', path: '/payments', icon: FileText },
   { name: 'Barangay Performance', path: '/barangay', icon: MapPin },
-  { name: 'Delinquencies & Notices', path: '#', icon: Bell },
+  { name: 'Delinquencies & Notices', path: '/deliquencies', icon: Bell },
   { name: 'Document Tracking', path: '#', icon: Folder },
   { name: 'User & Role Management', path: '#', icon: UserCog },
 ];
