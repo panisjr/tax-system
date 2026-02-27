@@ -71,8 +71,8 @@ const menuItems: MenuItem[] = [
     subtitle: '(Treasurer)',
   },
   {
-    name: 'Payments & QR Monitoring',
-    path: '#',
+    name: 'Payments & OR Monitoring',
+    path: '/payments',
     icon: FileText, // The credit card with the magnetic stripe
   },
   { name: 'Barangay Performance', path: '#', icon: MapPin },
