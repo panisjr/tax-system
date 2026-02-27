@@ -1,4 +1,7 @@
+"use client";
+
 import RegistryCard from '@/components/RegistryCard';
+import { useRouter } from 'next/navigation';
 
 import {
 	UsersRound,
@@ -14,6 +17,8 @@ const lexend = Lexend({ subsets: ['latin'], weight: ['700'] });
 const inter = Inter({ subsets: ['latin'], weight: ['400', '600'] });
 
 export default function UserRoleManagementPage() {
+	const router = useRouter();
+
 	return (
 		<div className='flex'>
 			<main className='flex-1'>
@@ -32,6 +37,7 @@ export default function UserRoleManagementPage() {
 						title='User Accounts'
 						description='Manage system users from Assessor, Treasurer, and Admin'
 						buttonText='View Users'
+						onButtonClick={() => router.push('/user/view')}
 					/>
 					<RegistryCard
 						icon={UserRoundPlus}
