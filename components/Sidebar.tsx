@@ -54,6 +54,32 @@ const menuItems: MenuItem[] = [
   { name: 'Delinquencies & Notices', path: '#', icon: Bell },
   { name: 'Document Tracking', path: '#', icon: Folder },
   { name: 'User & Role Management', path: '#', icon: UserCog },
+  {
+    name: 'Property Registry',
+    path: '/property/registry',
+    icon: Building2, // The tall building
+    subtitle: '(Assessor)'
+  },
+  {
+    name: 'Taxpayer Records',
+    path: '/taxpayers',
+    icon: Users, // The two people  
+  },
+  {
+    name: 'Assessment & Billing',
+    path: '/assessment',
+    icon: Wallet, // The document with lines
+    subtitle: '(Treasurer)',
+  },
+  {
+    name: 'Payments & OR Monitoring',
+    path: '/payments',
+    icon: FileText, // The credit card with the magnetic stripe
+  },
+  { name: 'Barangay Performance', path: '#', icon: MapPin },
+  { name: 'Delinquencies & Notices', path: '/deliquencies', icon: Bell },
+  { name: 'Document Tracking', path: '#', icon: Folder }, // The folder
+  { name: 'User & Role Management', path: '#', icon: UserCog }, // The user with the gear
 ];
 
 export default function Sidebar() {
