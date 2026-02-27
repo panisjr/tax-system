@@ -66,7 +66,7 @@ const menuItems: MenuItem[] = [
   },
   {
     name: 'Assessment & Billing',
-    path: '#',
+    path: '/assessment',
     icon: Wallet, // The document with lines
     subtitle: '(Treasurer)',
   },
