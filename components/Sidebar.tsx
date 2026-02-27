@@ -62,7 +62,7 @@ const menuItems: MenuItem[] = [
   { name: "Payments & QR Monitoring", path: "/payments", icon: FileText },
   { name: "Barangay Performance", path: "/barangay", icon: MapPin },
   { name: "Delinquencies & Notices", path: "/deliquencies", icon: Bell },
-  { name: "Document Tracking", path: "#", icon: Folder },
+  { name: "Document Tracking", path: "/document", icon: Folder },
   { name: "User & Role Management", path: "#", icon: UserCog },
 ];
 
