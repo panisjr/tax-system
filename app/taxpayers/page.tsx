@@ -3,10 +3,10 @@ import RegistryCard from '@/components/RegistryCard';
 import {
 	House,
 	TriangleAlert,
-	UserRoundPlus,
+	UserPlus,
 	UsersRound,
-	WalletCards,
-	FileBadge,
+	Wallet,
+	FileText,
 } from 'lucide-react';
 
 export default function TaxPayersPage() {
@@ -30,7 +30,7 @@ export default function TaxPayersPage() {
 						buttonText='Open Taxpayer List'
 					/>
 					<RegistryCard
-						icon={UserRoundPlus}
+						icon={UserPlus}
 						title='Register New Taxpayer'
 						description='Create a new taxpayer profile'
 						buttonText='Add Taxpayer'
@@ -42,7 +42,7 @@ export default function TaxPayersPage() {
 						buttonText='View Properties'
 					/>
 					<RegistryCard
-						icon={WalletCards}
+						icon={Wallet}
 						title='Payment History'
 						description='Track payments and official receipts'
 						buttonText='View Payments'
@@ -56,7 +56,7 @@ export default function TaxPayersPage() {
 						variant='secondary'
 					/>
 					<RegistryCard
-						icon={FileBadge}
+						icon={FileText}
 						title='Certifications & Records'
 						description='Issue certifications and official records'
 						buttonText='Generate Certificate'
