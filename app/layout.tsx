@@ -25,7 +25,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${lexend.variable} ${inter.variable} antialiased h-screen overflow-hidden font-sans`}>
+      <body className={`${lexend.variable} ${inter.variable} antialiased h-screen overflow-hidden font-inter`}>
         <ConditionalLayout>{children}</ConditionalLayout>
       </body>
     </html>

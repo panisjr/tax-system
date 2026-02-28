@@ -1,21 +1,5 @@
 "use client";
 
-import { Inter } from "next/font/google";
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  variable: "--font-inter",
-});
-
-import { Lexend } from "next/font/google";
-
-const lexend = Lexend({
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  variable: "--font-lexend",
-});
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -71,7 +55,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`${inter.className} fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col`}
+      className={`font-inter fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col`}
     >
       {/* Header with Logo */}
       <div className="p-5 border-b border-gray-200">
@@ -86,7 +70,7 @@ export default function Sidebar() {
           </div>
           <div>
             <h1
-              className={`${lexend.className} text-lg font-bold text-[#666D7D]`}
+              className={`font-lexend text-lg font-bold text-[#666D7D]`}
             >
               Sta. Rita, Samar
             </h1>

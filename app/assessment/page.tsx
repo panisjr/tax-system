@@ -8,20 +8,16 @@ import {
 	CalendarDays,
 	ClipboardList,
 } from 'lucide-react';
-import { Lexend, Inter } from 'next/font/google';
-
-const lexend = Lexend({ subsets: ['latin'], weight: ['700'] });
-const inter = Inter({ subsets: ['latin'], weight: ['400', '600'] });
 
 export default function AssessmentBillingPage() {
 	return (
 		<div className='flex'>
 			<main className='flex-1'>
 				<header className='mb-10'>
-					<h1 className={`${lexend.className} text-2xl font-bold text-[#595a5d]`}>
+					<h1 className={`font-lexend text-2xl font-bold text-[#595a5d]`}>
 						Assessment & Billing
 					</h1>
-					<p className={`${inter.className} mt-1 text-xs text-slate-400`}>
+					<p className={`font-inter mt-1 text-xs text-slate-400`}>
 						Treasurer Module - RPT Computation and Billing Management
 					</p>
 				</header>
