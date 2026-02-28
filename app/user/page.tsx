@@ -63,6 +63,7 @@ export default function UserRoleManagementPage() {
 						description='Track logins, actions, and system usage'
 						buttonText='View Logs'
 						variant='secondary'
+						onButtonClick={() => router.push('/user/activity/log')}
 					/>
 					<RegistryCard
 						icon={Settings}
