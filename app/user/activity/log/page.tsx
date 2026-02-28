@@ -82,7 +82,7 @@ export default function UserLogsPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px] border-collapse">
+            <table className="w-full min-w-175 border-collapse">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500">
