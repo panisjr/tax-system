@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   BarChart,
   Bar,
@@ -9,14 +9,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-
-import { Inter } from 'next/font/google';
-
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  variable: '--font-inter',
-});
 
 const fetchChartData = async () => {
   return new Promise((resolve) => {
@@ -49,7 +41,7 @@ export default function DashboardGraph() {
 
   return (
     <div className="bg-white p-6 w-full max-w-3xl rounded-sm shadow-sm border border-gray-100">
-      <h2 className={`${inter.className} text-[#94a3b8] text-sm font-medium mb-8`}>Monthly Collections</h2>
+      <h2 className={`font-inter text-[#94a3b8] text-sm font-medium mb-8`}>Monthly Collections</h2>
       
       <div className="relative h-62.5 w-full flex items-center justify-center">
         {chartData ? (

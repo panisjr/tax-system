@@ -1,21 +1,5 @@
 "use client";
 
-import { Inter } from "next/font/google";
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  variable: "--font-inter",
-});
-
-import { Lexend } from "next/font/google";
-
-const lexend = Lexend({
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  variable: "--font-lexend",
-});
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -66,17 +50,21 @@ const menuItems: MenuItem[] = [
   { name: "User & Role Management", path: "/user", icon: UserCog },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  isCollapsed: boolean;
+}
+
+export default function Sidebar({ isCollapsed }: SidebarProps) {
   const pathname = usePathname();
 
   return (
     <aside
-      className={`${inter.className} fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col`}
+      className={`font-inter ${isCollapsed ? "w-20" : "w-64"} shrink-0 h-full bg-white border-r border-gray-200 flex flex-col transition-all duration-200`}
     >
       {/* Header with Logo */}
-      <div className="p-5 border-b border-gray-200">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="relative w-12 h-12">
+      <div className="border-b border-gray-200 px-2 py-3">
+        <div className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"}`}>
+          <div className="relative w-12 h-12 shrink-0">
             <Image
               src="/img/sta.rita_logo.png"
               alt="Sta. Rita Logo"
@@ -84,13 +72,13 @@ export default function Sidebar() {
               className="object-contain"
             />
           </div>
-          <div>
+          <div className={isCollapsed ? "hidden" : "block"}>
             <h1
-              className={`${lexend.className} text-lg font-bold text-[#666D7D]`}
+              className={`font-lexend text-lg font-bold text-[#666D7D]`}
             >
               Sta. Rita, Samar
             </h1>
-            <p className="text-xs text-gray-600">
+            <p className="font-lexend text-xs text-gray-600">
               Real Property Tax Monitoring
             </p>
           </div>
@@ -107,15 +95,16 @@ export default function Sidebar() {
               <Link
                 key={item.name}
                 href={item.path}
-                className={`flex items-center gap-3 px-2 py-3 rounded-lg transition cursor-pointer [text-decoration:none] overflow-hidden ${
+                className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"} px-2 py-3 rounded-lg transition cursor-pointer [text-decoration:none] overflow-hidden ${
                   pathname === item.path
                     ? "bg-blue-50 text-blue-600 font-medium"
                     : "text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900 hover:font-semibold"
                 }`}
+                title={item.name}
               >
                 <Icon className="w-5 h-5 shrink-0 text-[#00154A]" />
 
-                <div className="flex-1 min-w-0 text-left overflow-hidden">
+                <div className={`flex-1 min-w-0 text-left overflow-hidden ${isCollapsed ? "hidden" : "block"}`}>
                   <div className="text-sm font-medium truncate">
                     {item.name}
                   </div>
