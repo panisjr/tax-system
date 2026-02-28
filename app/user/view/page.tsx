@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, UsersRound, ShieldCheck, Activity } from 'lucide-react';
+import { ArrowLeft, UsersRound, ShieldCheck, Activity, Pencil, Trash2 } from 'lucide-react';
 
-const users = [
+const initialUsers = [
 	{ name: 'Juan Dela Cruz', role: 'Assessor', status: 'Active' },
 	{ name: 'Maria Santos', role: 'Treasurer', status: 'Active' },
 	{ name: 'Admin User', role: 'Administrator', status: 'Active' },
@@ -12,6 +13,7 @@ const users = [
 
 export default function ViewUserPage() {
 	const router = useRouter();
+	const [users, setUsers] = useState(initialUsers);
 
 	const handleBack = () => {
 		router.push('/user');
@@ -19,6 +21,17 @@ export default function ViewUserPage() {
 
 	const handleAddUser = () => {
 		router.push('/user/create');
+	};
+
+	const handleEditUser = (name: string) => {
+		router.push(`/user/create?name=${encodeURIComponent(name)}`);
+	};
+
+	const handleDeleteUser = (name: string) => {
+		const ok = window.confirm(`Delete user "${name}"?`);
+		if (!ok) return;
+
+		setUsers((prev) => prev.filter((user) => user.name !== name));
 	};
 
 	return (
@@ -106,13 +119,31 @@ export default function ViewUserPage() {
 											</span>
 										</td>
 										<td className='px-3 py-3'>
-											<div className='flex justify-end'>
+											<div className='flex justify-end gap-2'>
 												<button
 													type='button'
 													className={`font-inter inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-gray-50 cursor-pointer`}
 												>
 													<Activity className='h-3.5 w-3.5' />
 													View Log
+												</button>
+
+												<button
+													type='button'
+													onClick={() => handleEditUser(user.name)}
+													className={`font-inter inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-gray-50 cursor-pointer`}
+												>
+													<Pencil className='h-3.5 w-3.5' />
+													Edit
+												</button>
+
+												<button
+													type='button'
+													onClick={() => handleDeleteUser(user.name)}
+													className={`font-inter inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-rose-600 transition-colors hover:bg-rose-50 cursor-pointer`}
+												>
+													<Trash2 className='h-3.5 w-3.5' />
+													Delete
 												</button>
 											</div>
 										</td>
