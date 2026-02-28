@@ -63,7 +63,7 @@ export default function UserRoleManagementPage() {
 						description='Track logins, actions, and system usage'
 						buttonText='View Logs'
 						variant='secondary'
-						onButtonClick={() => router.push('/user/activity/log')}
+						onButtonClick={() => router.push('/user/activity/logs')}
 					/>
 					<RegistryCard
 						icon={Settings}
@@ -71,6 +71,7 @@ export default function UserRoleManagementPage() {
 						description='Password policies, session control, and MFA'
 						buttonText='Security Options'
 						variant='secondary'
+						onButtonClick={() => router.push('/user/settings/security')}
 					/>
 				</div>
 			</main>
