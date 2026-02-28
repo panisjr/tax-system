@@ -62,8 +62,8 @@ export default function Sidebar({ isCollapsed }: SidebarProps) {
       className={`font-inter ${isCollapsed ? "w-20" : "w-64"} shrink-0 h-full bg-white border-r border-gray-200 flex flex-col transition-all duration-200`}
     >
       {/* Header with Logo */}
-      <div className="p-5 border-b border-gray-200">
-        <div className={`flex items-center mb-2 ${isCollapsed ? "justify-center" : "gap-3"}`}>
+      <div className="border-b border-gray-200 px-2 py-3">
+        <div className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"}`}>
           <div className="relative w-12 h-12 shrink-0">
             <Image
               src="/img/sta.rita_logo.png"
