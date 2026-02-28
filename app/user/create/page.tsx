@@ -164,7 +164,7 @@ export default function CreateUserPage() {
           <div className="flex items-center gap-2">
             <Link
               href="/user"
-              className="font-inter h-10 inline-flex items-center rounded px-5 text-xs font-medium text-slate-500 transition-colors hover:text-slate-700"
+              className="font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50"
             >
               Cancel
             </Link>
