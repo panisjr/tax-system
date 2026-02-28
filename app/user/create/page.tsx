@@ -229,11 +229,13 @@ export default function CreateUserPage() {
                     label="Male"
                     checked={form.sex}
                     onClick={() => updateField("sex", true)}
+                    className="cursor-pointer"
                   />
                   <BooleanChip
                     label="Female"
                     checked={!form.sex}
                     onClick={() => updateField("sex", false)}
+                    className="cursor-pointer"
                   />
                 </div>
               </div>
@@ -318,11 +320,13 @@ export default function CreateUserPage() {
                     label="Active"
                     checked={form.status}
                     onClick={() => updateField("status", true)}
+                    className="cursor-pointer"
                   />
                   <BooleanChip
                     label="Inactive"
                     checked={!form.status}
                     onClick={() => updateField("status", false)}
+                    className="cursor-pointer"
                   />
                 </div>
               </div>
@@ -452,7 +456,7 @@ function PasswordField({
           className="rounded p-1 text-slate-500 hover:bg-gray-50 hover:text-slate-900"
           aria-label="Toggle password visibility"
         >
-          {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {show ? <EyeOff className="h-4 w-4 cursor-pointer" /> : <Eye className="h-4 w-4 cursor-pointer" />}
         </button>
       </div>
     </div>
@@ -463,10 +467,12 @@ function BooleanChip({
   label,
   checked,
   onClick,
+  className,
 }: {
   label: string;
   checked: boolean;
   onClick: () => void;
+  className?: string;
 }) {
   return (
     <button
@@ -476,7 +482,7 @@ function BooleanChip({
         checked
           ? "border-blue-200 bg-blue-50 text-blue-700"
           : "border-gray-200 bg-white text-slate-600 hover:bg-gray-50"
-      }`}
+      } ${className || ""}`}
     >
       {label}
     </button>
