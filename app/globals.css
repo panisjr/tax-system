@@ -121,11 +121,13 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    font-family: var(--font-lexend), sans-serif !important;
   }
 
   /* default document font should be Inter */
   body {
-    @apply bg-background text-foreground font-inter;
+    @apply bg-background text-foreground;
+    font-family: var(--font-lexend), sans-serif;
   }
 
   /* headings always use Lexend for improved legibility */
