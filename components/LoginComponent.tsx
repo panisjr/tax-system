@@ -17,7 +17,6 @@ export default function LoginComponent() {
     setTimeout(() => {
       setIsLoading(false);
       //Re routing 
-      alert('Login attempt with: ' + username);
       router.push('/dashboard');
     }, 1000);
   };

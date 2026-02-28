@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import {
-  PanelRightClose, 
+  PanelRightClose,
   PanelRightOpen,
   Search,
   Settings,
@@ -11,6 +11,14 @@ import {
   UserCircle2,
   X,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+// We'll get a router instance inside the component using the hook and
+// forward a callback down to the user menu. The previous approach
+// imported `next/router` which is meant for the legacy pages router,
+// and the `roleName` argument was never used.
+
+// (Sign out implementation lives in the HeaderComponent body now.)
 
 // Types
 interface SearchBarProps {
@@ -22,6 +30,7 @@ interface UserMenuProps {
   userName?: string;
   userRole?: string;
   avatar?: string;
+  onSignOut?: () => void;
 }
 
 interface HeaderComponentProps {
@@ -42,10 +51,10 @@ const SEARCH_SHORTCUT = "Ctrl /";
 //
 //   const syncWithServer = useCallback(async () => {
 //     if (isSyncing) return;
-//     
+//
 //     setIsSyncing(true);
 //     setError(null);
-//     
+//
 //     try {
 //       const controller = new AbortController();
 //       const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -55,7 +64,7 @@ const SEARCH_SHORTCUT = "Ctrl /";
 //         signal: controller.signal,
 //         headers: { "Content-Type": "application/json" },
 //       });
-//       
+//
 //       clearTimeout(timeoutId);
 //
 //       if (!res.ok) {
@@ -79,7 +88,7 @@ const SEARCH_SHORTCUT = "Ctrl /";
 //
 //     const initializeTime = async () => {
 //       await syncWithServer();
-//       
+//
 //       if (!isMounted) return;
 //
 //       // Local tick every second
@@ -159,14 +168,17 @@ const SearchBar = memo(({ isOpen, onToggle }: SearchBarProps) => {
     setSearchValue(e.target.value);
   }, []);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      setSearchValue("");
-      if (onToggle && window.innerWidth < 768) {
-        onToggle();
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSearchValue("");
+        if (onToggle && window.innerWidth < 768) {
+          onToggle();
+        }
       }
-    }
-  }, [onToggle]);
+    },
+    [onToggle],
+  );
 
   // Desktop search bar
   return (
@@ -175,9 +187,9 @@ const SearchBar = memo(({ isOpen, onToggle }: SearchBarProps) => {
         <label htmlFor="search-input" className="sr-only">
           Search menu
         </label>
-        <Search 
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" 
-          aria-hidden="true" 
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+          aria-hidden="true"
         />
         <input
           id="search-input"
@@ -188,7 +200,7 @@ const SearchBar = memo(({ isOpen, onToggle }: SearchBarProps) => {
           onKeyDown={handleKeyDown}
           className="h-11 w-full rounded-xl border bg-gray-50 pl-10 pr-24 text-sm outline-none ring-0 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
         />
-        <kbd 
+        <kbd
           className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border bg-white px-2 py-0.5 text-xs text-gray-500"
           aria-label={`Shortcut: ${SEARCH_SHORTCUT}`}
         >
@@ -224,84 +236,90 @@ const SearchBar = memo(({ isOpen, onToggle }: SearchBarProps) => {
   );
 });
 
-SearchBar.displayName = "SearchBar"
+SearchBar.displayName = "SearchBar";
 
 // User menu component
-const UserMenu = memo(({ 
-  userName = "Admin", 
-  userRole = "Administrator", 
-  avatar 
-}: UserMenuProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+const UserMenu = memo(
+  ({
+    userName = "Admin",
+    userRole = "Administrator",
+    avatar,
+    onSignOut,
+  }: UserMenuProps) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (
+          menuRef.current &&
+          !menuRef.current.contains(event.target as Node)
+        ) {
+          setIsOpen(false);
+        }
+      };
 
-    document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-        };
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
     }, []);
 
     return (
-        <div ref={menuRef} className="relative">
+      <div ref={menuRef} className="relative">
         <button
-            type="button"
-            onClick={() => setIsOpen((prev) => !prev)}
-            className="cursor-pointer flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="User menu"
-            aria-expanded={isOpen}
-            aria-haspopup="true"
+          type="button"
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="cursor-pointer flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="User menu"
+          aria-expanded={isOpen}
+          aria-haspopup="true"
         >
-            {avatar ? (
-            <img 
-                src={avatar} 
-                alt={userName} 
-                className="h-8 w-8 rounded-full object-cover"
+          {avatar ? (
+            <img
+              src={avatar}
+              alt={userName}
+              className="h-8 w-8 rounded-full object-cover"
             />
-            ) : (
+          ) : (
             <UserCircle2 className="h-8 w-8 text-blue-500" aria-hidden="true" />
-            )}
+          )}
 
-            <div className="hidden text-left leading-tight sm:block">
+          <div className="hidden text-left leading-tight sm:block">
             <p className="text-sm font-semibold text-gray-900">{userName}</p>
             <p className="text-xs text-gray-500">{userRole}</p>
-            </div>
+          </div>
 
-            <ChevronDown 
+          <ChevronDown
             className={`hidden h-4 w-4 text-gray-500 transition-transform sm:block ${
-                isOpen ? "rotate-180" : ""
+              isOpen ? "rotate-180" : ""
             }`}
             aria-hidden="true"
-            />
+          />
         </button>
 
         {isOpen && (
-            <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-white py-1 shadow-lg">
+          <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-white py-1 shadow-lg">
             <button className="cursor-pointer w-full px-4 py-2 text-left text-sm hover:bg-gray-50">
-                Profile
+              Profile
             </button>
             <button className="cursor-pointer w-full px-4 py-2 text-left text-sm hover:bg-gray-50">
-                Settings
+              Settings
             </button>
             <hr className="my-1" />
-            <button className="cursor-pointer w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50">
-                Sign out
+            <button
+              onClick={() => onSignOut && onSignOut()}
+              className="cursor-pointer w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50"
+            >
+              Sign out
             </button>
-            </div>
+          </div>
         )}
-        </div>
+      </div>
     );
-});
+  },
+);
 
 UserMenu.displayName = "UserMenu";
 
@@ -309,6 +327,13 @@ export default function HeaderComponent({
   isSidebarCollapsed,
   onToggleSidebar,
 }: HeaderComponentProps) {
+  const router = useRouter();
+
+  // simple sign-out helper; clear auth state here as needed before redirecting
+  const handleSignOut = useCallback(() => {
+    // e.g. call logout API, clear local storage/cookies, etc.
+    router.push("/");
+  }, [router]);
   // const { currentMs, error, retry } = useServerTime(); - COMMENTED OUT
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
@@ -347,17 +372,19 @@ export default function HeaderComponent({
         {/* Left section */}
         <div className="flex min-w-0 items-center gap-3">
           <button
-                type="button"
-                onClick={onToggleSidebar}
-                className="cursor-pointer inline-flex h-11 w-11 items-center justify-center rounded-xl border text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                >
-                {isSidebarCollapsed ? (
-                    <PanelRightOpen className="h-5 w-5" />
-                ) : (
-                    <PanelRightClose className="h-5 w-5" />
-                )}
-            </button>
+            type="button"
+            onClick={onToggleSidebar}
+            className="cursor-pointer inline-flex h-11 w-11 items-center justify-center rounded-xl border text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label={
+              isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
+          >
+            {isSidebarCollapsed ? (
+              <PanelRightOpen className="h-5 w-5" />
+            ) : (
+              <PanelRightClose className="h-5 w-5" />
+            )}
+          </button>
 
           {/* Mobile search toggle */}
           <button
@@ -369,7 +396,7 @@ export default function HeaderComponent({
             <Search className="h-5 w-5" />
           </button>
 
-          <SearchBar 
+          <SearchBar
             isOpen={isMobileSearchOpen}
             onToggle={() => setIsMobileSearchOpen(false)}
           />
@@ -409,14 +436,14 @@ export default function HeaderComponent({
             aria-label="Notifications"
           >
             <Bell className="h-5 w-5" aria-hidden="true" />
-            <span 
+            <span
               className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"
               aria-label="Unread notifications"
             />
           </button>
 
           {/* User menu */}
-          <UserMenu />
+          <UserMenu onSignOut={handleSignOut} />
         </div>
       </div>
 
