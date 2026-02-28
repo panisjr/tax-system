@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Lexend, Inter } from 'next/font/google';
+
 import {
   ArrowLeft,
   ShieldCheck,
@@ -12,10 +12,6 @@ import {
   Eye,
 } from 'lucide-react';
 
-const lexend = Lexend({ subsets: ['latin'], weight: ['700'] });
-const inter = Inter({ subsets: ['latin'], weight: ['400', '600'] });
-
-// Sample roles data (replace with API/db later)
 const roles = [
   {
     name: 'Administrator',
@@ -78,7 +74,7 @@ export default function ManageRolePage() {
           <button
             type="button"
             onClick={handleBack}
-            className={`${inter.className} mb-5 inline-flex items-center gap-2 text-sm text-slate-500 transition-colors hover:text-slate-700 cursor-pointer`}
+            className={`font-lexend mb-5 inline-flex items-center gap-2 text-sm text-slate-500 transition-colors hover:text-slate-700 cursor-pointer`}
           >
             <ArrowLeft className="h-4 w-4" />
             Back to User Management
@@ -86,10 +82,10 @@ export default function ManageRolePage() {
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className={`${lexend.className} text-2xl font-bold text-[#595a5d]`}>
+              <h1 className={`font-lexend text-2xl font-bold text-[#595a5d]`}>
                 Manage Roles
               </h1>
-              <p className={`${inter.className} mt-1 text-xs text-slate-400`}>
+              <p className={`font-inter mt-1 text-xs text-slate-400`}>
                 Create roles, assign permissions, and manage access levels
               </p>
             </div>
@@ -97,7 +93,7 @@ export default function ManageRolePage() {
             <button
               type="button"
               onClick={handleAddRole}
-              className={`${inter.className} h-10 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 cursor-pointer`}
+              className={`font-inter h-10 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 cursor-pointer`}
             >
               Add New Role
             </button>
@@ -109,7 +105,7 @@ export default function ManageRolePage() {
             <div className="rounded-md bg-slate-100 p-2">
               <ShieldCheck className="h-5 w-5 text-[#00154A]" />
             </div>
-            <h2 className={`${inter.className} text-sm font-semibold text-[#848794]`}>
+            <h2 className={`font-inter text-sm font-semibold text-[#848794]`}>
               Role Directory
             </h2>
           </div>
@@ -119,27 +115,27 @@ export default function ManageRolePage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th
-                    className={`${inter.className} px-3 py-3 text-left text-xs font-semibold text-slate-500`}
+                    className={`font-lexend px-3 py-3 text-left text-xs font-semibold text-slate-500`}
                   >
                     Role
                   </th>
                   <th
-                    className={`${inter.className} px-3 py-3 text-left text-xs font-semibold text-slate-500`}
+                    className={`font-lexend px-3 py-3 text-left text-xs font-semibold text-slate-500`}
                   >
                     Permissions
                   </th>
                   <th
-                    className={`${inter.className} px-3 py-3 text-left text-xs font-semibold text-slate-500`}
+                    className={`font-lexend px-3 py-3 text-left text-xs font-semibold text-slate-500`}
                   >
                     Users
                   </th>
                   <th
-                    className={`${inter.className} px-3 py-3 text-left text-xs font-semibold text-slate-500`}
+                    className={`font-lexend px-3 py-3 text-left text-xs font-semibold text-slate-500`}
                   >
                     Status
                   </th>
                   <th
-                    className={`${inter.className} px-3 py-3 text-right text-xs font-semibold text-slate-500`}
+                    className={`font-inter px-3 py-3 text-right text-xs font-semibold text-slate-500`}
                   >
                     Actions
                   </th>
@@ -149,14 +145,14 @@ export default function ManageRolePage() {
               <tbody>
                 {roles.map((role) => (
                   <tr key={role.name} className="border-b border-gray-100">
-                    <td className={`${inter.className} px-3 py-3 text-sm text-slate-700`}>
+                    <td className={`font-inter px-3 py-3 text-sm text-slate-700`}>
                       <div className="inline-flex items-center gap-2">
                         <KeyRound className="h-4 w-4 text-slate-400" />
                         {role.name}
                       </div>
                     </td>
 
-                    <td className={`${inter.className} px-3 py-3 text-sm text-slate-600`}>
+                    <td className={`font-inter px-3 py-3 text-sm text-slate-600`}>
                       <div className="flex flex-wrap gap-2">
                         {role.permissions.slice(0, 3).map((p) => (
                           <span
@@ -174,7 +170,7 @@ export default function ManageRolePage() {
                       </div>
                     </td>
 
-                    <td className={`${inter.className} px-3 py-3 text-sm text-slate-600`}>
+                    <td className={`font-inter px-3 py-3 text-sm text-slate-600`}>
                       <button
                         type="button"
                         onClick={() => handleViewRoleUsers(role.name)}
@@ -186,7 +182,7 @@ export default function ManageRolePage() {
                       </button>
                     </td>
 
-                    <td className={`${inter.className} px-3 py-3 text-sm`}>
+                    <td className={`font-inter px-3 py-3 text-sm`}>
                       <span
                         className={`rounded px-2 py-1 text-xs ${
                           role.status === 'Active'
@@ -203,7 +199,7 @@ export default function ManageRolePage() {
                         <button
                           type="button"
                           onClick={() => handleViewRole(role.name)}
-                          className={`${inter.className} inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-gray-50 cursor-pointer`}
+                          className={`font-inter inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-gray-50 cursor-pointer`}
                         >
                           <Eye className="h-3.5 w-3.5" />
                           View
@@ -212,7 +208,7 @@ export default function ManageRolePage() {
                         <button
                           type="button"
                           onClick={() => handleEditRole(role.name)}
-                          className={`${inter.className} inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-gray-50 cursor-pointer`}
+                          className={`font-inter inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-gray-50 cursor-pointer`}
                         >
                           <Pencil className="h-3.5 w-3.5" />
                           Edit
@@ -221,7 +217,7 @@ export default function ManageRolePage() {
                         <button
                           type="button"
                           onClick={() => handleDeleteRole(role.name)}
-                          className={`${inter.className} inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-rose-600 transition-colors hover:bg-rose-50 cursor-pointer`}
+                          className={`font-inter inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-rose-600 transition-colors hover:bg-rose-50 cursor-pointer`}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                           Delete

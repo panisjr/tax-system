@@ -123,9 +123,34 @@
     @apply border-border outline-ring/50;
     font-family: var(--font-lexend), sans-serif !important;
   }
+
+  /* default document font should be Inter */
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-lexend), sans-serif;
   }
 
+  /* headings always use Lexend for improved legibility */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-lexend;
+  }
+}
+
+@layer utilities {
+  /* helper classes that reference the font variables so tailwind can
+     generate the corresponding utilities if the config isn't loaded or
+     for legacy fallback.  Most apps will rely on the theme extension
+     defined in tailwind.config.js, but having these here avoids a flash
+     of unstyled text if the config ever fails to load. */
+  .font-lexend {
+    font-family: var(--font-lexend) !important;
+  }
+  .font-inter {
+    font-family: var(--font-inter) !important;
+  }
 }
