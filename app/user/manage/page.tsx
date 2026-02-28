@@ -1,7 +1,6 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-
 import {
   ArrowLeft,
   ShieldCheck,
@@ -115,12 +114,12 @@ export default function ManageRolePage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th
-                    className={`font-lexend px-3 py-3 text-left text-xs font-semibold text-slate-500`}
+                    className={`font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500`}
                   >
                     Role
                   </th>
                   <th
-                    className={`font-lexend px-3 py-3 text-left text-xs font-semibold text-slate-500`}
+                    className={`font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500`}
                   >
                     Permissions
                   </th>
