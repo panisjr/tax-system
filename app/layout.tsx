@@ -20,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${lexend.variable} antialiased hsansen overflow font-(--font-lexend)`}>
+      <body className={`${lexend.variable} antialiased hsansen overflow-hidden font-(--font-lexend)`}>
         <ConditionalLayout>{children}</ConditionalLayout>
       </body>
     </html>
