@@ -74,7 +74,7 @@ export default function ManageRolePage() {
           <button
             type="button"
             onClick={handleBack}
-            className={`font-inter mb-5 inline-flex items-center gap-2 text-sm text-slate-500 transition-colors hover:text-slate-700 cursor-pointer`}
+            className={`font-lexend mb-5 inline-flex items-center gap-2 text-sm text-slate-500 transition-colors hover:text-slate-700 cursor-pointer`}
           >
             <ArrowLeft className="h-4 w-4" />
             Back to User Management
@@ -115,22 +115,22 @@ export default function ManageRolePage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th
-                    className={`font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500`}
+                    className={`font-lexend px-3 py-3 text-left text-xs font-semibold text-slate-500`}
                   >
                     Role
                   </th>
                   <th
-                    className={`font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500`}
+                    className={`font-lexend px-3 py-3 text-left text-xs font-semibold text-slate-500`}
                   >
                     Permissions
                   </th>
                   <th
-                    className={`font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500`}
+                    className={`font-lexend px-3 py-3 text-left text-xs font-semibold text-slate-500`}
                   >
                     Users
                   </th>
                   <th
-                    className={`font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500`}
+                    className={`font-lexend px-3 py-3 text-left text-xs font-semibold text-slate-500`}
                   >
                     Status
                   </th>

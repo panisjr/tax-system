@@ -28,7 +28,7 @@ export default function ViewUserPage() {
 					<button
 						type='button'
 						onClick={handleBack}
-						className={`font-inter mb-5 inline-flex items-center gap-2 text-sm text-slate-500 transition-colors hover:text-slate-700 cursor-pointer`}
+						className={`font-lexend mb-5 inline-flex items-center gap-2 text-sm text-slate-500 transition-colors hover:text-slate-700 cursor-pointer`}
 					>
 						<ArrowLeft className='h-4 w-4' />
 						Back to User Management
@@ -47,7 +47,7 @@ export default function ViewUserPage() {
 						<button
 							type='button'
 							onClick={handleAddUser}
-							className={`font-inter h-10 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 cursor-pointer`}
+							className={`font-lexend h-10 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 cursor-pointer`}
 						>
 							Add New User
 						</button>

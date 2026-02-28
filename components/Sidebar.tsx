@@ -74,7 +74,7 @@ export default function Sidebar() {
             >
               Sta. Rita, Samar
             </h1>
-            <p className="text-xs text-gray-600">
+            <p className="font-lexend text-xs text-gray-600">
               Real Property Tax Monitoring
             </p>
           </div>
@@ -91,7 +91,7 @@ export default function Sidebar() {
               <Link
                 key={item.name}
                 href={item.path}
-                className={`flex items-center gap-3 px-2 py-3 rounded-lg transition cursor-pointer [text-decoration:none] overflow-hidden ${
+                className={`font-inter flex items-center gap-3 px-2 py-3 rounded-lg transition cursor-pointer [text-decoration:none] overflow-hidden ${
                   pathname === item.path
                     ? "bg-blue-50 text-blue-600 font-medium"
                     : "text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900 hover:font-semibold"
