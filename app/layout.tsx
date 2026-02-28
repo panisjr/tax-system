@@ -19,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={`${lexend.variable} antialiased hsansen overflow-hidden font-(--font-lexend)`}>
+    <html lang="en" className="h-full">
+      <body className={`${lexend.variable} h-full antialiased hsansen overflow-hidden font-(--font-lexend)`}>
         <ConditionalLayout>{children}</ConditionalLayout>
       </body>
     </html>
