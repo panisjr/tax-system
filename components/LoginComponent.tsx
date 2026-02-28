@@ -55,7 +55,6 @@ export default function LoginComponent() {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter your username"
                   className={`font-inter w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#061e4a] focus:border-transparent`}
-                  required
                 />
               </div>
             </div>
@@ -74,7 +73,6 @@ export default function LoginComponent() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className={`font-inter w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#061e4a] focus:border-transparent`}
-                  required
                 />
                 <button
                   type="button"
