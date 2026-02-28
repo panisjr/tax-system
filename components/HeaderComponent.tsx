@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 import {
   PanelRightClose, 
   PanelRightOpen,
@@ -224,60 +224,83 @@ const SearchBar = memo(({ isOpen, onToggle }: SearchBarProps) => {
   );
 });
 
-SearchBar.displayName = "SearchBar";
+SearchBar.displayName = "SearchBar"
 
 // User menu component
-const UserMenu = memo(({ userName = "Admin", userRole = "Administrator", avatar }: UserMenuProps) => {
+const UserMenu = memo(({ 
+  userName = "Admin", 
+  userRole = "Administrator", 
+  avatar 
+}: UserMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="cursor-pointer flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        aria-label="User menu"
-        aria-expanded={isOpen}
-        aria-haspopup="true"
-      >
-        {avatar ? (
-          <img 
-            src={avatar} 
-            alt={userName} 
-            className="h-8 w-8 rounded-full object-cover"
-          />
-        ) : (
-          <UserCircle2 className="h-8 w-8 text-blue-500" aria-hidden="true" />
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
+    return (
+        <div ref={menuRef} className="relative">
+        <button
+            type="button"
+            onClick={() => setIsOpen((prev) => !prev)}
+            className="cursor-pointer flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="User menu"
+            aria-expanded={isOpen}
+            aria-haspopup="true"
+        >
+            {avatar ? (
+            <img 
+                src={avatar} 
+                alt={userName} 
+                className="h-8 w-8 rounded-full object-cover"
+            />
+            ) : (
+            <UserCircle2 className="h-8 w-8 text-blue-500" aria-hidden="true" />
+            )}
+
+            <div className="hidden text-left leading-tight sm:block">
+            <p className="text-sm font-semibold text-gray-900">{userName}</p>
+            <p className="text-xs text-gray-500">{userRole}</p>
+            </div>
+
+            <ChevronDown 
+            className={`hidden h-4 w-4 text-gray-500 transition-transform sm:block ${
+                isOpen ? "rotate-180" : ""
+            }`}
+            aria-hidden="true"
+            />
+        </button>
+
+        {isOpen && (
+            <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-white py-1 shadow-lg">
+            <button className="cursor-pointer w-full px-4 py-2 text-left text-sm hover:bg-gray-50">
+                Profile
+            </button>
+            <button className="cursor-pointer w-full px-4 py-2 text-left text-sm hover:bg-gray-50">
+                Settings
+            </button>
+            <hr className="my-1" />
+            <button className="cursor-pointer w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50">
+                Sign out
+            </button>
+            </div>
         )}
-        <div className="hidden text-left leading-tight sm:block">
-          <p className="text-sm font-semibold text-gray-900">{userName}</p>
-          <p className="text-xs text-gray-500">{userRole}</p>
         </div>
-        <ChevronDown 
-          className={`hidden h-4 w-4 text-gray-500 transition-transform sm:block ${
-            isOpen ? "rotate-180" : ""
-          }`}
-          aria-hidden="true"
-        />
-      </button>
-
-      {/* Dropdown menu - can be expanded */}
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-white py-1 shadow-lg">
-          <button className="cursor-pointer w-full px-4 py-2 text-left text-sm hover:bg-gray-50">
-            Profile
-          </button>
-          <button className="cursor-pointer w-full px-4 py-2 text-left text-sm hover:bg-gray-50">
-            Settings
-          </button>
-          <hr className="my-1" />
-          <button className="cursor-pointer w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50">
-            Sign out
-          </button>
-        </div>
-      )}
-    </div>
-  );
+    );
 });
 
 UserMenu.displayName = "UserMenu";
