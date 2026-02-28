@@ -54,6 +54,7 @@ export default function UserRoleManagementPage() {
 						title='Permission Settings'
 						description='Fine-grained access control for system features'
 						buttonText='Configure Permissions'
+						onButtonClick={() => router.push('/user/settings/permission')}
 						variant='secondary'
 					/>
 					<RegistryCard
