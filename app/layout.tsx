@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ConditionalLayout from "@/components/ConditionalLayout";
-import { Inter, Lexend } from "next/font/google";
+import { Lexend } from "next/font/google";
 
 const lexend = Lexend({
   subsets: ["latin"],
   variable: "--font-lexend",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
@@ -25,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${lexend.variable} ${inter.variable} antialiased h-screen overflow-hidden font-sans`}>
+      <body className={`${lexend.variable} antialiased h-screen overflow-hidden font-(--font-lexend)`}>
         <ConditionalLayout>{children}</ConditionalLayout>
       </body>
     </html>

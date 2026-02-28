@@ -319,7 +319,7 @@ export default function HeaderComponent({
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/60">
+    <header className="sticky top-0 z-30 w-full border-b bg-white/95 font-(--font-lexend) backdrop-blur supports-backdrop-filter:bg-white/60">
       <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
         {/* Left section */}
         <div className="flex min-w-0 items-center gap-3">
