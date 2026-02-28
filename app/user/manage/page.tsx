@@ -47,7 +47,7 @@ export default function ManageRolePage() {
   const router = useRouter();
 
   const handleBack = () => router.push('/user'); // adjust if you have a settings/admin route
-  const handleAddRole = () => router.push('/roles/create');
+  const handleAddRole = () => router.push('/user/create');
 
   const handleEditRole = (roleName: string) => {
     router.push(`/roles/edit?name=${encodeURIComponent(roleName)}`);
