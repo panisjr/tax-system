@@ -1,19 +1,82 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, UsersRound, ShieldCheck, Activity, Pencil, Trash2 } from 'lucide-react';
 
-const initialUsers = [
-	{ name: 'Juan Dela Cruz', role: 'Assessor', status: 'Active' },
-	{ name: 'Maria Santos', role: 'Treasurer', status: 'Active' },
-	{ name: 'Admin User', role: 'Administrator', status: 'Active' },
-	{ name: 'Ramon Reyes', role: 'Assessor', status: 'Inactive' },
-];
+type ListedUser = {
+	empID: string;
+	name: string;
+	role: string;
+	status: 'Active' | 'Inactive';
+	email: string;
+};
+
+type ApiUser = {
+	empID?: string;
+	firstname?: string;
+	middlename?: string;
+	lastname?: string;
+	suffix?: string;
+	role?: string;
+	status?: boolean;
+	email?: string;
+};
 
 export default function ViewUserPage() {
 	const router = useRouter();
-	const [users, setUsers] = useState(initialUsers);
+	const [users, setUsers] = useState<ListedUser[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [loadError, setLoadError] = useState<string | null>(null);
+
+	useEffect(() => {
+		const fetchUsers = async () => {
+			setIsLoading(true);
+			setLoadError(null);
+
+			try {
+				const response = await fetch('/api/user/list', { cache: 'no-store' });
+				const data = (await response.json()) as {
+					error?: string;
+					users?: ApiUser[];
+				};
+
+				if (!response.ok) {
+					setLoadError(data.error ?? 'Failed to load users.');
+					setUsers([]);
+					return;
+				}
+
+				const mapped = (data.users ?? []).map((user) => {
+					const fullname = [
+						user.firstname?.trim() || '',
+						user.middlename?.trim() || '',
+						user.lastname?.trim() || '',
+						user.suffix?.trim() || '',
+					]
+						.filter(Boolean)
+						.join(' ');
+
+					return {
+						empID: user.empID || user.email || Math.random().toString(36),
+						name: fullname || 'Unnamed User',
+						role: user.role || 'Unassigned',
+						status: user.status ? 'Active' : 'Inactive',
+						email: user.email || '',
+					} as ListedUser;
+				});
+
+				setUsers(mapped);
+			} catch {
+				setLoadError('Unable to connect to server.');
+				setUsers([]);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchUsers();
+	}, []);
 
 	const handleBack = () => {
 		router.push('/user');
@@ -23,15 +86,15 @@ export default function ViewUserPage() {
 		router.push('/user/create');
 	};
 
-	const handleEditUser = (name: string) => {
-		router.push(`/user/create?name=${encodeURIComponent(name)}`);
+	const handleEditUser = (empID: string) => {
+		router.push(`/user/create?empID=${encodeURIComponent(empID)}`);
 	};
 
-	const handleDeleteUser = (name: string) => {
+	const handleDeleteUser = (empID: string, name: string) => {
 		const ok = window.confirm(`Delete user "${name}"?`);
 		if (!ok) return;
 
-		setUsers((prev) => prev.filter((user) => user.name !== name));
+		setUsers((prev) => prev.filter((user) => user.empID !== empID));
 	};
 
 	return (
@@ -77,6 +140,12 @@ export default function ViewUserPage() {
 						</h2>
 					</div>
 
+					{loadError && (
+						<div className='mb-4 rounded border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700'>
+							{loadError}
+						</div>
+					)}
+
 					<div className='overflow-x-auto'>
 						<table className='w-full min-w-155 border-collapse'>
 							<thead>
@@ -96,8 +165,24 @@ export default function ViewUserPage() {
 								</tr>
 							</thead>
 							<tbody>
-								{users.map((user) => (
-									<tr key={user.name} className='border-b border-gray-100'>
+								{isLoading && (
+									<tr>
+										<td className='font-inter px-3 py-8 text-center text-sm text-slate-500' colSpan={4}>
+											Loading users...
+										</td>
+									</tr>
+								)}
+
+								{!isLoading && users.length === 0 && (
+									<tr>
+										<td className='font-inter px-3 py-8 text-center text-sm text-slate-500' colSpan={4}>
+											No users found.
+										</td>
+									</tr>
+								)}
+
+								{!isLoading && users.map((user) => (
+									<tr key={`${user.empID}-${user.email}`} className='border-b border-gray-100'>
 										<td className={`font-inter px-3 py-3 text-sm text-slate-700`}>
 											{user.name}
 										</td>
@@ -130,7 +215,7 @@ export default function ViewUserPage() {
 
 												<button
 													type='button'
-													onClick={() => handleEditUser(user.name)}
+													onClick={() => handleEditUser(user.empID)}
 													className={`font-inter inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-gray-50 cursor-pointer`}
 												>
 													<Pencil className='h-3.5 w-3.5' />
@@ -139,7 +224,7 @@ export default function ViewUserPage() {
 
 												<button
 													type='button'
-													onClick={() => handleDeleteUser(user.name)}
+													onClick={() => handleDeleteUser(user.empID, user.name)}
 													className={`font-inter inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-rose-600 transition-colors hover:bg-rose-50 cursor-pointer`}
 												>
 													<Trash2 className='h-3.5 w-3.5' />
