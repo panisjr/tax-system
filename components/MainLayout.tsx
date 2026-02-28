@@ -1,18 +1,28 @@
 // components/MainLayout.tsx
+"use client";
+
+import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
+import HeaderComponent from "@/components/HeaderComponent";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar fixed height + its own scroll */}
-      <aside className="w-64 shrink-0 border-r bg-white overflow-y-auto">
-        <Sidebar />
-      </aside>
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-      {/* Main content scrolls */}
-      <main className="flex-1 overflow-y-auto p-6 bg-gray-100">
-        {children}
-      </main>
+  return (
+    <div className="flex h-full overflow-hidden">
+      <Sidebar isCollapsed={isSidebarCollapsed} />
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <HeaderComponent
+          isSidebarCollapsed={isSidebarCollapsed}
+          onToggleSidebar={() => setIsSidebarCollapsed((prev) => !prev)}
+        />
+
+        {/* Main content scrolls */}
+        <main className="flex-1 overflow-y-auto p-6 bg-gray-100">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
