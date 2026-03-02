@@ -213,7 +213,7 @@ export default function CreateUserPage() {
               <Field
                 label="Birthdate"
                 required
-                placeholder="yyyy-mm-dd"
+                inputType="date"
                 value={form.birthdate}
                 onChange={(v) => updateField("birthdate", v)}
               />
@@ -392,6 +392,7 @@ function Field({
   label,
   placeholder,
   leftIcon,
+  inputType = "text",
   value,
   onChange,
   required = false,
@@ -399,6 +400,7 @@ function Field({
   label: string;
   placeholder?: string;
   leftIcon?: React.ReactNode;
+  inputType?: "text" | "date" | "email" | "tel";
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
@@ -412,9 +414,12 @@ function Field({
       <div className="mt-1 flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-slate-200">
         {leftIcon}
         <input
+          type={inputType}
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+          className={`w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 ${
+            inputType === "date" ? "cursor-pointer" : ""
+          }`}
           placeholder={placeholder}
         />
       </div>
