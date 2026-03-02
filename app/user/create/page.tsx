@@ -1,6 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -16,13 +27,20 @@ import {
   Save,
 } from "lucide-react";
 
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
+
 type FormState = {
   empID: string;
   firstname: string;
   middlename: string;
   lastname: string;
   suffix: string;
-  birthdate: string;
+  birthdate: Date | undefined;
   age: string;
   sex: boolean;
   temp_pass: string;
@@ -41,7 +59,7 @@ const initialFormState: FormState = {
   middlename: "",
   lastname: "",
   suffix: "",
-  birthdate: "",
+  birthdate: undefined,
   age: "",
   sex: true,
   temp_pass: "",
@@ -55,7 +73,7 @@ const initialFormState: FormState = {
 };
 
 export default function CreateUserPage() {
-  const router = useRouter();
+    const router = useRouter();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showTempPassword, setShowTempPassword] = useState(false);
@@ -64,32 +82,53 @@ export default function CreateUserPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(initialFormState);
 
-  const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+  useEffect(() => {
+    if (!form.birthdate) {
+      updateField("age", "");
+      return;
+    }
+
+    const today = new Date();
+    let age = today.getFullYear() - form.birthdate.getFullYear();
+
+    const monthDiff = today.getMonth() - form.birthdate.getMonth();
+    const dayDiff = today.getDate() - form.birthdate.getDate();
+
+    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+      age--;
+    }
+
+    updateField("age", age.toString());
+  }, [form.birthdate]);
+
+  const updateField = <K extends keyof FormState>(
+    key: K,
+    value: FormState[K],
+  ) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const missingRequiredFields = useMemo(() => {
-    const requiredValues = [
-      form.empID,
-      form.firstname,
-      form.lastname,
-      form.birthdate,
-      form.age,
-      form.temp_pass,
-      form.password,
-      form.email,
-      form.phone,
-      form.role,
-      form.department,
-      form.position,
-    ];
-
-    return requiredValues.some((value) => value.trim().length === 0);
+    return (
+      !form.empID.trim() ||
+      !form.firstname.trim() ||
+      !form.lastname.trim() ||
+      !form.birthdate ||
+      !form.age.trim() ||
+      !form.temp_pass.trim() ||
+      !form.password.trim() ||
+      !form.email.trim() ||
+      !form.phone.trim() ||
+      !form.role.trim() ||
+      !form.department.trim() ||
+      !form.position.trim()
+    );
   }, [form]);
 
   const isBirthdateValid = useMemo(() => {
     if (!form.birthdate) return true;
-    return /^\d{4}-\d{2}-\d{2}$/.test(form.birthdate);
+    // ensure the selected date is a valid Date object
+    return !isNaN(form.birthdate.getTime());
   }, [form.birthdate]);
 
   const handleSave = async () => {
@@ -98,11 +137,6 @@ export default function CreateUserPage() {
 
     if (missingRequiredFields) {
       setErrorMessage("Please fill out all required fields.");
-      return;
-    }
-
-    if (!isBirthdateValid) {
-      setErrorMessage("Birthdate must be in yyyy-mm-dd format.");
       return;
     }
 
@@ -119,10 +153,18 @@ export default function CreateUserPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          birthdate: form.birthdate
+            ? format(form.birthdate, "yyyy-MM-dd")
+            : null,
+        }),
       });
 
-      const data = (await response.json()) as { error?: string; message?: string };
+      const data = (await response.json()) as {
+        error?: string;
+        message?: string;
+      };
 
       if (!response.ok) {
         setErrorMessage(data.error ?? "Failed to create user.");
@@ -155,7 +197,9 @@ export default function CreateUserPage() {
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-lexend text-2xl font-bold text-[#595a5d]">Create New User</h1>
+            <h1 className="font-lexend text-2xl font-bold text-[#595a5d]">
+              Create New User
+            </h1>
             <p className="font-inter mt-1 text-xs text-slate-400">
               Add required user information and role access details.
             </p>
@@ -201,23 +245,88 @@ export default function CreateUserPage() {
               <div className="rounded-md bg-slate-100 p-2">
                 <UserRound className="h-5 w-5 text-[#00154A]" />
               </div>
-              <h2 className="font-inter text-sm font-semibold text-[#848794]">Personal Information</h2>
+              <h2 className="font-inter text-sm font-semibold text-[#848794]">
+                Personal Information
+              </h2>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Emp ID" required value={form.empID} onChange={(v) => updateField("empID", v)} />
-              <Field label="First Name" required value={form.firstname} onChange={(v) => updateField("firstname", v)} />
-              <Field label="Middle Name" value={form.middlename} onChange={(v) => updateField("middlename", v)} />
-              <Field label="Last Name" required value={form.lastname} onChange={(v) => updateField("lastname", v)} />
-              <Field label="Suffix" value={form.suffix} onChange={(v) => updateField("suffix", v)} />
               <Field
-                label="Birthdate"
+                label="Emp ID"
                 required
-                placeholder="yyyy-mm-dd"
-                value={form.birthdate}
-                onChange={(v) => updateField("birthdate", v)}
+                value={form.empID}
+                onChange={(v) => updateField("empID", v)}
               />
-              <Field label="Age" required value={form.age} onChange={(v) => updateField("age", v)} />
+              <Field
+                label="First Name"
+                required
+                value={form.firstname}
+                onChange={(v) => updateField("firstname", v)}
+              />
+              <Field
+                label="Middle Name"
+                value={form.middlename}
+                onChange={(v) => updateField("middlename", v)}
+              />
+              <Field
+                label="Last Name"
+                required
+                value={form.lastname}
+                onChange={(v) => updateField("lastname", v)}
+              />
+              <div>
+                <label className="font-inter text-xs font-medium text-slate-600">
+                  Suffix
+                </label>
+                <SuffixDropdown
+                  value={form.suffix}
+                  onChange={(v) => updateField("suffix", v)}
+                />
+              </div>
+              <div>
+                <label className="font-inter text-xs font-medium text-slate-600">
+                  Birthdate
+                  <span className="ml-1 text-rose-500">*</span>
+                </label>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-1 w-full justify-start text-left font-normal"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
+                      {form.birthdate ? (
+                        format(form.birthdate, "yyyy-MM-dd")
+                      ) : (
+                        <span className="text-slate-400">Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      disabled={(date) => date > new Date()}
+                      mode="single"
+                      selected={form.birthdate}
+                      onSelect={(date) => updateField("birthdate", date)}
+                      captionLayout="dropdown"
+                      fromYear={1950}
+                      toYear={new Date().getFullYear()}
+                      initialFocus
+                      className="rounded-lg border"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <Field
+                label="Age"
+                required
+                value={form.age}
+                onChange={() => {}}
+                readOnly
+              />
 
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
@@ -245,7 +354,9 @@ export default function CreateUserPage() {
               <div className="rounded-md bg-slate-100 p-2">
                 <Mail className="h-5 w-5 text-[#00154A]" />
               </div>
-              <h2 className="font-inter text-sm font-semibold text-[#848794]">Contact & Work Details</h2>
+              <h2 className="font-inter text-sm font-semibold text-[#848794]">
+                Contact & Work Details
+              </h2>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -334,7 +445,9 @@ export default function CreateUserPage() {
               <div className="rounded-md bg-slate-100 p-2">
                 <KeyRound className="h-5 w-5 text-[#00154A]" />
               </div>
-              <h2 className="font-inter text-sm font-semibold text-[#848794]">Security</h2>
+              <h2 className="font-inter text-sm font-semibold text-[#848794]">
+                Security
+              </h2>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -360,19 +473,30 @@ export default function CreateUserPage() {
 
         <div className="space-y-6">
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="font-inter text-sm font-semibold text-[#848794]">Summary</h2>
+            <h2 className="font-inter text-sm font-semibold text-[#848794]">
+              Summary
+            </h2>
             <p className="font-inter mt-1 text-xs text-slate-400">
               All listed fields are required. Birthdate format: yyyy-mm-dd.
             </p>
 
             <div className="mt-4 space-y-3 text-sm">
-              <SummaryRow label="Name" value={`${form.firstname} ${form.middlename} ${form.lastname} ${form.suffix}`.trim() || "(Required)"} />
+              <SummaryRow
+                label="Name"
+                value={
+                  `${form.firstname} ${form.middlename} ${form.lastname} ${form.suffix}`.trim() ||
+                  "(Required)"
+                }
+              />
               <SummaryRow label="Emp ID" value={form.empID || "(Required)"} />
               <SummaryRow label="Role" value={form.role || "(Required)"} />
-              <SummaryRow label="Status" value={form.status ? "Active" : "Inactive"} />
+              <SummaryRow
+                label="Status"
+                value={form.status ? "Active" : "Inactive"}
+              />
             </div>
 
-            {(missingRequiredFields || !isBirthdateValid) && (
+            {missingRequiredFields && (
               <p className="font-inter mt-4 text-xs text-rose-600">
                 Complete all required fields and use valid birthdate format.
               </p>
@@ -391,6 +515,7 @@ function Field({
   value,
   onChange,
   required = false,
+  readOnly = false,
 }: {
   label: string;
   placeholder?: string;
@@ -398,6 +523,7 @@ function Field({
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
+  readOnly?: boolean;
 }) {
   return (
     <div>
@@ -409,6 +535,7 @@ function Field({
         {leftIcon}
         <input
           value={value}
+          readOnly={readOnly}
           onChange={(event) => onChange(event.target.value)}
           className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
           placeholder={placeholder}
@@ -494,7 +621,13 @@ function RoleRadio({
 }) {
   return (
     <label className="font-inter inline-flex cursor-pointer items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-xs text-slate-700 hover:bg-gray-50">
-      <input type="radio" name="role" checked={checked} onChange={onChange} className="h-4 w-4" />
+      <input
+        type="radio"
+        name="role"
+        checked={checked}
+        onChange={onChange}
+        className="h-4 w-4"
+      />
       {label}
     </label>
   );
@@ -506,5 +639,52 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
       <span className="font-inter text-slate-500">{label}</span>
       <span className="font-inter font-medium text-slate-900">{value}</span>
     </div>
+  );
+}
+
+// dropdown component for selecting suffix using accordion
+function SuffixDropdown({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const options = ["", "Jr.", "Sr.", "II", "III", "IV", "V"];
+
+  return (
+    <Accordion
+      type="single"
+      collapsible
+      value={open ? "suffix" : undefined}
+      onValueChange={(v) => setOpen(!!v)}
+      className="mt-1"
+    >
+      <AccordionItem value="suffix">
+        <AccordionTrigger
+          className="w-full flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 focus-within:ring-2 focus-within:ring-slate-200"
+        >
+          {value || "Select suffix"}
+        </AccordionTrigger>
+        <AccordionContent className="border border-gray-200 rounded-md bg-white">
+          <div className="flex flex-col gap-2 p-2">
+            {options.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                className="text-left w-full rounded px-2 py-1 hover:bg-gray-100"
+                onClick={() => {
+                  onChange(opt);
+                  setOpen(false);
+                }}
+              >
+                {opt || "(none)"}
+              </button>
+            ))}
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }
