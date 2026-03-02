@@ -20,6 +20,9 @@ type ApiUser = {
 	lastname?: string;
 	suffix?: string;
 	role?: string;
+	roles?: {
+		name?: string;
+	} | null;
 	status?: boolean;
 	email?: string;
 };
@@ -61,7 +64,7 @@ export default function ViewUserPage() {
 					return {
 						empID: user.empID || user.email || Math.random().toString(36),
 						name: fullname || 'Unnamed User',
-						role: user.role || 'Unassigned',
+						role: user.roles?.name || user.role || 'Unassigned',
 						status: user.status ? 'Active' : 'Inactive',
 						email: user.email || '',
 					} as ListedUser;
