@@ -14,7 +14,7 @@ type CreateUserPayload = {
 	password: string;
 	email: string;
 	phone: string;
-	role: string;
+	role_id: number;
 	department: string;
 	position: string;
 	status: boolean;
@@ -31,6 +31,7 @@ function isValidBirthdate(value: string) {
 export async function POST(request: Request) {
 	try {
 		const body = (await request.json()) as Partial<CreateUserPayload>;
+		const roleId = Number(body.role_id);
 
 		const requiredTextFields: Array<keyof CreateUserPayload> = [
 			'empID',
@@ -42,7 +43,6 @@ export async function POST(request: Request) {
 			'password',
 			'email',
 			'phone',
-			'role',
 			'department',
 			'position',
 		];
@@ -62,6 +62,20 @@ export async function POST(request: Request) {
 
 		if (typeof body.status !== 'boolean') {
 			return NextResponse.json({ error: 'status is required.' }, { status: 400 });
+		}
+
+		if (!Number.isInteger(roleId) || roleId <= 0) {
+			return NextResponse.json({ error: 'role_id is required.' }, { status: 400 });
+		}
+
+		const { data: roleData, error: roleError } = await supabaseAdmin
+			.from('roles')
+			.select('id, name')
+			.eq('id', roleId)
+			.single();
+
+		if (roleError || !roleData) {
+			return NextResponse.json({ error: 'Selected role is invalid.' }, { status: 400 });
 		}
 
 		if (!isValidBirthdate(body.birthdate!)) {
@@ -92,7 +106,8 @@ export async function POST(request: Request) {
 				age: body.age!.trim(),
 				sex: body.sex,
 				phone: body.phone!.trim(),
-				role: body.role!.trim(),
+				role_id: roleId,
+				role: roleData.name,
 				department: body.department!.trim(),
 				position: body.position!.trim(),
 				status: body.status,
@@ -123,7 +138,7 @@ export async function POST(request: Request) {
 			sex: body.sex,
 			email: body.email!.trim(),
 			phone: body.phone!.trim(),
-			role: body.role!.trim(),
+			role_id: roleId,
 			department: body.department!.trim(),
 			position: body.position!.trim(),
 			status: body.status,

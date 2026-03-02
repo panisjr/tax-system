@@ -30,10 +30,16 @@ type FormState = {
   password: string;
   email: string;
   phone: string;
-  role: string;
+  role_id: string;
   department: string;
   position: string;
   status: boolean;
+};
+
+type RoleOption = {
+  id: number;
+  name: string;
+  created_at?: string;
 };
 
 type ApiUserDetails = {
@@ -47,6 +53,10 @@ type ApiUserDetails = {
   sex?: boolean;
   email?: string;
   phone?: string;
+  role_id?: number;
+  roles?: {
+    name?: string;
+  } | null;
   role?: string;
   department?: string;
   position?: string;
@@ -66,7 +76,7 @@ const initialFormState: FormState = {
   password: "",
   email: "",
   phone: "",
-  role: "",
+  role_id: "",
   department: "",
   position: "",
   status: true,
@@ -82,6 +92,8 @@ export default function CreateUserPage() {
   const [showTempPassword, setShowTempPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingUser, setIsLoadingUser] = useState(false);
+  const [roles, setRoles] = useState<RoleOption[]>([]);
+  const [isLoadingRoles, setIsLoadingRoles] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(initialFormState);
@@ -90,6 +102,30 @@ export default function CreateUserPage() {
   const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      setIsLoadingRoles(true);
+
+      try {
+        const response = await fetch("/api/roles/list", { cache: "no-store" });
+        const data = (await response.json()) as { error?: string; roles?: RoleOption[] };
+
+        if (!response.ok) {
+          setRoles([]);
+          return;
+        }
+
+        setRoles(data.roles ?? []);
+      } catch {
+        setRoles([]);
+      } finally {
+        setIsLoadingRoles(false);
+      }
+    };
+
+    fetchRoles();
+  }, []);
 
   useEffect(() => {
     if (!isEditMode) {
@@ -133,7 +169,10 @@ export default function CreateUserPage() {
           password: "",
           email: user?.email?.trim() ?? "",
           phone: user?.phone?.trim() ?? "",
-          role: user?.role?.trim() ?? "",
+          role_id:
+            typeof user?.role_id === "number"
+              ? String(user.role_id)
+              : "",
           department: user?.department?.trim() ?? "",
           position: user?.position?.trim() ?? "",
           status: typeof user?.status === "boolean" ? user.status : true,
@@ -170,7 +209,7 @@ export default function CreateUserPage() {
       form.age,
       form.email,
       form.phone,
-      form.role,
+      form.role_id,
       form.department,
       form.position,
     ];
@@ -201,7 +240,7 @@ export default function CreateUserPage() {
       sex: value.sex,
       email: value.email.trim(),
       phone: value.phone.trim(),
-      role: value.role.trim(),
+      role_id: value.role_id.trim(),
       department: value.department.trim(),
       position: value.position.trim(),
       status: value.status,
@@ -255,12 +294,15 @@ export default function CreateUserPage() {
             sex: form.sex,
             email: form.email,
             phone: form.phone,
-            role: form.role,
+            role_id: Number(form.role_id),
             department: form.department,
             position: form.position,
             status: form.status,
           }
-        : form;
+        : {
+            ...form,
+            role_id: Number(form.role_id),
+          };
 
       const response = await fetch(isEditMode ? "/api/user/update" : "/api/user/create", {
         method: isEditMode ? "PUT" : "POST",
@@ -444,26 +486,19 @@ export default function CreateUserPage() {
                   <span className="ml-1 text-rose-500">*</span>
                 </label>
                 <div className="mt-2 grid grid-cols-2 gap-2">
-                  <RoleRadio
-                    label="Admin"
-                    checked={form.role === "Admin"}
-                    onChange={() => updateField("role", "Admin")}
-                  />
-                  <RoleRadio
-                    label="Assessor"
-                    checked={form.role === "Assessor"}
-                    onChange={() => updateField("role", "Assessor")}
-                  />
-                  <RoleRadio
-                    label="Treasurer"
-                    checked={form.role === "Treasurer"}
-                    onChange={() => updateField("role", "Treasurer")}
-                  />
-                  <RoleRadio
-                    label="Viewer"
-                    checked={form.role === "Viewer"}
-                    onChange={() => updateField("role", "Viewer")}
-                  />
+                  <select
+                    value={form.role_id}
+                    onChange={(event) => updateField("role_id", event.target.value)}
+                    className="font-inter w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-slate-200 sm:col-span-2"
+                    disabled={isLoadingRoles}
+                  >
+                    <option value="">{isLoadingRoles ? "Loading roles..." : "Select role"}</option>
+                    {roles.map((roleOption) => (
+                      <option key={roleOption.id} value={String(roleOption.id)}>
+                        {roleOption.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <Field
@@ -546,7 +581,10 @@ export default function CreateUserPage() {
             <div className="mt-4 space-y-3 text-sm">
               <SummaryRow label="Name" value={`${form.firstname} ${form.middlename} ${form.lastname} ${form.suffix}`.trim() || "(Required)"} />
               <SummaryRow label="Emp ID" value={form.empID || "(Required)"} />
-              <SummaryRow label="Role" value={form.role || "(Required)"} />
+              <SummaryRow
+                label="Role"
+                value={roles.find((roleOption) => String(roleOption.id) === form.role_id)?.name || "(Required)"}
+              />
               <SummaryRow label="Status" value={form.status ? "Active" : "Inactive"} />
             </div>
 
@@ -667,23 +705,6 @@ function BooleanChip({
     >
       {label}
     </button>
-  );
-}
-
-function RoleRadio({
-  label,
-  checked,
-  onChange,
-}: {
-  label: "Admin" | "Assessor" | "Treasurer" | "Viewer";
-  checked: boolean;
-  onChange: () => void;
-}) {
-  return (
-    <label className="font-inter inline-flex cursor-pointer items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-xs text-slate-700 hover:bg-gray-50">
-      <input type="radio" name="role" checked={checked} onChange={onChange} className="h-4 w-4" />
-      {label}
-    </label>
   );
 }
 
