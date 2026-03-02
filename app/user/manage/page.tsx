@@ -1,5 +1,7 @@
 'use client';
 
+import Swal from 'sweetalert2';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -10,6 +12,14 @@ import {
   Trash2,
   Eye,
 } from 'lucide-react';
+
+type ApiUser = {
+  firstname?: string;
+  middlename?: string;
+  lastname?: string;
+  suffix?: string;
+  role?: string;
+};
 
 const roles = [
   {
@@ -38,8 +48,70 @@ const roles = [
   },
 ] as const;
 
+const normalizeRole = (role: string) => {
+  const value = role.trim().toLowerCase();
+
+  if (value === 'admin' || value === 'administrator') return 'administrator';
+  if (value === 'treasurer') return 'treasurer';
+  if (value === 'assessor') return 'assessor';
+  if (value === 'encoder') return 'encoder';
+
+  return value;
+};
+
 export default function ManageRolePage() {
   const router = useRouter();
+
+  const [users, setUsers] = useState<ApiUser[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setIsLoadingUsers(true);
+
+      try {
+        const response = await fetch('/api/user/list', { cache: 'no-store' });
+        const data = (await response.json()) as { error?: string; users?: ApiUser[] };
+
+        if (!response.ok) {
+          setUsers([]);
+          return;
+        }
+
+        setUsers(data.users ?? []);
+      } catch {
+        setUsers([]);
+      } finally {
+        setIsLoadingUsers(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  const usersByRole = useMemo(() => {
+    const grouped = new Map<string, string[]>();
+
+    for (const user of users) {
+      const roleKey = normalizeRole(user.role ?? '');
+      if (!roleKey) continue;
+
+      const fullname = [
+        user.firstname?.trim() ?? '',
+        user.middlename?.trim() ?? '',
+        user.lastname?.trim() ?? '',
+        user.suffix?.trim() ?? '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+
+      const names = grouped.get(roleKey) ?? [];
+      names.push(fullname || 'Unnamed User');
+      grouped.set(roleKey, names);
+    }
+
+    return grouped;
+  }, [users]);
 
   const handleBack = () => router.push('/user'); // adjust if you have a settings/admin route
   const handleAddRole = () => router.push('/user/create');
@@ -52,8 +124,48 @@ export default function ManageRolePage() {
     router.push(`/roles/view?name=${encodeURIComponent(roleName)}`);
   };
 
-  const handleViewRoleUsers = (roleName: string) => {
-    router.push(`/roles/users?role=${encodeURIComponent(roleName)}`);
+  const handleViewRoleUsers = async (roleName: string) => {
+    const roleKey = normalizeRole(roleName);
+    const names = usersByRole.get(roleKey) ?? [];
+
+    const listHtml =
+      names.length === 0
+        ? '<p class="font-inter text-sm text-slate-500">No users assigned to this role.</p>'
+        : `
+          <div class="max-h-64 overflow-y-auto rounded-md border border-gray-100">
+            <ul class="divide-y divide-gray-100">
+              ${names
+                .map(
+                  (name) =>
+                    `<li class="px-3 py-2 text-sm text-slate-700 font-inter">${name}</li>`,
+                )
+                .join('')}
+            </ul>
+          </div>
+        `;
+
+    await Swal.fire({
+      html: `
+        <div class="text-left">
+          <h2 class="font-lexend text-lg font-semibold text-[#0F172A] mb-1">
+            ${roleName} Users
+          </h2>
+          <p class="font-inter text-xs text-slate-500 mb-3">
+            Total assigned users: <span class="font-semibold text-[#0F172A]">${names.length}</span>
+          </p>
+          ${listHtml}
+        </div>
+      `,
+      showConfirmButton: true,
+      confirmButtonText: 'Close',
+      buttonsStyling: false,
+      background: '#ffffff',
+      customClass: {
+        popup: 'rounded-xl p-6 shadow-lg',
+        confirmButton:
+          'bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition',
+      },
+    });
   };
 
   const handleDeleteRole = (roleName: string) => {
@@ -142,7 +254,12 @@ export default function ManageRolePage() {
               </thead>
 
               <tbody>
-                {roles.map((role) => (
+                {roles.map((role) => {
+                  const roleKey = normalizeRole(role.name);
+                  const roleUsers = usersByRole.get(roleKey) ?? [];
+                  const roleUsersCount = roleUsers.length;
+
+                  return (
                   <tr key={role.name} className="border-b border-gray-100">
                     <td className={`font-inter px-3 py-3 text-sm text-slate-700`}>
                       <div className="inline-flex items-center gap-2">
@@ -175,9 +292,10 @@ export default function ManageRolePage() {
                         onClick={() => handleViewRoleUsers(role.name)}
                         className="inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-gray-50 cursor-pointer"
                         title="View users with this role"
+                        disabled={isLoadingUsers}
                       >
                         <UsersRound className="h-3.5 w-3.5" />
-                        {role.usersCount}
+                        {isLoadingUsers ? '...' : roleUsersCount}
                       </button>
                     </td>
 
@@ -224,7 +342,8 @@ export default function ManageRolePage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
