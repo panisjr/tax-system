@@ -10,6 +10,7 @@ import {
   Trash2,
   Eye,
 } from 'lucide-react';
+import { confirmDelete } from '@/components/DeleteUserAction';
 
 const roles = [
   {
@@ -56,10 +57,9 @@ export default function ManageRolePage() {
     router.push(`/roles/users?role=${encodeURIComponent(roleName)}`);
   };
 
-  const handleDeleteRole = (roleName: string) => {
-    // Replace with a confirm modal + API call
-    const ok = window.confirm(`Delete role "${roleName}"? This cannot be undone.`);
-    if (!ok) return;
+  const handleDeleteRole = async (roleName: string) => {
+    const confirmed = await confirmDelete(roleName, 'Role');
+    if (!confirmed) return;
 
     // TODO: call delete API, then refresh
     // Example:
