@@ -1,5 +1,7 @@
 'use client';
 
+import Swal from 'sweetalert2';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -11,38 +13,268 @@ import {
   Eye,
 } from 'lucide-react';
 
-const roles = [
-  {
-    name: 'Administrator',
-    status: 'Active',
-    usersCount: 1,
-    permissions: ['User Management', 'Role Management', 'Audit Logs', 'Reports'],
-  },
-  {
-    name: 'Treasurer',
-    status: 'Active',
-    usersCount: 1,
-    permissions: ['Collections', 'Payments', 'Reports'],
-  },
-  {
-    name: 'Assessor',
-    status: 'Active',
-    usersCount: 2,
-    permissions: ['Assessments', 'Property Records', 'Reports'],
-  },
-  {
-    name: 'Encoder',
-    status: 'Inactive',
-    usersCount: 0,
-    permissions: ['Data Entry'],
-  },
-] as const;
+type ApiUser = {
+  firstname?: string;
+  middlename?: string;
+  lastname?: string;
+  suffix?: string;
+  role?: string;
+  roles?: {
+    name?: string;
+  } | null;
+};
+
+type ApiPermission = {
+  id: number;
+  name: string;
+  created_at?: string;
+};
+
+type ApiRole = {
+  id?: string | number;
+  name?: string;
+  permission_id?: number;
+  created_at?: string;
+  permissions?: {
+    id?: number;
+    name?: string;
+    created_at?: string;
+  } | null;
+};
+
+type ListedRole = {
+  key: string;
+  name: string;
+  permissionName: string;
+  createdAt: string;
+};
+
+const normalizeRole = (role: string) => {
+  const value = role.trim().toLowerCase();
+
+  if (value === 'admin' || value === 'administrator') return 'administrator';
+  if (value === 'treasurer') return 'treasurer';
+  if (value === 'assessor') return 'assessor';
+  if (value === 'encoder') return 'encoder';
+
+  return value;
+};
 
 export default function ManageRolePage() {
   const router = useRouter();
 
+  const [users, setUsers] = useState<ApiUser[]>([]);
+  const [roles, setRoles] = useState<ListedRole[]>([]);
+  const [permissions, setPermissions] = useState<ApiPermission[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [isLoadingRoles, setIsLoadingRoles] = useState(true);
+
+  const mapRole = (role: ApiRole, index: number): ListedRole => {
+    const rawName = role.name ?? '';
+    const name = typeof rawName === 'string' && rawName.trim().length > 0 ? rawName.trim() : `Role ${index + 1}`;
+    const permissionName = role.permissions?.name?.trim() || 'Unassigned';
+    const createdAt = role.created_at ? new Date(role.created_at).toLocaleDateString() : '-';
+
+    const roleIdentifier = role.id ?? name;
+
+    return {
+      key: String(roleIdentifier),
+      name,
+      permissionName,
+      createdAt,
+    };
+  };
+
+  const fetchRoles = async () => {
+    setIsLoadingRoles(true);
+
+    try {
+      const response = await fetch('/api/roles/list', { cache: 'no-store' });
+      const data = (await response.json()) as { error?: string; roles?: ApiRole[] };
+
+      if (!response.ok) {
+        setRoles([]);
+        return;
+      }
+
+      const mapped = (data.roles ?? []).map((role, index) => mapRole(role, index));
+      setRoles(mapped);
+    } catch {
+      setRoles([]);
+    } finally {
+      setIsLoadingRoles(false);
+    }
+  };
+
+  const fetchPermissions = async () => {
+    try {
+      const response = await fetch('/api/permissions/list', { cache: 'no-store' });
+      const data = (await response.json()) as { permissions?: ApiPermission[] };
+
+      if (!response.ok) {
+        setPermissions([]);
+        return;
+      }
+
+      setPermissions(data.permissions ?? []);
+    } catch {
+      setPermissions([]);
+    }
+  };
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setIsLoadingUsers(true);
+
+      try {
+        const response = await fetch('/api/user/list', { cache: 'no-store' });
+        const data = (await response.json()) as { error?: string; users?: ApiUser[] };
+
+        if (!response.ok) {
+          setUsers([]);
+          return;
+        }
+
+        setUsers(data.users ?? []);
+      } catch {
+        setUsers([]);
+      } finally {
+        setIsLoadingUsers(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    fetchRoles();
+    fetchPermissions();
+  }, []);
+
+  const usersByRole = useMemo(() => {
+    const grouped = new Map<string, string[]>();
+
+    for (const user of users) {
+      const roleKey = normalizeRole(user.roles?.name ?? user.role ?? '');
+      if (!roleKey) continue;
+
+      const fullname = [
+        user.firstname?.trim() ?? '',
+        user.middlename?.trim() ?? '',
+        user.lastname?.trim() ?? '',
+        user.suffix?.trim() ?? '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+
+      const names = grouped.get(roleKey) ?? [];
+      names.push(fullname || 'Unnamed User');
+      grouped.set(roleKey, names);
+    }
+
+    return grouped;
+  }, [users]);
+
   const handleBack = () => router.push('/user'); // adjust if you have a settings/admin route
-  const handleAddRole = () => router.push('/user/create');
+  const handleAddRole = async () => {
+    const result = await Swal.fire({
+      html: `
+        <div class="text-left">
+          <h2 class="font-lexend text-lg font-semibold text-[#0F172A] mb-2">Add New Role</h2>
+          <p class="font-inter text-sm text-slate-500 mb-4">Create a new role for role management.</p>
+          <label class="font-inter block text-xs font-medium text-slate-600 mb-1">Role Name</label>
+          <input
+            id="role-name-input"
+            class="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
+            placeholder="Enter role name"
+          />
+          <label class="font-inter block text-xs font-medium text-slate-600 mb-1 mt-3">Permission</label>
+          <select
+            id="permission-id-input"
+            class="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
+          >
+            <option value="">Select permission</option>
+            ${permissions
+              .map((permission) => `<option value="${permission.id}">${permission.name}</option>`)
+              .join('')}
+          </select>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Save Role',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      buttonsStyling: false,
+      background: '#ffffff',
+      customClass: {
+        popup: 'rounded-xl p-6 shadow-lg',
+        confirmButton:
+          'bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition',
+        cancelButton:
+          'border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition mr-2',
+      },
+      preConfirm: async () => {
+        const input = document.getElementById('role-name-input') as HTMLInputElement | null;
+        const permissionInput = document.getElementById('permission-id-input') as HTMLSelectElement | null;
+        const roleName = input?.value?.trim() ?? '';
+        const permissionId = Number(permissionInput?.value ?? '');
+
+        if (!roleName) {
+          Swal.showValidationMessage('Role name is required.');
+          return null;
+        }
+
+        if (!Number.isInteger(permissionId) || permissionId <= 0) {
+          Swal.showValidationMessage('Permission is required.');
+          return null;
+        }
+
+        try {
+          const response = await fetch('/api/roles/create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: roleName, permission_id: permissionId }),
+          });
+
+          const data = (await response.json()) as { error?: string };
+
+          if (!response.ok) {
+            Swal.showValidationMessage(data.error ?? 'Failed to create role.');
+            return null;
+          }
+
+          return roleName;
+        } catch {
+          Swal.showValidationMessage('Unable to connect to server.');
+          return null;
+        }
+      },
+    });
+
+    if (!result.isConfirmed) return;
+
+    await fetchRoles();
+
+    await Swal.fire({
+      html: `
+        <div class="text-left">
+          <h2 class="font-lexend text-lg font-semibold text-[#0F172A] mb-2">Role Added</h2>
+          <p class="font-inter text-sm text-slate-500">The new role has been added successfully.</p>
+        </div>
+      `,
+      showConfirmButton: true,
+      confirmButtonText: 'OK',
+      buttonsStyling: false,
+      background: '#ffffff',
+      customClass: {
+        popup: 'rounded-xl p-6 shadow-lg',
+        confirmButton:
+          'bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition',
+      },
+    });
+  };
 
   const handleEditRole = (roleName: string) => {
     router.push(`/roles/edit?name=${encodeURIComponent(roleName)}`);
@@ -52,8 +284,48 @@ export default function ManageRolePage() {
     router.push(`/roles/view?name=${encodeURIComponent(roleName)}`);
   };
 
-  const handleViewRoleUsers = (roleName: string) => {
-    router.push(`/roles/users?role=${encodeURIComponent(roleName)}`);
+  const handleViewRoleUsers = async (roleName: string) => {
+    const roleKey = normalizeRole(roleName);
+    const names = usersByRole.get(roleKey) ?? [];
+
+    const listHtml =
+      names.length === 0
+        ? '<p class="font-inter text-sm text-slate-500">No users assigned to this role.</p>'
+        : `
+          <div class="max-h-64 overflow-y-auto rounded-md border border-gray-100">
+            <ul class="divide-y divide-gray-100">
+              ${names
+                .map(
+                  (name) =>
+                    `<li class="px-3 py-2 text-sm text-slate-700 font-inter">${name}</li>`,
+                )
+                .join('')}
+            </ul>
+          </div>
+        `;
+
+    await Swal.fire({
+      html: `
+        <div class="text-left">
+          <h2 class="font-lexend text-lg font-semibold text-[#0F172A] mb-1">
+            ${roleName} Users
+          </h2>
+          <p class="font-inter text-xs text-slate-500 mb-3">
+            Total assigned users: <span class="font-semibold text-[#0F172A]">${names.length}</span>
+          </p>
+          ${listHtml}
+        </div>
+      `,
+      showConfirmButton: true,
+      confirmButtonText: 'Close',
+      buttonsStyling: false,
+      background: '#ffffff',
+      customClass: {
+        popup: 'rounded-xl p-6 shadow-lg',
+        confirmButton:
+          'bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition',
+      },
+    });
   };
 
   const handleDeleteRole = (roleName: string) => {
@@ -131,7 +403,7 @@ export default function ManageRolePage() {
                   <th
                     className={`font-lexend px-3 py-3 text-left text-xs font-semibold text-slate-500`}
                   >
-                    Status
+                    Created
                   </th>
                   <th
                     className={`font-inter px-3 py-3 text-right text-xs font-semibold text-slate-500`}
@@ -142,8 +414,29 @@ export default function ManageRolePage() {
               </thead>
 
               <tbody>
-                {roles.map((role) => (
-                  <tr key={role.name} className="border-b border-gray-100">
+                {isLoadingRoles && (
+                  <tr>
+                    <td className="font-inter px-3 py-8 text-center text-sm text-slate-500" colSpan={5}>
+                      Loading roles...
+                    </td>
+                  </tr>
+                )}
+
+                {!isLoadingRoles && roles.length === 0 && (
+                  <tr>
+                    <td className="font-inter px-3 py-8 text-center text-sm text-slate-500" colSpan={5}>
+                      No roles found.
+                    </td>
+                  </tr>
+                )}
+
+                {!isLoadingRoles && roles.map((role) => {
+                  const roleKey = normalizeRole(role.name);
+                  const roleUsers = usersByRole.get(roleKey) ?? [];
+                  const roleUsersCount = roleUsers.length;
+
+                  return (
+                  <tr key={role.key} className="border-b border-gray-100">
                     <td className={`font-inter px-3 py-3 text-sm text-slate-700`}>
                       <div className="inline-flex items-center gap-2">
                         <KeyRound className="h-4 w-4 text-slate-400" />
@@ -153,19 +446,9 @@ export default function ManageRolePage() {
 
                     <td className={`font-inter px-3 py-3 text-sm text-slate-600`}>
                       <div className="flex flex-wrap gap-2">
-                        {role.permissions.slice(0, 3).map((p) => (
-                          <span
-                            key={p}
-                            className="rounded bg-slate-50 px-2 py-1 text-xs text-slate-600"
-                          >
-                            {p}
-                          </span>
-                        ))}
-                        {role.permissions.length > 3 && (
-                          <span className="rounded bg-slate-50 px-2 py-1 text-xs text-slate-500">
-                            +{role.permissions.length - 3} more
-                          </span>
-                        )}
+                        <span className="rounded bg-slate-50 px-2 py-1 text-xs text-slate-600">
+                          {role.permissionName}
+                        </span>
                       </div>
                     </td>
 
@@ -175,22 +458,15 @@ export default function ManageRolePage() {
                         onClick={() => handleViewRoleUsers(role.name)}
                         className="inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-gray-50 cursor-pointer"
                         title="View users with this role"
+                        disabled={isLoadingUsers}
                       >
                         <UsersRound className="h-3.5 w-3.5" />
-                        {role.usersCount}
+                        {isLoadingUsers ? '...' : roleUsersCount}
                       </button>
                     </td>
 
                     <td className={`font-inter px-3 py-3 text-sm`}>
-                      <span
-                        className={`rounded px-2 py-1 text-xs ${
-                          role.status === 'Active'
-                            ? 'bg-emerald-50 text-emerald-600'
-                            : 'bg-gray-100 text-gray-500'
-                        }`}
-                      >
-                        {role.status}
-                      </span>
+                      <span className='text-xs text-slate-600'>{role.createdAt}</span>
                     </td>
 
                     <td className="px-3 py-3">
@@ -224,7 +500,8 @@ export default function ManageRolePage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
