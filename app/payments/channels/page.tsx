@@ -2,19 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowLeft, Save, Building2, Wallet, CreditCard } from "lucide-react";
+
 import {
-  ArrowLeft,
-  Save,
-  Building2,
-  Wallet,
-  CreditCard,
-} from "lucide-react";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
+
+const bankOptions = [
+  "Landbank of the Philippines",
+  "Development Bank of the Philippines",
+  "Other Commercial Bank",
+] as const;
 
 export default function PaymentChannelsPage() {
   const router = useRouter();
@@ -46,7 +49,8 @@ export default function PaymentChannelsPage() {
                 Payment Channels Configuration
               </h1>
               <p className="font-inter mt-1 text-xs text-slate-400">
-                Manage cash, bank deposits, and online payment methods for RPT collection.
+                Manage cash, bank deposits, and online payment methods for RPT
+                collection.
               </p>
             </div>
 
@@ -92,38 +96,19 @@ export default function PaymentChannelsPage() {
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Bank Name <span className="text-rose-500">*</span>
                 </label>
-                <Accordion
-                  type="single"
-                  collapsible
-                  value={bankDropdownOpen ? "bank-name" : undefined}
-                  onValueChange={(v) => setBankDropdownOpen(!!v)}
-                  className="mt-1"
-                >
-                  <AccordionItem value="bank-name">
-                    <AccordionTrigger className="w-full flex items-center justify-between gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 focus-within:ring-2 focus-within:ring-slate-200">
-                      <span className="font-inter">
-                        {selectedBank || "Select bank"}
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="border border-gray-200 rounded-md bg-white">
-                      <div className="flex flex-col gap-1 p-1">
-                        {bankOptions.map((label) => (
-                          <button
-                            key={label}
-                            type="button"
-                            className="font-inter text-left w-full rounded px-2 py-1 text-sm text-slate-700 hover:bg-gray-100"
-                            onClick={() => {
-                              setSelectedBank(label);
-                              setBankDropdownOpen(false);
-                            }}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
+                <Combobox items={bankOptions}>
+                  <ComboboxInput placeholder="Select a framework" />
+                  <ComboboxContent>
+                    <ComboboxEmpty>No items found.</ComboboxEmpty>
+                    <ComboboxList>
+                      {(item) => (
+                        <ComboboxItem key={item} value={item}>
+                          {item}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
               </div>
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
@@ -146,7 +131,7 @@ export default function PaymentChannelsPage() {
                 />
               </div>
             </div>
-            
+
             <button className="font-inter mt-4 text-xs font-medium text-[#00154A] hover:underline">
               + Add another bank account
             </button>
@@ -165,18 +150,34 @@ export default function PaymentChannelsPage() {
 
             <div className="space-y-3">
               <label className="font-inter flex items-center gap-3 rounded border border-gray-200 px-4 py-3 text-sm text-slate-700 bg-slate-50">
-                <input type="checkbox" className="h-4 w-4 rounded border-gray-300" defaultChecked />
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300"
+                  defaultChecked
+                />
                 <div className="flex flex-col">
-                  <span className="font-medium text-slate-900">Cash Payments</span>
-                  <span className="text-[11px] text-slate-500">Standard over-the-counter cash acceptance</span>
+                  <span className="font-medium text-slate-900">
+                    Cash Payments
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    Standard over-the-counter cash acceptance
+                  </span>
                 </div>
               </label>
 
               <label className="font-inter flex items-center gap-3 rounded border border-gray-200 px-4 py-3 text-sm text-slate-700 bg-slate-50">
-                <input type="checkbox" className="h-4 w-4 rounded border-gray-300" defaultChecked />
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300"
+                  defaultChecked
+                />
                 <div className="flex flex-col">
-                  <span className="font-medium text-slate-900">Manager's / Cashier's Check</span>
-                  <span className="text-[11px] text-slate-500">Require check clearing validation prior to OR issuance</span>
+                  <span className="font-medium text-slate-900">
+                    Manager's / Cashier's Check
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    Require check clearing validation prior to OR issuance
+                  </span>
                 </div>
               </label>
             </div>
@@ -200,18 +201,33 @@ export default function PaymentChannelsPage() {
 
             <div className="space-y-3">
               <label className="font-inter flex items-center gap-3 rounded border border-gray-200 px-4 py-3 text-sm text-slate-700">
-                <input type="checkbox" className="h-4 w-4 rounded border-gray-300" />
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300"
+                />
                 <div className="flex flex-col">
-                  <span className="font-medium text-slate-900">GCash Integration</span>
-                  <span className="text-[11px] text-slate-500">Generate dynamic QR codes for tax assessments</span>
+                  <span className="font-medium text-slate-900">
+                    GCash Integration
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    Generate dynamic QR codes for tax assessments
+                  </span>
                 </div>
               </label>
 
               <label className="font-inter flex items-center gap-3 rounded border border-gray-200 px-4 py-3 text-sm text-slate-700">
-                <input type="checkbox" className="h-4 w-4 rounded border-gray-300" />
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300"
+                />
                 <div className="flex flex-col">
-                  <span className="font-medium text-slate-900">Maya Integration</span>
-                  <span className="text-[11px] text-slate-500">Accept PayMaya and credit/debit card payments via Maya Checkout</span>
+                  <span className="font-medium text-slate-900">
+                    Maya Integration
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    Accept PayMaya and credit/debit card payments via Maya
+                    Checkout
+                  </span>
                 </div>
               </label>
             </div>
