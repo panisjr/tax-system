@@ -27,6 +27,15 @@ import {
 } from "lucide-react";
 
 import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
+
+import {
   Accordion,
   AccordionItem,
   AccordionTrigger,
@@ -70,6 +79,9 @@ const initialFormState: FormState = {
   position: "",
   status: true,
 };
+
+const Suffix = ["Sr.", "Jr.", "I", "II", "III", "IV", "V"] as const;
+const Roles = ["Admin","Assessor", "Treasurer", "Viewer"] as const;
 
 export default function CreateUserPage() {
   const router = useRouter();
@@ -142,15 +154,19 @@ export default function CreateUserPage() {
     // 2. Email Validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email)) {
-      setErrorMessage("Please enter a valid email address (e.g., name@example.com).");
+      setErrorMessage(
+        "Please enter a valid email address (e.g., name@example.com).",
+      );
       return;
     }
 
     // 3. Phone Validation (Allows 09... or +639... formats)
     const strippedPhone = form.phone.replace(/[\s-]/g, ""); // strip spaces and dashes for checking
-    const phoneRegex = /^(?:\+63|63|0)9\d{9}$/; 
+    const phoneRegex = /^(?:\+63|63|0)9\d{9}$/;
     if (!phoneRegex.test(strippedPhone)) {
-      setErrorMessage("Please enter a valid 11-digit mobile number (e.g., 09171234567 or +63 917 123 4567).");
+      setErrorMessage(
+        "Please enter a valid 11-digit mobile number (e.g., 09171234567 or +63 917 123 4567).",
+      );
       return;
     }
 
@@ -160,7 +176,9 @@ export default function CreateUserPage() {
       return;
     }
     if (!/[A-Z]/.test(form.password) || !/[0-9]/.test(form.password)) {
-      setErrorMessage("Password must contain at least one uppercase letter and one number.");
+      setErrorMessage(
+        "Password must contain at least one uppercase letter and one number.",
+      );
       return;
     }
 
@@ -303,10 +321,19 @@ export default function CreateUserPage() {
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Suffix
                 </label>
-                <SuffixDropdown
-                  value={form.suffix}
-                  onChange={(v) => updateField("suffix", v)}
-                />
+                <Combobox items={Suffix}>
+                  <ComboboxInput placeholder="" />
+                  <ComboboxContent>
+                    <ComboboxEmpty>No items found.</ComboboxEmpty>
+                    <ComboboxList>
+                      {(item) => (
+                        <ComboboxItem key={item} value={item}>
+                          {item}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
               </div>
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
@@ -415,28 +442,19 @@ export default function CreateUserPage() {
                   </span>
                   <span className="ml-1 text-rose-500">*</span>
                 </label>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <RoleRadio
-                    label="Admin"
-                    checked={form.role === "Admin"}
-                    onChange={() => updateField("role", "Admin")}
-                  />
-                  <RoleRadio
-                    label="Assessor"
-                    checked={form.role === "Assessor"}
-                    onChange={() => updateField("role", "Assessor")}
-                  />
-                  <RoleRadio
-                    label="Treasurer"
-                    checked={form.role === "Treasurer"}
-                    onChange={() => updateField("role", "Treasurer")}
-                  />
-                  <RoleRadio
-                    label="Viewer"
-                    checked={form.role === "Viewer"}
-                    onChange={() => updateField("role", "Viewer")}
-                  />
-                </div>
+<Combobox items={Roles}>
+      <ComboboxInput placeholder="Select Role" />
+      <ComboboxContent>
+        <ComboboxEmpty>No items found.</ComboboxEmpty>
+        <ComboboxList>
+          {(item) => (
+            <ComboboxItem key={item} value={item}>
+              {item}
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
               </div>
               <Field
                 label="Department"
@@ -697,9 +715,7 @@ function SuffixDropdown({
       className="mt-1"
     >
       <AccordionItem value="suffix">
-        <AccordionTrigger
-          className="w-full flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 focus-within:ring-2 focus-within:ring-slate-200"
-        >
+        <AccordionTrigger className="w-full flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 focus-within:ring-2 focus-within:ring-slate-200">
           {value || "Select suffix"}
         </AccordionTrigger>
         <AccordionContent className="border border-gray-200 rounded-md bg-white">
