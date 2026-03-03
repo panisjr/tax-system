@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import BarangayPerformanceMap from '@/components/BarangayPerformanceMap';
+import BarangayPerformanceMapClient from '@/components/BarangayPerformanceMapClient';
 
 export default function BarangayMapPage() {
   return (
@@ -18,7 +18,7 @@ export default function BarangayMapPage() {
           </Link>
         </header>
 
-        <BarangayPerformanceMap />
+        <BarangayPerformanceMapClient />
       </main>
     </div>
   );
