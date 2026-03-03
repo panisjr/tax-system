@@ -1,6 +1,5 @@
 "use client";
 
-<<<<<<< HEAD
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
@@ -12,9 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 
 import { useMemo, useState, useEffect } from "react";
-=======
-import { Suspense, useEffect, useMemo, useState } from "react";
->>>>>>> 5a01c354ef56fe2ecdc9458de3247f4350e66b4c
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -30,15 +26,6 @@ import {
   Save,
   FilePenLine,
 } from "lucide-react";
-
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@/components/ui/combobox";
 
 import {
   Accordion,
@@ -112,18 +99,7 @@ const initialFormState: FormState = {
   status: true,
 };
 
-const Suffix = ["Sr.", "Jr.", "I", "II", "III", "IV", "V"] as const;
-const Roles = ["Admin","Assessor", "Treasurer", "Viewer"] as const;
-
 export default function CreateUserPage() {
-  return (
-    <Suspense fallback={null}>
-      <CreateUserPageContent />
-    </Suspense>
-  );
-}
-
-function CreateUserPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editingEmpID = searchParams.get("empID")?.trim() ?? "";
@@ -138,6 +114,8 @@ function CreateUserPageContent() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(initialFormState);
+  
+  // FIX 1: Added missing initialLoadedForm state
   const [initialLoadedForm, setInitialLoadedForm] = useState<FormState | null>(null);
 
   useEffect(() => {
@@ -225,17 +203,15 @@ function CreateUserPageContent() {
           middlename: user?.middlename?.trim() ?? "",
           lastname: user?.lastname?.trim() ?? "",
           suffix: user?.suffix?.trim() ?? "",
-          birthdate: user?.birthdate?.trim() ?? "",
+          // FIX 2: Safely parse birthdate string back into a Date object
+          birthdate: user?.birthdate ? new Date(user.birthdate) : undefined, 
           age: user?.age?.trim() ?? "",
           sex: typeof user?.sex === "boolean" ? user.sex : true,
           temp_pass: "",
           password: "",
           email: user?.email?.trim() ?? "",
           phone: user?.phone?.trim() ?? "",
-          role_id:
-            typeof user?.role_id === "number"
-              ? String(user.role_id)
-              : "",
+          role_id: typeof user?.role_id === "number" ? String(user.role_id) : "",
           department: user?.department?.trim() ?? "",
           position: user?.position?.trim() ?? "",
           status: typeof user?.status === "boolean" ? user.status : true,
@@ -264,7 +240,6 @@ function CreateUserPageContent() {
   }, [editingEmpID, isEditMode]);
 
   const missingRequiredFields = useMemo(() => {
-<<<<<<< HEAD
     return (
       !form.empID.trim() ||
       !form.firstname.trim() ||
@@ -275,32 +250,11 @@ function CreateUserPageContent() {
       !form.password.trim() ||
       !form.email.trim() ||
       !form.phone.trim() ||
-      !form.role.trim() ||
+      !form.role_id.trim() || // FIX 3: Changed form.role to form.role_id
       !form.department.trim() ||
       !form.position.trim()
     );
   }, [form]);
-=======
-    const requiredValues = [
-      form.empID,
-      form.firstname,
-      form.lastname,
-      form.birthdate,
-      form.age,
-      form.email,
-      form.phone,
-      form.role_id,
-      form.department,
-      form.position,
-    ];
-
-    if (!isEditMode) {
-      requiredValues.push(form.temp_pass, form.password);
-    }
-
-    return requiredValues.some((value) => value.trim().length === 0);
-  }, [form, isEditMode]);
->>>>>>> 5a01c354ef56fe2ecdc9458de3247f4350e66b4c
 
   const isBirthdateValid = useMemo(() => {
     if (!form.birthdate) return true;
@@ -310,13 +264,14 @@ function CreateUserPageContent() {
   const hasFormChanges = useMemo(() => {
     if (!isEditMode || !initialLoadedForm) return true;
 
+    // FIX 4: Prevent calling .trim() on Date object which causes crashes
     const normalize = (value: FormState) => ({
       empID: value.empID.trim(),
       firstname: value.firstname.trim(),
       middlename: value.middlename.trim(),
       lastname: value.lastname.trim(),
       suffix: value.suffix.trim(),
-      birthdate: value.birthdate.trim(),
+      birthdate: value.birthdate ? format(value.birthdate, "yyyy-MM-dd") : "",
       age: value.age.trim(),
       sex: value.sex,
       email: value.email.trim(),
@@ -334,57 +289,40 @@ function CreateUserPageContent() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-<<<<<<< HEAD
-    // 1. Basic empty fields check
-=======
     if (isEditMode && isLoadingUser) {
       setErrorMessage("User data is still loading.");
       return;
     }
 
->>>>>>> 5a01c354ef56fe2ecdc9458de3247f4350e66b4c
     if (missingRequiredFields) {
       setErrorMessage("Please fill out all required fields.");
       return;
     }
 
-    // 2. Email Validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email)) {
-      setErrorMessage(
-        "Please enter a valid email address (e.g., name@example.com).",
-      );
+      setErrorMessage("Please enter a valid email address (e.g., name@example.com).");
       return;
     }
 
-<<<<<<< HEAD
-    // 3. Phone Validation (Allows 09... or +639... formats)
-    const strippedPhone = form.phone.replace(/[\s-]/g, ""); // strip spaces and dashes for checking
+    const strippedPhone = form.phone.replace(/[\s-]/g, ""); 
     const phoneRegex = /^(?:\+63|63|0)9\d{9}$/;
     if (!phoneRegex.test(strippedPhone)) {
-      setErrorMessage(
-        "Please enter a valid 11-digit mobile number (e.g., 09171234567 or +63 917 123 4567).",
-      );
+      setErrorMessage("Please enter a valid 11-digit mobile number (e.g., 09171234567 or +63 917 123 4567).");
       return;
     }
 
-    // 4. Password Security Rules
     if (form.password.length < 8) {
       setErrorMessage("Password must be at least 8 characters long.");
       return;
     }
+    
     if (!/[A-Z]/.test(form.password) || !/[0-9]/.test(form.password)) {
-      setErrorMessage(
-        "Password must contain at least one uppercase letter and one number.",
-      );
+      setErrorMessage("Password must contain at least one uppercase letter and one number.");
       return;
     }
 
-    // 5. Password Match Check
     if (form.temp_pass !== form.password) {
-=======
-    if (!isEditMode && form.temp_pass !== form.password) {
->>>>>>> 5a01c354ef56fe2ecdc9458de3247f4350e66b4c
       setErrorMessage("Temporary password and password must match.");
       return;
     }
@@ -405,7 +343,7 @@ function CreateUserPageContent() {
             middlename: form.middlename,
             lastname: form.lastname,
             suffix: form.suffix,
-            birthdate: form.birthdate,
+            birthdate: form.birthdate ? format(form.birthdate, "yyyy-MM-dd") : null,
             age: form.age,
             sex: form.sex,
             email: form.email,
@@ -417,30 +355,17 @@ function CreateUserPageContent() {
           }
         : {
             ...form,
+            birthdate: form.birthdate ? format(form.birthdate, "yyyy-MM-dd") : null,
             role_id: Number(form.role_id),
           };
 
       const response = await fetch(isEditMode ? "/api/user/update" : "/api/user/create", {
         method: isEditMode ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-<<<<<<< HEAD
-        body: JSON.stringify({
-          ...form,
-          birthdate: form.birthdate
-            ? format(form.birthdate, "yyyy-MM-dd")
-            : null,
-        }),
-=======
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
->>>>>>> 5a01c354ef56fe2ecdc9458de3247f4350e66b4c
       });
 
-      const data = (await response.json()) as {
-        error?: string;
-        message?: string;
-      };
+      const data = (await response.json()) as { error?: string; message?: string };
 
       if (!response.ok) {
         setErrorMessage(data.error ?? `Failed to ${isEditMode ? "update" : "create"} user.`);
@@ -478,11 +403,7 @@ function CreateUserPageContent() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-lexend text-2xl font-bold text-[#595a5d]">
-<<<<<<< HEAD
-              Create New User
-=======
               {isEditMode ? "Edit User" : "Create New User"}
->>>>>>> 5a01c354ef56fe2ecdc9458de3247f4350e66b4c
             </h1>
             <p className="font-inter mt-1 text-xs text-slate-400">
               {isEditMode
@@ -554,7 +475,6 @@ function CreateUserPageContent() {
               <Field
                 label="Emp ID"
                 required
-<<<<<<< HEAD
                 value={form.empID}
                 onChange={(v) => updateField("empID", v)}
               />
@@ -579,19 +499,11 @@ function CreateUserPageContent() {
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Suffix
                 </label>
-                <Combobox items={Suffix}>
-                  <ComboboxInput placeholder="" />
-                  <ComboboxContent>
-                    <ComboboxEmpty>No items found.</ComboboxEmpty>
-                    <ComboboxList>
-                      {(item) => (
-                        <ComboboxItem key={item} value={item}>
-                          {item}
-                        </ComboboxItem>
-                      )}
-                    </ComboboxList>
-                  </ComboboxContent>
-                </Combobox>
+                {/* FIX 5: Reverted incomplete Combobox back to your working SuffixDropdown */}
+                <SuffixDropdown
+                  value={form.suffix}
+                  onChange={(v) => updateField("suffix", v)}
+                />
               </div>
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
@@ -625,22 +537,19 @@ function CreateUserPageContent() {
                       fromYear={1950}
                       toYear={new Date().getFullYear()}
                       initialFocus
-                      className="rounded-lg border"
+                      className="rounded-lg border bg-white"
                     />
                   </PopoverContent>
                 </Popover>
               </div>
-              <Field
-                label="Age"
-                required
-                value={form.age}
-                onChange={() => {}}
+              
+              {/* FIX 6: Removed duplicate age/birthdate field and set Age to readOnly */}
+              <Field 
+                label="Age" 
+                required 
                 readOnly
-=======
-                inputType="date"
-                value={form.birthdate}
-                onChange={(v) => updateField("birthdate", v)}
->>>>>>> 5a01c354ef56fe2ecdc9458de3247f4350e66b4c
+                value={form.age} 
+                onChange={(v) => updateField("age", v)} 
               />
 
               <div>
@@ -694,7 +603,6 @@ function CreateUserPageContent() {
                 value={form.phone}
                 leftIcon={<Phone className="h-4 w-4 text-slate-400" />}
                 onChange={(v) => {
-                  // Prevents letters from being typed; allows numbers, spaces, and +
                   const sanitized = v.replace(/[^0-9+\s-]/g, "");
                   updateField("phone", sanitized);
                 }}
@@ -707,37 +615,23 @@ function CreateUserPageContent() {
                   </span>
                   <span className="ml-1 text-rose-500">*</span>
                 </label>
-<<<<<<< HEAD
-<Combobox items={Roles}>
-      <ComboboxInput placeholder="Select Role" />
-      <ComboboxContent>
-        <ComboboxEmpty>No items found.</ComboboxEmpty>
-        <ComboboxList>
-          {(item) => (
-            <ComboboxItem key={item} value={item}>
-              {item}
-            </ComboboxItem>
-          )}
-        </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
-=======
                 <div className="mt-2 grid grid-cols-2 gap-2">
-                  <select
-                    value={form.role_id}
-                    onChange={(event) => updateField("role_id", event.target.value)}
-                    className="font-inter w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-slate-200 sm:col-span-2"
-                    disabled={isLoadingRoles}
-                  >
-                    <option value="">{isLoadingRoles ? "Loading roles..." : "Select role"}</option>
-                    {roles.map((roleOption) => (
-                      <option key={roleOption.id} value={String(roleOption.id)}>
-                        {roleOption.name}
-                      </option>
-                    ))}
-                  </select>
+                  {/* FIX 7: Render dynamic roles from API state */}
+                  {isLoadingRoles ? (
+                     <span className="text-xs text-slate-400 col-span-2">Loading roles...</span>
+                  ) : roles.length > 0 ? (
+                     roles.map((role) => (
+                       <RoleRadio
+                         key={role.id}
+                         label={role.name}
+                         checked={form.role_id === String(role.id)}
+                         onChange={() => updateField("role_id", String(role.id))}
+                       />
+                     ))
+                  ) : (
+                     <span className="text-xs text-rose-500 col-span-2">No roles configured</span>
+                  )}
                 </div>
->>>>>>> 5a01c354ef56fe2ecdc9458de3247f4350e66b4c
               </div>
               <Field
                 label="Department"
@@ -776,42 +670,33 @@ function CreateUserPageContent() {
             </div>
           </section>
 
-          {!isEditMode && (
-            <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-4 flex items-center gap-2">
-                <div className="rounded-md bg-slate-100 p-2">
-                  <KeyRound className="h-5 w-5 text-[#00154A]" />
-                </div>
-                <h2 className="font-inter text-sm font-semibold text-[#848794]">Security</h2>
+          <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <div className="rounded-md bg-slate-100 p-2">
+                <KeyRound className="h-5 w-5 text-[#00154A]" />
               </div>
-<<<<<<< HEAD
-              <h2 className="font-inter text-sm font-semibold text-[#848794]">
-                Security
-              </h2>
+              <h2 className="font-inter text-sm font-semibold text-[#848794]">Security</h2>
             </div>
-=======
->>>>>>> 5a01c354ef56fe2ecdc9458de3247f4350e66b4c
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <PasswordField
-                  label="Temp Pass"
-                  required
-                  value={form.temp_pass}
-                  show={showTempPassword}
-                  onToggle={() => setShowTempPassword((v) => !v)}
-                  onChange={(v) => updateField("temp_pass", v)}
-                />
-                <PasswordField
-                  label="Password"
-                  required
-                  value={form.password}
-                  show={showPassword}
-                  onToggle={() => setShowPassword((v) => !v)}
-                  onChange={(v) => updateField("password", v)}
-                />
-              </div>
-            </section>
-          )}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <PasswordField
+                label="Temp Pass"
+                required
+                value={form.temp_pass}
+                show={showTempPassword}
+                onToggle={() => setShowTempPassword((v) => !v)}
+                onChange={(v) => updateField("temp_pass", v)}
+              />
+              <PasswordField
+                label="Password"
+                required
+                value={form.password}
+                show={showPassword}
+                onToggle={() => setShowPassword((v) => !v)}
+                onChange={(v) => updateField("password", v)}
+              />
+            </div>
+          </section>
         </div>
 
         <div className="space-y-6">
@@ -834,25 +719,17 @@ function CreateUserPageContent() {
                 }
               />
               <SummaryRow label="Emp ID" value={form.empID || "(Required)"} />
-<<<<<<< HEAD
-              <SummaryRow label="Role" value={form.role || "(Required)"} />
-              <SummaryRow
-                label="Status"
-                value={form.status ? "Active" : "Inactive"}
+              
+              {/* FIX 8: Display the dynamic role name instead of the ID */}
+              <SummaryRow 
+                label="Role" 
+                value={roles.find(r => String(r.id) === form.role_id)?.name || "(Required)"} 
               />
-            </div>
-
-            {missingRequiredFields && (
-=======
-              <SummaryRow
-                label="Role"
-                value={roles.find((roleOption) => String(roleOption.id) === form.role_id)?.name || "(Required)"}
-              />
+              
               <SummaryRow label="Status" value={form.status ? "Active" : "Inactive"} />
             </div>
 
-            {(missingRequiredFields || !isBirthdateValid || (isEditMode && !hasFormChanges)) && (
->>>>>>> 5a01c354ef56fe2ecdc9458de3247f4350e66b4c
+            {(missingRequiredFields || !isBirthdateValid) && (
               <p className="font-inter mt-4 text-xs text-rose-600">
                 {isEditMode && !hasFormChanges
                   ? "No changes detected yet. Update at least one field before saving."
@@ -865,6 +742,10 @@ function CreateUserPageContent() {
     </div>
   );
 }
+
+// ----------------------------------------------------
+// HELPER COMPONENTS
+// ----------------------------------------------------
 
 function Field({
   label,
@@ -893,20 +774,15 @@ function Field({
         {label}
         {required && <span className="ml-1 text-rose-500">*</span>}
       </label>
-      <div className="mt-1 flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-slate-200">
+      <div className={`mt-1 flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 ${readOnly ? "bg-gray-50 opacity-80" : "bg-white focus-within:ring-2 focus-within:ring-slate-200"}`}>
         {leftIcon}
         <input
-<<<<<<< HEAD
-          type={type}
-=======
-          type={inputType}
->>>>>>> 5a01c354ef56fe2ecdc9458de3247f4350e66b4c
           value={value}
           readOnly={readOnly}
           onChange={(event) => onChange(event.target.value)}
           className={`w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 ${
             inputType === "date" ? "cursor-pointer" : ""
-          }`}
+          } ${readOnly ? "cursor-not-allowed text-slate-500" : ""}`}
           placeholder={placeholder}
         />
       </div>
@@ -981,32 +857,23 @@ function BooleanChip({
   );
 }
 
-<<<<<<< HEAD
 function RoleRadio({
   label,
   checked,
   onChange,
 }: {
-  label: "Admin" | "Assessor" | "Treasurer" | "Viewer";
+  label: string;
   checked: boolean;
   onChange: () => void;
 }) {
   return (
     <label className="font-inter inline-flex cursor-pointer items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-xs text-slate-700 hover:bg-gray-50">
-      <input
-        type="radio"
-        name="role"
-        checked={checked}
-        onChange={onChange}
-        className="h-4 w-4"
-      />
+      <input type="radio" name="role" checked={checked} onChange={onChange} className="h-4 w-4" />
       {label}
     </label>
   );
 }
 
-=======
->>>>>>> 5a01c354ef56fe2ecdc9458de3247f4350e66b4c
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4">
@@ -1034,17 +901,17 @@ function SuffixDropdown({
       onValueChange={(v) => setOpen(!!v)}
       className="mt-1"
     >
-      <AccordionItem value="suffix">
-        <AccordionTrigger className="w-full flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 focus-within:ring-2 focus-within:ring-slate-200">
-          {value || "Select suffix"}
+      <AccordionItem value="suffix" className="border-none">
+        <AccordionTrigger className="w-full flex items-center justify-between gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 focus-within:ring-2 focus-within:ring-slate-200 hover:no-underline">
+          <span className="font-inter font-normal">{value || "Select suffix"}</span>
         </AccordionTrigger>
-        <AccordionContent className="border border-gray-200 rounded-md bg-white">
-          <div className="flex flex-col gap-2 p-2">
+        <AccordionContent className="mt-1 border border-gray-200 rounded-md bg-white shadow-sm absolute z-10 w-full md:w-auto min-w-[120px]">
+          <div className="flex flex-col gap-1 p-1">
             {options.map((opt) => (
               <button
                 key={opt}
                 type="button"
-                className="text-left w-full rounded px-2 py-1 hover:bg-gray-100"
+                className="text-left font-inter w-full rounded px-2 py-1.5 text-sm hover:bg-gray-100 transition-colors"
                 onClick={() => {
                   onChange(opt);
                   setOpen(false);
