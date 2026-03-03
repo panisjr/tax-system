@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-type CreateUserPayload = {
+type UpdateUserPayload = {
+	originalEmpID: string;
 	empID: string;
 	firstname: string;
 	middlename: string;
@@ -10,8 +11,6 @@ type CreateUserPayload = {
 	birthdate: string;
 	age: string;
 	sex: boolean;
-	temp_pass: string;
-	password: string;
 	email: string;
 	phone: string;
 	role_id: number;
@@ -28,19 +27,18 @@ function isValidBirthdate(value: string) {
 	return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
-export async function POST(request: Request) {
+export async function PUT(request: Request) {
 	try {
-		const body = (await request.json()) as Partial<CreateUserPayload>;
+		const body = (await request.json()) as Partial<UpdateUserPayload>;
 		const roleId = Number(body.role_id);
 
-		const requiredTextFields: Array<keyof CreateUserPayload> = [
+		const requiredTextFields: Array<keyof UpdateUserPayload> = [
+			'originalEmpID',
 			'empID',
 			'firstname',
 			'lastname',
 			'birthdate',
 			'age',
-			'temp_pass',
-			'password',
 			'email',
 			'phone',
 			'department',
@@ -70,7 +68,7 @@ export async function POST(request: Request) {
 
 		const { data: roleData, error: roleError } = await supabaseAdmin
 			.from('roles')
-			.select('id, name')
+			.select('id')
 			.eq('id', roleId)
 			.single();
 
@@ -85,18 +83,19 @@ export async function POST(request: Request) {
 			);
 		}
 
-		if (body.temp_pass !== body.password) {
-			return NextResponse.json(
-				{ error: 'temp_pass and password must match.' },
-				{ status: 400 },
-			);
+		const { data: existingUser, error: existingError } = await supabaseAdmin
+			.from('users')
+			.select('empID')
+			.eq('empID', body.originalEmpID!.trim())
+			.single();
+
+		if (existingError || !existingUser) {
+			return NextResponse.json({ error: 'User not found.' }, { status: 404 });
 		}
 
-		const { data, error } = await supabaseAdmin.auth.admin.createUser({
-			email: body.email!.trim(),
-			password: body.temp_pass!,
-			email_confirm: true,
-			user_metadata: {
+		const { error: updateError } = await supabaseAdmin
+			.from('users')
+			.update({
 				empID: body.empID!.trim(),
 				firstname: body.firstname!.trim(),
 				middlename: body.middlename?.trim() || '',
@@ -105,53 +104,21 @@ export async function POST(request: Request) {
 				birthdate: body.birthdate!.trim(),
 				age: body.age!.trim(),
 				sex: body.sex,
+				email: body.email!.trim(),
 				phone: body.phone!.trim(),
 				role_id: roleId,
-				role: roleData.name,
 				department: body.department!.trim(),
 				position: body.position!.trim(),
 				status: body.status,
-			},
-		});
+			})
+			.eq('empID', body.originalEmpID!.trim());
 
-		if (error) {
-			return NextResponse.json({ error: error.message }, { status: 400 });
-		}
-
-		const authUserId = data.user?.id;
-
-		if (!authUserId) {
-			return NextResponse.json(
-				{ error: 'Auth user creation returned no user id.' },
-				{ status: 500 },
-			);
-		}
-
-		const { error: insertError } = await supabaseAdmin.from('users').insert({
-			empID: body.empID!.trim(),
-			firstname: body.firstname!.trim(),
-			middlename: body.middlename?.trim() || '',
-			lastname: body.lastname!.trim(),
-			suffix: body.suffix?.trim() || '',
-			birthdate: body.birthdate!.trim(),
-			age: body.age!.trim(),
-			sex: body.sex,
-			email: body.email!.trim(),
-			phone: body.phone!.trim(),
-			role_id: roleId,
-			department: body.department!.trim(),
-			position: body.position!.trim(),
-			status: body.status,
-		});
-
-		if (insertError) {
-			await supabaseAdmin.auth.admin.deleteUser(authUserId);
-			return NextResponse.json({ error: insertError.message }, { status: 400 });
+		if (updateError) {
+			return NextResponse.json({ error: updateError.message }, { status: 400 });
 		}
 
 		return NextResponse.json({
-			message: 'User created successfully.',
-			userId: authUserId,
+			message: 'User updated successfully.',
 		});
 	} catch {
 		return NextResponse.json(
