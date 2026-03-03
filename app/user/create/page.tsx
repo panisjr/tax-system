@@ -3,6 +3,7 @@
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import { toast } from "sonner";
 import {
   Popover,
   PopoverContent,
@@ -111,7 +112,6 @@ function CreateUserForm() {
   const [isLoadingUser, setIsLoadingUser] = useState(false);
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [isLoadingRoles, setIsLoadingRoles] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(initialFormState);
   
@@ -179,7 +179,6 @@ function CreateUserForm() {
 
     const fetchUserDetails = async () => {
       setIsLoadingUser(true);
-      setErrorMessage(null);
       setSuccessMessage(null);
 
       try {
@@ -191,7 +190,9 @@ function CreateUserForm() {
 
         if (!response.ok) {
           if (isMounted) {
-            setErrorMessage(data.error ?? "Failed to load user details.");
+            toast.error("Unable to load user details", {
+              description: data.error || "An error occurred while loading user details.",
+            });
           }
           return;
         }
@@ -223,7 +224,9 @@ function CreateUserForm() {
         }
       } catch {
         if (isMounted) {
-          setErrorMessage("Unable to connect to server.");
+          toast.error("Connection Error", {
+            description: "Unable to connect to server.",
+          });
         }
       } finally {
         if (isMounted) {
@@ -286,49 +289,62 @@ function CreateUserForm() {
   }, [form, initialLoadedForm, isEditMode]);
 
   const handleSave = async () => {
-    setErrorMessage(null);
     setSuccessMessage(null);
 
     if (isEditMode && isLoadingUser) {
-      setErrorMessage("User data is still loading.");
+      toast("User data is still loading.");
       return;
     }
 
     if (missingRequiredFields) {
-      setErrorMessage("Please fill out all required fields.");
+      toast.error("Required Field Error", {
+        description: "Please fill out all required fields.",
+      });
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email)) {
-      setErrorMessage("Please enter a valid email address (e.g., name@example.com).");
+      toast.error("Email Error", {
+        description: "Please enter a valid email address (e.g., name@example.com).",
+      });
       return;
     }
 
     const strippedPhone = form.phone.replace(/[\s-]/g, ""); 
     const phoneRegex = /^(?:\+63|63|0)9\d{9}$/;
     if (!phoneRegex.test(strippedPhone)) {
-      setErrorMessage("Please enter a valid 11-digit mobile number (e.g., 09171234567 or +63 917 123 4567).");
+      toast.error("Phone Number Error", {
+        description: "Please enter a valid 11-digit mobile number (e.g., 09171234567 or +63 917 123 4567).",
+      });
       return;
     }
 
     if (form.password.length < 8) {
-      setErrorMessage("Password must be at least 8 characters long.");
+      toast.error("Password Error", {
+        description: "Password must be at least 8 characters long.",
+      });
       return;
     }
     
     if (!/[A-Z]/.test(form.password) || !/[0-9]/.test(form.password)) {
-      setErrorMessage("Password must contain at least one uppercase letter and one number.");
+      toast.error("Password Error", {
+        description: "Password must contain at least one uppercase letter and one number.",
+      });
       return;
     }
 
     if (form.temp_pass !== form.password) {
-      setErrorMessage("Temporary password and password must match.");
+      toast.error("Password Error", {
+        description: "Temporary password and password must match.",
+      });
       return;
     }
 
     if (isEditMode && !hasFormChanges) {
-      setErrorMessage("No changes detected. Update at least one field before saving.");
+      toast.error("No Changes Detected", {
+        description: "Update at least one field before saving.",
+      });
       return;
     }
 
@@ -368,11 +384,13 @@ function CreateUserForm() {
       const data = (await response.json()) as { error?: string; message?: string };
 
       if (!response.ok) {
-        setErrorMessage(data.error ?? `Failed to ${isEditMode ? "update" : "create"} user.`);
+        toast.error("Failed to Save User", {
+          description: data.error ?? `Failed to ${isEditMode ? "update" : "create"} user.`,
+        });
         return;
       }
 
-      setSuccessMessage(data.message ?? `User ${isEditMode ? "updated" : "created"} successfully.`);
+      toast.success(data.message ?? `User ${isEditMode ? "updated" : "created"} successfully.`);
 
       if (!isEditMode) {
         setForm(initialFormState);
@@ -382,7 +400,9 @@ function CreateUserForm() {
         router.push("/user/view");
       }, 1200);
     } catch {
-      setErrorMessage("Unable to connect to server.");
+      toast.error("Connection Error", {
+        description: "Unable to connect to server.",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -444,18 +464,6 @@ function CreateUserForm() {
       {isEditMode && isLoadingUser && (
         <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
           Loading selected user details...
-        </div>
-      )}
-
-      {(errorMessage || successMessage) && (
-        <div
-          className={`mb-4 rounded-md border px-4 py-3 text-sm ${
-            errorMessage
-              ? "border-rose-200 bg-rose-50 text-rose-700"
-              : "border-emerald-200 bg-emerald-50 text-emerald-700"
-          }`}
-        >
-          {errorMessage ?? successMessage}
         </div>
       )}
 
