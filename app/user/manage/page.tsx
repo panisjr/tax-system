@@ -14,6 +14,15 @@ import {
   ChevronsUpDown,
   Search,
 } from 'lucide-react';
+import {
+  Table,
+  TableContainer,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 
 type ApiUser = {
   firstname?: string;
@@ -391,70 +400,27 @@ export default function ManageRolePage() {
             </h2>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-155 border-collapse">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th
-                    className={`font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500`}
-                  >
-                    Role
-                  </th>
-                  <th
-                    className={`font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500`}
-                  >
-                    Permissions
-                  </th>
-                  <th
-                    className={`font-lexend px-3 py-3 text-left text-xs font-semibold text-slate-500`}
-                  >
-                    Users
-                  </th>
-                  <th
-                    className={`font-lexend px-3 py-3 text-left text-xs font-semibold text-slate-500`}
-                  >
-                    Created
-                  </th>
-                  <th
-                    className={`font-inter px-3 py-3 text-right text-xs font-semibold text-slate-500`}
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {isLoadingRoles && (
-                  <tr>
-                    <td className="font-inter px-3 py-8 text-center text-sm text-slate-500" colSpan={5}>
-                      Loading roles...
-                    </td>
-                  </tr>
-                )}
-
-                {!isLoadingRoles && roles.length === 0 && (
-                  <tr>
-                    <td className="font-inter px-3 py-8 text-center text-sm text-slate-500" colSpan={5}>
-                      No roles found.
-                    </td>
-                  </tr>
-                )}
-
-                {!isLoadingRoles && roles.map((role) => {
-                  const roleKey = normalizeRole(role.name);
-                  const roleUsers = usersByRole.get(roleKey) ?? [];
-                  const roleUsersCount = roleUsers.length;
-
-                  return (
-                  <tr key={role.key} className="border-b border-gray-100">
-                    <td className={`font-inter px-3 py-3 text-sm text-slate-700`}>
+          <TableContainer>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Permissions</TableHead>
+                  <TableHead>Users</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead align="right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {roles.map((role) => (
+                  <TableRow key={role.name}>
+                    <TableCell className="text-slate-700">
                       <div className="inline-flex items-center gap-2">
                         <KeyRound className="h-4 w-4 text-slate-400" />
                         {role.name}
                       </div>
-                    </td>
-
-                    <td className={`font-inter px-3 py-3 text-sm text-slate-600`}>
+                    </TableCell>
+                    <TableCell>
                       <div className="flex flex-wrap gap-2">
                         {role.permissionNames.length === 0 ? (
                           <span className="rounded bg-slate-50 px-2 py-1 text-xs text-slate-400">
@@ -468,9 +434,8 @@ export default function ManageRolePage() {
                           ))
                         )}
                       </div>
-                    </td>
-
-                    <td className={`font-inter px-3 py-3 text-sm text-slate-600`}>
+                    </TableCell>
+                    <TableCell>
                       <button
                         type="button"
                         onClick={() => handleViewRoleUsers(role.name)}
@@ -481,39 +446,51 @@ export default function ManageRolePage() {
                         <UsersRound className="h-3.5 w-3.5" />
                         {isLoadingUsers ? '...' : roleUsersCount}
                       </button>
-                    </td>
-
-                    <td className={`font-inter px-3 py-3 text-sm`}>
-                      <span className='text-xs text-slate-600'>{role.createdAt}</span>
-                    </td>
-
-                    <td className="px-3 py-3">
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`rounded px-2 py-1 text-xs ${
+                          role.status === 'Active'
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : 'bg-gray-100 text-gray-500'
+                        }`}
+                      >
+                        {role.status}
+                      </span>
+                    </TableCell>
+                    <TableCell align="right">
                       <div className="flex justify-end gap-2">
                         <button
                           type="button"
+                          onClick={() => handleViewRole(role.name)}
+                          className="font-inter inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-gray-50 cursor-pointer"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          View
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => handleEditRole(role.name)}
-                          className={`font-inter inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-gray-50 cursor-pointer`}
+                          className="font-inter inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-gray-50 cursor-pointer"
                         >
                           <Pencil className="h-3.5 w-3.5" />
                           Edit
                         </button>
-
                         <button
                           type="button"
                           onClick={() => handleDeleteRole(role.name)}
-                          className={`font-inter inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-rose-600 transition-colors hover:bg-rose-50 cursor-pointer`}
+                          className="font-inter inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-rose-600 transition-colors hover:bg-rose-50 cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                           Delete
                         </button>
                       </div>
-                    </td>
-                  </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </section>
 
         {isAddRoleOpen && (
