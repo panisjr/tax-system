@@ -10,10 +10,6 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",
-<<<<<<< HEAD
-    "@radix-ui/react-slot": "^1.2.4",
-=======
->>>>>>> 07a1f80810e1e9f145b645561b33bc7dae2dad0d
     "@supabase/supabase-js": "^2.98.0",
     "chart.js": "^4.5.1",
     "class-variance-authority": "^0.7.1",
