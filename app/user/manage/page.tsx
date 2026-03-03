@@ -33,13 +33,15 @@ type ApiPermission = {
 type ApiRole = {
   id?: string | number;
   name?: string;
-  permission_id?: number;
   created_at?: string;
-  permissions?: {
-    id?: number;
-    name?: string;
-    created_at?: string;
-  } | null;
+  role_permissions?: {
+    permission_id?: number;
+    permissions?: {
+      id?: number;
+      name?: string;
+      created_at?: string;
+    } | null;
+  }[];
 };
 
 type ListedRole = {
@@ -47,7 +49,7 @@ type ListedRole = {
   id: string | number;
   name: string;
   permissionName: string;
-  permissionId?: number;
+  permissionIds: number[];
   createdAt: string;
 };
 
@@ -73,27 +75,39 @@ export default function ManageRolePage() {
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
 
   const mapRole = (role: ApiRole, index: number): ListedRole => {
-    const rawName = role.name ?? "";
-    const name =
-      typeof rawName === "string" && rawName.trim().length > 0
-        ? rawName.trim()
-        : `Role ${index + 1}`;
-    const permissionName = role.permissions?.name?.trim() || "Unassigned";
-    const createdAt = role.created_at
-      ? new Date(role.created_at).toLocaleDateString()
-      : "-";
+  const rawName = role.name ?? "";
+  const name =
+    typeof rawName === "string" && rawName.trim().length > 0
+      ? rawName.trim()
+      : `Role ${index + 1}`;
 
-    const roleIdentifier = role.id ?? name;
+  const permissionIds =
+    role.role_permissions?.map((rp) => rp.permission_id ?? 0)
+      .filter((id) => Number.isInteger(id) && id > 0) ?? [];
 
-    return {
-      key: String(roleIdentifier),
-      id: roleIdentifier,
-      name,
-      permissionName,
-      permissionId: role.permission_id,
-      createdAt,
-    };
+  const permissionName =
+    role.role_permissions && role.role_permissions.length > 0
+      ? role.role_permissions
+          .map((rp) => rp.permissions?.name)
+          .filter(Boolean)
+          .join(", ")
+      : "Unassigned";
+
+  const createdAt = role.created_at
+    ? new Date(role.created_at).toLocaleDateString()
+    : "-";
+
+  const roleIdentifier = role.id ?? name;
+
+  return {
+    key: String(roleIdentifier),
+    id: roleIdentifier,
+    name,
+    permissionName,
+    permissionIds,
+    createdAt,
   };
+};
 
   const fetchRoles = async () => {
     setIsLoadingRoles(true);
@@ -311,8 +325,8 @@ export default function ManageRolePage() {
 
   const handleEditRole = async (role: ListedRole) => {
     // Track currently selected permissions
-    const selectedPermissions = role.permissionId ? [role.permissionId] : [];
-
+    const selectedPermissions = role.permissionIds ?? [];
+    
     const result = await Swal.fire({
       html: `
       <div class="text-left">
