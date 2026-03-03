@@ -1,61 +1,159 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Building2, MapPin, Layers, Home, BarChart3, FileText, User } from 'lucide-react';
+/**
+ * New Tax Declaration — app/property/new-td/page.tsx
+ *
+ * Select dropdowns replaced with shadcn-style Combobox (Radix Popover):
+ *  1. Declaration Type → Combobox (static options)
+ *  2. Owner / Taxpayer → Combobox (fetched from /api/taxpayers/list)
+ *  3. Barangay         → Combobox (fetched from /api/barangays/list)
+ *  4. Classification   → Combobox (static options)
+ *  5. Structural Type  → Combobox (static options)
+ *  6. Quarter          → kept as plain <select> (4 options, no search needed)
+ *
+ * Data fetching strategy:
+ *  • Barangays: GET /api/barangays/list — 23 rows, fetched once at mount.
+ *  • Taxpayers: GET /api/taxpayers/list — fetched once at mount; if dataset
+ *    grows past ~5 000 rows, add a server-side search param to filter by name.
+ */
 
-const barangays = [
-  'Bacubac', 'Bagacay', 'Balonga-as', 'Barayong', 'Binalayan', 'Buenavista',
-  'Cagbigti', 'Calunangan', 'Caluwayan', 'Camumucmuc', 'Capacuhan', 'Corocawayan',
-  'Cotmon', 'Dao', 'Flores', 'Gabas', 'Ilag', 'Pinamorotan', 'Poblacion',
-  'San Jose', 'Tagalag', 'Urdaneta', 'Zaragoza',
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  ArrowLeft, Save, MapPin, Layers, Home, BarChart3, FileText, User,
+} from 'lucide-react';
+import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
+
+// ── Static option sets (small, no DB fetch needed) ────────────────────────────
+const DECLARATION_TYPES: ComboboxOption[] = [
+  { value: 'New',          label: 'New' },
+  { value: 'Revision',     label: 'Revision' },
+  { value: 'Cancellation', label: 'Cancellation' },
+  { value: 'Transfer',     label: 'Transfer' },
 ];
+
+const CLASSIFICATIONS: ComboboxOption[] = [
+  { value: 'Residential',  label: 'Residential' },
+  { value: 'Commercial',   label: 'Commercial' },
+  { value: 'Agricultural', label: 'Agricultural' },
+  { value: 'Industrial',   label: 'Industrial' },
+  { value: 'Special',      label: 'Special' },
+  { value: 'Timberland',   label: 'Timberland' },
+  { value: 'Mineral',      label: 'Mineral' },
+];
+
+const STRUCTURAL_TYPES: ComboboxOption[] = [
+  { value: 'Type I – Wood',            label: 'Type I – Wood' },
+  { value: 'Type II – Mixed',          label: 'Type II – Mixed' },
+  { value: 'Type III – Masonry/Steel', label: 'Type III – Masonry/Steel' },
+  { value: 'Type IV – Steel/RC',       label: 'Type IV – Steel/RC' },
+  { value: 'Type V – RC',              label: 'Type V – RC' },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function NewTaxDeclarationPage() {
   const router = useRouter();
 
-  // Declaration Info
-  const [tdNumber, setTdNumber] = useState('');
-  const [pin, setPin] = useState('');
-  const [prevTd, setPrevTd] = useState('');
-  const [declarationType, setDeclarationType] = useState('New');
-  const [arpNumber, setArpNumber] = useState('');
-  const [taxYear, setTaxYear] = useState('2024');
+  // ── Remote option lists ──────────────────────────────────────────────────
+  const [barangayOptions, setBarangayOptions] = useState<ComboboxOption[]>([]);
+  const [taxpayerOptions, setTaxpayerOptions] = useState<ComboboxOption[]>([]);
+  const [loading, setLoading]                 = useState(true);
 
-  // Owner Info
-  const [ownerName, setOwnerName] = useState('');
-  const [tin, setTin] = useState('');
+  useEffect(() => {
+    async function loadReferenceData() {
+      const [barangayRes, taxpayerRes] = await Promise.all([
+        fetch('/api/barangays/list'),
+        fetch('/api/taxpayers/list'),
+      ]);
+
+      const { barangays = [] } = barangayRes.ok ? await barangayRes.json() : {};
+      const { taxpayers = [] } = taxpayerRes.ok ? await taxpayerRes.json() : {};
+
+      setBarangayOptions(
+        barangays.map((b: { id: number; name: string }) => ({
+          value: String(b.id),
+          label: b.name,
+        }))
+      );
+      setTaxpayerOptions(
+        taxpayers.map((t: { id: number; owner_name: string; tin: string | null }) => ({
+          value: String(t.id),
+          label: t.owner_name,
+          sublabel: t.tin ? `TIN: ${t.tin}` : undefined,
+        }))
+      );
+      setLoading(false);
+    }
+    loadReferenceData();
+  }, []);
+
+  // ── Form state ───────────────────────────────────────────────────────────
+  // Declaration Info
+  const [tdNumber,         setTdNumber]         = useState('');
+  const [pin,              setPin]              = useState('');
+  const [prevTd,           setPrevTd]           = useState('');
+  const [declarationType,  setDeclarationType]  = useState('New');
+  const [arpNumber,        setArpNumber]        = useState('');
+  const [taxYear,          setTaxYear]          = useState('2024');
+
+  // Owner Info — taxpayerId links to the selected taxpayer in the DB
+  const [taxpayerId,   setTaxpayerId]   = useState('');
+  const [tin,          setTin]          = useState('');
   const [ownerAddress, setOwnerAddress] = useState('');
-  const [ownerType, setOwnerType] = useState('Individual');
+  const [ownerType,    setOwnerType]    = useState('Individual');
 
   // Property Location
-  const [barangay, setBarangay] = useState('');
-  const [street, setStreet] = useState('');
-  const [lotNumber, setLotNumber] = useState('');
-  const [blockNumber, setBlockNumber] = useState('');
+  const [barangayId,   setBarangayId]   = useState('');
+  const [street,       setStreet]       = useState('');
+  const [lotNumber,    setLotNumber]    = useState('');
+  const [blockNumber,  setBlockNumber]  = useState('');
   const [surveyNumber, setSurveyNumber] = useState('');
 
   // Land Details
-  const [classification, setClassification] = useState('Residential');
-  const [actualUse, setActualUse] = useState('');
-  const [landArea, setLandArea] = useState('');
-  const [landUnitValue, setLandUnitValue] = useState('');
-  const [landMarketValue, setLandMarketValue] = useState('');
-  const [landAssessLevel, setLandAssessLevel] = useState('');
-  const [landAssessedValue, setLandAssessedValue] = useState('');
+  const [classification,   setClassification]   = useState('Residential');
+  const [actualUse,        setActualUse]         = useState('');
+  const [landArea,         setLandArea]          = useState('');
+  const [landUnitValue,    setLandUnitValue]      = useState('');
+  const [landMarketValue,  setLandMarketValue]   = useState('');
+  const [landAssessLevel,  setLandAssessLevel]   = useState('');
+  const [landAssessedValue,setLandAssessedValue] = useState('');
 
   // Building Details
-  const [buildingKind, setBuildingKind] = useState('');
-  const [structuralType, setStructuralType] = useState('');
-  const [floorArea, setFloorArea] = useState('');
-  const [yearBuilt, setYearBuilt] = useState('');
+  const [buildingKind,    setBuildingKind]    = useState('');
+  const [structuralType,  setStructuralType]  = useState('');
+  const [floorArea,       setFloorArea]       = useState('');
+  const [yearBuilt,       setYearBuilt]       = useState('');
   const [bldgMarketValue, setBldgMarketValue] = useState('');
   const [bldgAssessLevel, setBldgAssessLevel] = useState('');
   const [bldgAssessedValue, setBldgAssessedValue] = useState('');
 
   // Effectivity
-  const [effectivityYear, setEffectivityYear] = useState('2024');
+  const [effectivityYear,    setEffectivityYear]    = useState('2024');
   const [effectivityQuarter, setEffectivityQuarter] = useState('1st');
+
+  // ── Derived: auto-fill owner details when a taxpayer is selected ─────────
+  useEffect(() => {
+    if (!taxpayerId) return;
+    const found = taxpayerOptions.find((t) => t.value === taxpayerId);
+    if (found?.sublabel) {
+      // Extract TIN from sublabel ("TIN: 123-456-789")
+      const extracted = found.sublabel.replace('TIN: ', '');
+      setTin(extracted);
+    }
+  }, [taxpayerId, taxpayerOptions]);
+
+  // ── Derived: display labels for summary sidebar ──────────────────────────
+  const selectedBarangayLabel  = barangayOptions.find((b) => b.value === barangayId)?.label ?? '';
+  const selectedTaxpayerLabel  = taxpayerOptions.find((t) => t.value === taxpayerId)?.label ?? '';
+
+  // ── Save handler (wire to server action / API route) ─────────────────────
+  function handleSave() {
+    // TODO: call POST /api/tax-declarations or a Server Action
+    console.log('Save:', {
+      tdNumber, taxpayerId, barangayId, classification, taxYear, declarationType,
+    });
+  }
 
   return (
     <div className="w-full">
@@ -85,6 +183,7 @@ export default function NewTaxDeclarationPage() {
           </button>
           <button
             type="button"
+            onClick={handleSave}
             className="font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800"
           >
             <Save className="h-4 w-4" />
@@ -102,16 +201,18 @@ export default function NewTaxDeclarationPage() {
               <Field label="TD Number" placeholder="e.g. TD-2024-0001" value={tdNumber} onChange={setTdNumber} required />
               <Field label="Property Index Number (PIN)" placeholder="e.g. 088-01-001-01-001" value={pin} onChange={setPin} required />
               <Field label="Previous TD Number" placeholder="If revision or cancellation" value={prevTd} onChange={setPrevTd} />
-              <div>
-                <label className="font-inter text-xs font-medium text-slate-600">Declaration Type <span className="text-rose-500">*</span></label>
-                <select
-                  value={declarationType}
-                  onChange={(e) => setDeclarationType(e.target.value)}
-                  className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 font-inter text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200"
-                >
-                  {['New', 'Revision', 'Cancellation', 'Transfer'].map((t) => <option key={t}>{t}</option>)}
-                </select>
-              </div>
+
+              {/* Declaration Type — Combobox */}
+              <Combobox
+                label="Declaration Type"
+                placeholder="Select type"
+                searchPlaceholder="Search type..."
+                options={DECLARATION_TYPES}
+                value={declarationType}
+                onChange={setDeclarationType}
+                required
+              />
+
               <Field label="ARP Number" placeholder="Assessment Roll of Property #" value={arpNumber} onChange={setArpNumber} />
               <Field label="Tax Year" placeholder="e.g. 2024" value={taxYear} onChange={setTaxYear} required />
             </div>
@@ -120,15 +221,44 @@ export default function NewTaxDeclarationPage() {
           {/* Owner Information */}
           <Section icon={<User className="h-5 w-5 text-[#00154A]" />} title="Owner Information">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Owner / Taxpayer Name" placeholder="Last, First Middle" value={ownerName} onChange={setOwnerName} required />
-              <Field label="Tax Identification Number (TIN)" placeholder="e.g. 123-456-789" value={tin} onChange={setTin} />
+
+              {/* Taxpayer search — the primary combobox for this module */}
+              <div className="sm:col-span-2">
+                <Combobox
+                  label="Owner / Taxpayer"
+                  placeholder={loading ? 'Loading taxpayers...' : 'Select or search taxpayer'}
+                  searchPlaceholder="Type name or TIN to search..."
+                  options={taxpayerOptions}
+                  value={taxpayerId}
+                  onChange={setTaxpayerId}
+                  required
+                  disabled={loading}
+                />
+                <p className="font-inter mt-1 text-xs text-slate-400">
+                  Select an existing taxpayer or{' '}
+                  <button
+                    type="button"
+                    className="text-blue-600 underline-offset-2 hover:underline"
+                    onClick={() => router.push('/taxpayers?action=new')}
+                  >
+                    register a new one
+                  </button>
+                  .
+                </p>
+              </div>
+
+              <Field label="Tax Identification Number (TIN)" placeholder="Auto-filled from taxpayer" value={tin} onChange={setTin} />
               <div className="sm:col-span-2">
                 <Field label="Owner Address" placeholder="Complete address of owner" value={ownerAddress} onChange={setOwnerAddress} required />
               </div>
+
+              {/* Owner Type — toggle buttons (3 options, no search needed) */}
               <div>
-                <label className="font-inter text-xs font-medium text-slate-600">Owner Type <span className="text-rose-500">*</span></label>
+                <label className="font-inter text-xs font-medium text-slate-600">
+                  Owner Type <span className="text-rose-500">*</span>
+                </label>
                 <div className="mt-1 flex gap-2">
-                  {['Individual', 'Corporation', 'Government'].map((t) => (
+                  {(['Individual', 'Corporation', 'Government'] as const).map((t) => (
                     <button
                       key={t}
                       type="button"
@@ -146,23 +276,28 @@ export default function NewTaxDeclarationPage() {
           {/* Property Location */}
           <Section icon={<MapPin className="h-5 w-5 text-[#00154A]" />} title="Property Location">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* Municipality — fixed, read-only */}
               <div>
-                <label className="font-inter text-xs font-medium text-slate-600">Municipality <span className="text-rose-500">*</span></label>
+                <label className="font-inter text-xs font-medium text-slate-600">
+                  Municipality <span className="text-rose-500">*</span>
+                </label>
                 <div className="mt-1 flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
                   <span className="font-inter text-sm text-slate-500">Sta. Rita, Samar</span>
                 </div>
               </div>
-              <div>
-                <label className="font-inter text-xs font-medium text-slate-600">Barangay <span className="text-rose-500">*</span></label>
-                <select
-                  value={barangay}
-                  onChange={(e) => setBarangay(e.target.value)}
-                  className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 font-inter text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200"
-                >
-                  <option value="">Select Barangay</option>
-                  {barangays.map((b) => <option key={b}>{b}</option>)}
-                </select>
-              </div>
+
+              {/* Barangay — Combobox */}
+              <Combobox
+                label="Barangay"
+                placeholder={loading ? 'Loading barangays...' : 'Select barangay'}
+                searchPlaceholder="Search barangay..."
+                options={barangayOptions}
+                value={barangayId}
+                onChange={setBarangayId}
+                required
+                disabled={loading}
+              />
+
               <Field label="Street / Road" placeholder="Street or road name" value={street} onChange={setStreet} />
               <Field label="Lot Number" placeholder="e.g. Lot 12" value={lotNumber} onChange={setLotNumber} />
               <Field label="Block Number" placeholder="e.g. Block 5" value={blockNumber} onChange={setBlockNumber} />
@@ -173,16 +308,18 @@ export default function NewTaxDeclarationPage() {
           {/* Land Details */}
           <Section icon={<Layers className="h-5 w-5 text-[#00154A]" />} title="Land Details">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="font-inter text-xs font-medium text-slate-600">Classification <span className="text-rose-500">*</span></label>
-                <select
-                  value={classification}
-                  onChange={(e) => setClassification(e.target.value)}
-                  className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 font-inter text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200"
-                >
-                  {['Residential', 'Commercial', 'Agricultural', 'Industrial', 'Special', 'Timberland', 'Mineral'].map((c) => <option key={c}>{c}</option>)}
-                </select>
-              </div>
+
+              {/* Classification — Combobox */}
+              <Combobox
+                label="Classification"
+                placeholder="Select classification"
+                searchPlaceholder="Search classification..."
+                options={CLASSIFICATIONS}
+                value={classification}
+                onChange={setClassification}
+                required
+              />
+
               <Field label="Actual Use" placeholder="e.g. Single-Family Dwelling" value={actualUse} onChange={setActualUse} required />
               <Field label="Land Area (sqm)" placeholder="e.g. 250.00" value={landArea} onChange={setLandArea} required />
               <Field label="Unit Value (₱ per sqm)" placeholder="e.g. 5,000.00" value={landUnitValue} onChange={setLandUnitValue} required />
@@ -195,19 +332,19 @@ export default function NewTaxDeclarationPage() {
           {/* Building / Improvement Details */}
           <Section icon={<Home className="h-5 w-5 text-[#00154A]" />} title="Building / Improvement Details">
             <p className="font-inter mb-4 text-xs text-slate-400">Leave blank if land only.</p>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <Field label="Kind of Building" placeholder="e.g. Single Detached, Apartment" value={buildingKind} onChange={setBuildingKind} />
-              <div>
-                <label className="font-inter text-xs font-medium text-slate-600">Structural Type</label>
-                <select
-                  value={structuralType}
-                  onChange={(e) => setStructuralType(e.target.value)}
-                  className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 font-inter text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200"
-                >
-                  <option value="">Select type</option>
-                  {['Type I – Wood', 'Type II – Mixed', 'Type III – Masonry/Steel', 'Type IV – Steel/RC', 'Type V – RC'].map((t) => <option key={t}>{t}</option>)}
-                </select>
-              </div>
+
+              {/* Structural Type — Combobox */}
+              <Combobox
+                label="Structural Type"
+                placeholder="Select structural type"
+                searchPlaceholder="Search structural type..."
+                options={STRUCTURAL_TYPES}
+                value={structuralType}
+                onChange={setStructuralType}
+              />
+
               <Field label="Floor Area (sqm)" placeholder="e.g. 120.00" value={floorArea} onChange={setFloorArea} />
               <Field label="Year Built" placeholder="e.g. 2010" value={yearBuilt} onChange={setYearBuilt} />
               <Field label="Building Market Value (₱)" placeholder="e.g. 1,200,000.00" value={bldgMarketValue} onChange={setBldgMarketValue} />
@@ -221,7 +358,9 @@ export default function NewTaxDeclarationPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Year of Effectivity" placeholder="e.g. 2024" value={effectivityYear} onChange={setEffectivityYear} required />
               <div>
-                <label className="font-inter text-xs font-medium text-slate-600">Quarter <span className="text-rose-500">*</span></label>
+                <label className="font-inter text-xs font-medium text-slate-600">
+                  Quarter <span className="text-rose-500">*</span>
+                </label>
                 <select
                   value={effectivityQuarter}
                   onChange={(e) => setEffectivityQuarter(e.target.value)}
@@ -232,14 +371,16 @@ export default function NewTaxDeclarationPage() {
               </div>
             </div>
             <div className="mt-6 rounded-md border border-gray-200 bg-gray-50 p-4">
-              <h3 className="font-inter mb-3 text-xs font-semibold uppercase tracking-wide text-[#595a5d]">Total Valuation Summary</h3>
+              <h3 className="font-inter mb-3 text-xs font-semibold uppercase tracking-wide text-[#595a5d]">
+                Total Valuation Summary
+              </h3>
               <div className="space-y-2">
-                <ValuationRow label="Land Market Value" value={landMarketValue ? `₱${landMarketValue}` : '—'} />
-                <ValuationRow label="Building Market Value" value={bldgMarketValue ? `₱${bldgMarketValue}` : '—'} />
-                <ValuationRow label="Land Assessed Value" value={landAssessedValue ? `₱${landAssessedValue}` : '—'} />
+                <ValuationRow label="Land Market Value"     value={landMarketValue  ? `₱${landMarketValue}` : '—'} />
+                <ValuationRow label="Building Market Value" value={bldgMarketValue  ? `₱${bldgMarketValue}` : '—'} />
+                <ValuationRow label="Land Assessed Value"   value={landAssessedValue ? `₱${landAssessedValue}` : '—'} />
                 <ValuationRow label="Building Assessed Value" value={bldgAssessedValue ? `₱${bldgAssessedValue}` : '—'} />
                 <div className="border-t border-gray-200 pt-2">
-                  <ValuationRow label="Total Market Value" value="—" bold />
+                  <ValuationRow label="Total Market Value"   value="—" bold />
                   <ValuationRow label="Total Assessed Value" value="—" bold />
                 </div>
               </div>
@@ -254,13 +395,13 @@ export default function NewTaxDeclarationPage() {
             <h2 className="font-inter text-sm font-semibold text-[#848794]">Declaration Summary</h2>
             <p className="font-inter mt-1 text-xs text-slate-400">Fields marked with * are required.</p>
             <div className="mt-4 space-y-3">
-              <SummaryRow label="TD Number" value={tdNumber || '(Required)'} />
-              <SummaryRow label="Owner" value={ownerName || '(Required)'} />
-              <SummaryRow label="Barangay" value={barangay || '(Required)'} />
+              <SummaryRow label="TD Number"      value={tdNumber               || '(Required)'} />
+              <SummaryRow label="Owner"          value={selectedTaxpayerLabel || '(Required)'} />
+              <SummaryRow label="Barangay"       value={selectedBarangayLabel || '(Required)'} />
               <SummaryRow label="Classification" value={classification} />
-              <SummaryRow label="Tax Year" value={taxYear || '(Required)'} />
-              <SummaryRow label="Type" value={declarationType} />
-              <SummaryRow label="Effectivity" value={`${effectivityQuarter} Qtr ${effectivityYear}`} />
+              <SummaryRow label="Tax Year"       value={taxYear               || '(Required)'} />
+              <SummaryRow label="Type"           value={declarationType} />
+              <SummaryRow label="Effectivity"    value={`${effectivityQuarter} Qtr ${effectivityYear}`} />
             </div>
           </section>
 
@@ -269,11 +410,11 @@ export default function NewTaxDeclarationPage() {
             <div className="mt-3 space-y-2 font-inter text-xs text-slate-500">
               {[
                 ['Residential', '20%'],
-                ['Commercial', '40–50%'],
-                ['Agricultural', '40%'],
-                ['Industrial', '50%'],
-                ['Special', '10–30%'],
-                ['Timberland', '20%'],
+                ['Commercial',  '40–50%'],
+                ['Agricultural','40%'],
+                ['Industrial',  '50%'],
+                ['Special',     '10–30%'],
+                ['Timberland',  '20%'],
               ].map(([cls, lvl]) => (
                 <div key={cls} className="flex justify-between">
                   <span>{cls}</span>
@@ -294,7 +435,7 @@ export default function NewTaxDeclarationPage() {
                 'Valid Government-issued ID',
               ].map((doc) => (
                 <li key={doc} className="flex items-start gap-2">
-                  <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400"></span>
+                  <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400" />
                   {doc}
                 </li>
               ))}
@@ -305,6 +446,8 @@ export default function NewTaxDeclarationPage() {
     </div>
   );
 }
+
+// ── Sub-components ─────────────────────────────────────────────────────────────
 
 function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (

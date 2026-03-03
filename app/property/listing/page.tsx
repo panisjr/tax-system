@@ -3,12 +3,27 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Search, Plus, Eye, Pencil, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
 
-const barangays = [
+const CLASS_OPTIONS: ComboboxOption[] = [
+  { value: 'Residential',  label: 'Residential' },
+  { value: 'Commercial',   label: 'Commercial' },
+  { value: 'Agricultural', label: 'Agricultural' },
+  { value: 'Industrial',   label: 'Industrial' },
+  { value: 'Special',      label: 'Special' },
+];
+
+const BARANGAY_OPTIONS: ComboboxOption[] = [
   'Bacubac', 'Bagacay', 'Balonga-as', 'Barayong', 'Binalayan', 'Buenavista',
   'Cagbigti', 'Calunangan', 'Caluwayan', 'Camumucmuc', 'Capacuhan', 'Corocawayan',
   'Cotmon', 'Dao', 'Flores', 'Gabas', 'Ilag', 'Pinamorotan', 'Poblacion',
   'San Jose', 'Tagalag', 'Urdaneta', 'Zaragoza',
+].map((b) => ({ value: b, label: b }));
+
+const STATUS_OPTIONS: ComboboxOption[] = [
+  { value: 'Active',    label: 'Active' },
+  { value: 'Cancelled', label: 'Cancelled' },
+  { value: 'Revised',   label: 'Revised' },
 ];
 
 // TODO: fetch from Supabase — query tax_declarations joined with taxpayers, properties, barangays
@@ -111,32 +126,36 @@ export default function PropertyListingPage() {
               className="font-inter w-full rounded-sm border border-gray-200 py-2 pl-8 pr-3 text-xs text-[#595a5d] focus:outline-none focus:border-slate-400"
             />
           </div>
-          <select
-            value={classFilter}
-            onChange={(e) => setClassFilter(e.target.value)}
-            className="font-inter rounded-sm border border-gray-200 px-3 py-2 text-xs text-slate-500 focus:outline-none focus:border-slate-400"
-          >
-            <option value="">All Classifications</option>
-            {['Residential', 'Commercial', 'Agricultural', 'Industrial', 'Special'].map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-          <select
-            value={barangayFilter}
-            onChange={(e) => setBarangayFilter(e.target.value)}
-            className="font-inter rounded-sm border border-gray-200 px-3 py-2 text-xs text-slate-500 focus:outline-none focus:border-slate-400"
-          >
-            <option value="">All Barangays</option>
-            {barangays.map((b) => <option key={b} value={b}>{b}</option>)}
-          </select>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="font-inter rounded-sm border border-gray-200 px-3 py-2 text-xs text-slate-500 focus:outline-none focus:border-slate-400"
-          >
-            <option value="">All Statuses</option>
-            {['Active', 'Cancelled', 'Revised'].map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          <div className="min-w-[160px]">
+            <Combobox
+              placeholder="All Classifications"
+              searchPlaceholder="Search classification..."
+              options={CLASS_OPTIONS}
+              value={classFilter}
+              onChange={setClassFilter}
+              triggerClassName="rounded-sm text-xs py-1.5 text-slate-500"
+            />
+          </div>
+          <div className="min-w-[160px]">
+            <Combobox
+              placeholder="All Barangays"
+              searchPlaceholder="Search barangay..."
+              options={BARANGAY_OPTIONS}
+              value={barangayFilter}
+              onChange={setBarangayFilter}
+              triggerClassName="rounded-sm text-xs py-1.5 text-slate-500"
+            />
+          </div>
+          <div className="min-w-[140px]">
+            <Combobox
+              placeholder="All Statuses"
+              searchPlaceholder="Search status..."
+              options={STATUS_OPTIONS}
+              value={statusFilter}
+              onChange={setStatusFilter}
+              triggerClassName="rounded-sm text-xs py-1.5 text-slate-500"
+            />
+          </div>
         </div>
       </div>
 
