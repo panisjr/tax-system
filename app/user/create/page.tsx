@@ -1,6 +1,5 @@
 "use client";
 
-
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
@@ -73,7 +72,7 @@ const initialFormState: FormState = {
 };
 
 export default function CreateUserPage() {
-    const router = useRouter();
+  const router = useRouter();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showTempPassword, setShowTempPassword] = useState(false);
@@ -127,7 +126,6 @@ export default function CreateUserPage() {
 
   const isBirthdateValid = useMemo(() => {
     if (!form.birthdate) return true;
-    // ensure the selected date is a valid Date object
     return !isNaN(form.birthdate.getTime());
   }, [form.birthdate]);
 
@@ -135,11 +133,38 @@ export default function CreateUserPage() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
+    // 1. Basic empty fields check
     if (missingRequiredFields) {
       setErrorMessage("Please fill out all required fields.");
       return;
     }
 
+    // 2. Email Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      setErrorMessage("Please enter a valid email address (e.g., name@example.com).");
+      return;
+    }
+
+    // 3. Phone Validation (Allows 09... or +639... formats)
+    const strippedPhone = form.phone.replace(/[\s-]/g, ""); // strip spaces and dashes for checking
+    const phoneRegex = /^(?:\+63|63|0)9\d{9}$/; 
+    if (!phoneRegex.test(strippedPhone)) {
+      setErrorMessage("Please enter a valid 11-digit mobile number (e.g., 09171234567 or +63 917 123 4567).");
+      return;
+    }
+
+    // 4. Password Security Rules
+    if (form.password.length < 8) {
+      setErrorMessage("Password must be at least 8 characters long.");
+      return;
+    }
+    if (!/[A-Z]/.test(form.password) || !/[0-9]/.test(form.password)) {
+      setErrorMessage("Password must contain at least one uppercase letter and one number.");
+      return;
+    }
+
+    // 5. Password Match Check
     if (form.temp_pass !== form.password) {
       setErrorMessage("Temporary password and password must match.");
       return;
@@ -362,6 +387,8 @@ export default function CreateUserPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field
                 label="Email"
+                type="email"
+                placeholder="name@example.com"
                 required
                 value={form.email}
                 leftIcon={<Mail className="h-4 w-4 text-slate-400" />}
@@ -369,10 +396,16 @@ export default function CreateUserPage() {
               />
               <Field
                 label="Phone"
+                type="tel"
+                placeholder="+63 917 123 4567"
                 required
                 value={form.phone}
                 leftIcon={<Phone className="h-4 w-4 text-slate-400" />}
-                onChange={(v) => updateField("phone", v)}
+                onChange={(v) => {
+                  // Prevents letters from being typed; allows numbers, spaces, and +
+                  const sanitized = v.replace(/[^0-9+\s-]/g, "");
+                  updateField("phone", sanitized);
+                }}
               />
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
@@ -510,6 +543,7 @@ export default function CreateUserPage() {
 
 function Field({
   label,
+  type = "text",
   placeholder,
   leftIcon,
   value,
@@ -518,6 +552,7 @@ function Field({
   readOnly = false,
 }: {
   label: string;
+  type?: "text" | "email" | "tel";
   placeholder?: string;
   leftIcon?: React.ReactNode;
   value: string;
@@ -534,6 +569,7 @@ function Field({
       <div className="mt-1 flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-slate-200">
         {leftIcon}
         <input
+          type={type}
           value={value}
           readOnly={readOnly}
           onChange={(event) => onChange(event.target.value)}
@@ -642,7 +678,6 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-// dropdown component for selecting suffix using accordion
 function SuffixDropdown({
   value,
   onChange,
