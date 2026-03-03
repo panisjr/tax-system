@@ -97,7 +97,7 @@ export default function PaymentChannelsPage() {
                   Bank Name <span className="text-rose-500">*</span>
                 </label>
                 <Combobox items={bankOptions}>
-                  <ComboboxInput placeholder="Select a framework" />
+                  <ComboboxInput placeholder="Select Bank" />
                   <ComboboxContent>
                     <ComboboxEmpty>No items found.</ComboboxEmpty>
                     <ComboboxList>
