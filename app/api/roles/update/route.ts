@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 type UpdateRolePayload = {
   id: string | number;
   name: string;
+  permission_id?: number;
   permission_ids?: number[];
 };
 
@@ -13,11 +14,13 @@ export async function POST(request: Request) {
 
     const id = body.id;
     const name = body.name?.trim() ?? "";
-    const permissionIds: number[] = Array.isArray(body.permission_ids)
-      ? body.permission_ids
-          .map((n) => Number(n))
-          .filter((n) => Number.isInteger(n) && n > 0)
-      : [];
+    const permissionIdFromArray =
+      Array.isArray(body.permission_ids) && body.permission_ids.length > 0
+        ? Number(body.permission_ids[0])
+        : null;
+    const permissionId = Number(
+      permissionIdFromArray ?? body.permission_id ?? NaN,
+    );
 
     if (!id) {
       return NextResponse.json({ error: "id is required." }, { status: 400 });
@@ -27,9 +30,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "name is required." }, { status: 400 });
     }
 
-    if (permissionIds.length === 0) {
+    if (!Number.isInteger(permissionId) || permissionId <= 0) {
       return NextResponse.json(
-        { error: "At least one permission is required." },
+        { error: "permission_id is required." },
         { status: 400 },
       );
     }
@@ -45,35 +48,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Role not found." }, { status: 404 });
     }
 
-    // update role name only
+    // verify permission exists
+    const { data: permission, error: permissionError } = await supabaseAdmin
+      .from("permissions")
+      .select("id")
+      .eq("id", permissionId)
+      .single();
+
+    if (permissionError || !permission) {
+      return NextResponse.json(
+        { error: "Selected permission is invalid." },
+        { status: 400 },
+      );
+    }
+
+    // update role
     const { data, error } = await supabaseAdmin
       .from("roles")
-      .update({ name })
+      .update({ name, permission_id: permissionId })
       .eq("id", id)
       .select("*")
       .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    // 🔥 Replace role permissions
-    await supabaseAdmin.from("role_permissions").delete().eq("role_id", id);
-
-    const inserts = permissionIds.map((pid) => ({
-      role_id: id,
-      permission_id: pid,
-    }));
-
-    const { error: insertError } = await supabaseAdmin
-      .from("role_permissions")
-      .insert(inserts);
-
-    if (insertError) {
-      return NextResponse.json(
-        { error: insertError.message },
-        { status: 400 },
-      );
     }
 
     return NextResponse.json({

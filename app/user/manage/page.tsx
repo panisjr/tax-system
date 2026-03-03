@@ -33,15 +33,20 @@ type ApiPermission = {
 type ApiRole = {
   id?: string | number;
   name?: string;
+  permission_id?: number;
   created_at?: string;
-  role_permissions?: {
-    permission_id?: number;
-    permissions?: {
-      id?: number;
-      name?: string;
-      created_at?: string;
-    } | null;
-  }[];
+  permissions?:
+    | {
+        id?: number;
+        name?: string;
+        created_at?: string;
+      }
+    | {
+        id?: number;
+        name?: string;
+        created_at?: string;
+      }[]
+    | null;
 };
 
 type ListedRole = {
@@ -49,7 +54,7 @@ type ListedRole = {
   id: string | number;
   name: string;
   permissionName: string;
-  permissionIds: number[];
+  permissionId: number | null;
   createdAt: string;
 };
 
@@ -81,17 +86,18 @@ export default function ManageRolePage() {
       ? rawName.trim()
       : `Role ${index + 1}`;
 
-  const permissionIds =
-    role.role_permissions?.map((rp) => rp.permission_id ?? 0)
-      .filter((id) => Number.isInteger(id) && id > 0) ?? [];
+  const permissionId =
+    Number.isInteger(role.permission_id) && Number(role.permission_id) > 0
+      ? Number(role.permission_id)
+      : null;
 
-  const permissionName =
-    role.role_permissions && role.role_permissions.length > 0
-      ? role.role_permissions
-          .map((rp) => rp.permissions?.name)
-          .filter(Boolean)
-          .join(", ")
-      : "Unassigned";
+  const permissionsValue = role.permissions ?? null;
+  const permissionName = Array.isArray(permissionsValue)
+    ? permissionsValue
+        .map((p) => p?.name)
+        .filter(Boolean)
+        .join(", ") || "Unassigned"
+    : permissionsValue?.name?.trim() || "Unassigned";
 
   const createdAt = role.created_at
     ? new Date(role.created_at).toLocaleDateString()
@@ -104,7 +110,7 @@ export default function ManageRolePage() {
     id: roleIdentifier,
     name,
     permissionName,
-    permissionIds,
+    permissionId,
     createdAt,
   };
 };
@@ -324,31 +330,26 @@ export default function ManageRolePage() {
   };
 
   const handleEditRole = async (role: ListedRole) => {
-    // Track currently selected permissions
-    const selectedPermissions = role.permissionIds ?? [];
+    const selectedPermissionId = role.permissionId ?? null;
     
     const result = await Swal.fire({
       html: `
       <div class="text-left">
         <h2 class="font-lexend text-lg font-semibold text-[#0F172A] mb-2">Edit Role</h2>
-        <p class="font-inter text-sm text-slate-500 mb-4">Update role permissions below.</p>
+        <p class="font-inter text-sm text-slate-500 mb-4">Update role permission below.</p>
         <label class="font-inter block text-xs font-medium text-slate-600 mb-1">Role Name</label>
         <input
           class="w-full rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-slate-700 outline-none"
           value="${role.name}"
           disabled
         />
-        <label class="font-inter block text-xs font-medium text-slate-600 mb-1 mt-3">Permissions</label>
+        <label class="font-inter block text-xs font-medium text-slate-600 mb-1 mt-3">Permission</label>
         <div class="space-y-2">
-          <label class="inline-flex items-center gap-2">
-            <input type="checkbox" name="permission" value="" ${selectedPermissions.length === 0 ? "checked" : ""} />
-            <span class="text-xs text-slate-600">Unassigned</span>
-          </label>
           ${permissions
             .map(
               (p) => `
                 <label class="inline-flex items-center gap-2">
-                  <input type="checkbox" name="permission" value="${p.id}" ${selectedPermissions.includes(p.id) ? "checked" : ""} />
+                  <input type="radio" name="permission" value="${p.id}" ${selectedPermissionId === p.id ? "checked" : ""} />
                   <span class="text-xs text-slate-600">${p.name}</span>
                 </label>
               `,
@@ -371,18 +372,13 @@ export default function ManageRolePage() {
           "border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition mr-2",
       },
       preConfirm: async () => {
-        const checkedInputs = Array.from(
-          document.querySelectorAll<HTMLInputElement>(
-            'input[name="permission"]:checked',
-          ),
+        const checked = document.querySelector<HTMLInputElement>(
+          'input[name="permission"]:checked',
         );
-        const permissionIds = checkedInputs
-          .map((input) => input.value)
-          .filter((v) => v)
-          .map((v) => Number(v));
+        const permissionId = Number(checked?.value ?? "");
 
-        if (permissionIds.length === 0) {
-          Swal.showValidationMessage("At least one permission is required.");
+        if (!Number.isInteger(permissionId) || permissionId <= 0) {
+          Swal.showValidationMessage("Permission is required.");
           return null;
         }
 
@@ -393,7 +389,7 @@ export default function ManageRolePage() {
             body: JSON.stringify({
               id: role.id,
               name: role.name,
-              permission_ids: permissionIds,
+              permission_id: permissionId,
             }),
           });
           const data = (await response.json()) as { error?: string };
@@ -401,7 +397,7 @@ export default function ManageRolePage() {
             Swal.showValidationMessage(data.error ?? "Failed to update role.");
             return null;
           }
-          return permissionIds;
+          return permissionId;
         } catch {
           Swal.showValidationMessage("Unable to connect to server.");
           return null;

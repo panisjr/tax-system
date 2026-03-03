@@ -10,17 +10,17 @@ export async function GET(request: Request) {
     }
 
     const { data, error } = await supabaseAdmin
-      .from('role_permissions')
+      .from('roles')
       .select('permission_id')
-      .eq('role_id', roleId as string);
+      .eq('id', roleId as string)
+      .single();
 
     if (error) {
-      return NextResponse.json({ permission_ids: [], error: error.message }, { status: 400 });
+      return NextResponse.json({ permission_id: null, error: error.message }, { status: 400 });
     }
 
-    const ids = (data ?? []).map((r: any) => r.permission_id).filter(Boolean);
-    return NextResponse.json({ permission_ids: ids });
+    return NextResponse.json({ permission_id: data?.permission_id ?? null });
   } catch {
-    return NextResponse.json({ permission_ids: [], error: 'Unable to load permissions.' }, { status: 500 });
+    return NextResponse.json({ permission_id: null, error: 'Unable to load permissions.' }, { status: 500 });
   }
 }
