@@ -84,7 +84,7 @@ export default function IssueReceiptPage() {
                   className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 placeholder:text-slate-400 text-slate-900"
                 />
               </div>
-              <button className="font-inter h-[38px] px-6 rounded bg-[#00154A] text-white text-xs font-medium hover:bg-blue-900 transition-colors">
+              <button className="font-inter h-9.5 px-6 rounded bg-[#00154A] text-white text-xs font-medium hover:bg-blue-900 transition-colors">
                 Search
               </button>
             </div>
