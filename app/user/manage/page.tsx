@@ -435,7 +435,7 @@ export default function ManageRolePage() {
         error?: string;
         message?: string;
       };
-
+      
       if (!response.ok) {
         toast.error(data.error ?? "Failed to delete role.");
         return;

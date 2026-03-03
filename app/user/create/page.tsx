@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -99,7 +99,7 @@ const initialFormState: FormState = {
   status: true,
 };
 
-export default function CreateUserPage() {
+function CreateUserForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editingEmpID = searchParams.get("empID")?.trim() ?? "";
@@ -499,7 +499,6 @@ export default function CreateUserPage() {
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Suffix
                 </label>
-                {/* FIX 5: Reverted incomplete Combobox back to your working SuffixDropdown */}
                 <SuffixDropdown
                   value={form.suffix}
                   onChange={(v) => updateField("suffix", v)}
@@ -516,7 +515,7 @@ export default function CreateUserPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="mt-1 w-full justify-start text-left font-normal"
+                      className="mt-1 w-full justify-start text-left font-normal cursor-pointer"
                     >
                       <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
                       {form.birthdate ? (
@@ -883,6 +882,14 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+export default function CreateUserPage() {
+  return (
+    <Suspense fallback={<div className="p-10 text-slate-500">Loading form...</div>}>
+      <CreateUserForm />
+    </Suspense>
+  );
+}
+
 function SuffixDropdown({
   value,
   onChange,
@@ -899,13 +906,13 @@ function SuffixDropdown({
       collapsible
       value={open ? "suffix" : undefined}
       onValueChange={(v) => setOpen(!!v)}
-      className="mt-1"
+      className="mt-1 relative"
     >
       <AccordionItem value="suffix" className="border-none">
         <AccordionTrigger className="w-full flex items-center justify-between gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 focus-within:ring-2 focus-within:ring-slate-200 hover:no-underline">
           <span className="font-inter font-normal">{value || "Select suffix"}</span>
         </AccordionTrigger>
-        <AccordionContent className="mt-1 border border-gray-200 rounded-md bg-white shadow-sm absolute z-10 w-full md:w-auto min-w-[120px]">
+        <AccordionContent className="mt-1 border border-gray-200 rounded-md bg-white shadow-sm absolute z-10 w-full md:w-auto min-w-120px">
           <div className="flex flex-col gap-1 p-1">
             {options.map((opt) => (
               <button
