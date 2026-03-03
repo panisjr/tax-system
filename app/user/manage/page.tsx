@@ -10,7 +10,6 @@ import {
   KeyRound,
   Pencil,
   Trash2,
-  Eye,
 } from "lucide-react";
 
 type ApiUser = {
@@ -33,7 +32,6 @@ type ApiPermission = {
 type ApiRole = {
   id?: string | number;
   name?: string;
-  permission_id?: number;
   created_at?: string;
   permissions?:
     | {
@@ -80,40 +78,50 @@ export default function ManageRolePage() {
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
 
   const mapRole = (role: ApiRole, index: number): ListedRole => {
-  const rawName = role.name ?? "";
-  const name =
-    typeof rawName === "string" && rawName.trim().length > 0
-      ? rawName.trim()
-      : `Role ${index + 1}`;
+    const rawName = role.name ?? "";
+    const name =
+      typeof rawName === "string" && rawName.trim().length > 0
+        ? rawName.trim()
+        : `Role ${index + 1}`;
 
-  const permissionId =
-    Number.isInteger(role.permission_id) && Number(role.permission_id) > 0
-      ? Number(role.permission_id)
-      : null;
+    const permissionsValue = role.permissions ?? null;
 
-  const permissionsValue = role.permissions ?? null;
-  const permissionName = Array.isArray(permissionsValue)
-    ? permissionsValue
-        .map((p) => p?.name)
-        .filter(Boolean)
-        .join(", ") || "Unassigned"
-    : permissionsValue?.name?.trim() || "Unassigned";
+    // Extract permission ID and Name directly from the nested permissions object/array
+    let permissionId: number | null = null;
+    let permissionName = "Unassigned";
 
-  const createdAt = role.created_at
-    ? new Date(role.created_at).toLocaleDateString()
-    : "-";
+    if (Array.isArray(permissionsValue)) {
+      // If permissions is an array, grab the ID and names from it
+      permissionId =
+        permissionsValue.length > 0 && permissionsValue[0]?.id
+          ? Number(permissionsValue[0].id)
+          : null;
+      permissionName =
+        permissionsValue
+          .map((p) => p?.name)
+          .filter(Boolean)
+          .join(", ") || "Unassigned";
+    } else if (permissionsValue) {
+      // If permissions is a single object, grab the ID and name directly
+      permissionId = permissionsValue.id ? Number(permissionsValue.id) : null;
+      permissionName = permissionsValue.name?.trim() || "Unassigned";
+    }
 
-  const roleIdentifier = role.id ?? name;
+    const createdAt = role.created_at
+      ? new Date(role.created_at).toLocaleDateString()
+      : "-";
 
-  return {
-    key: String(roleIdentifier),
-    id: roleIdentifier,
-    name,
-    permissionName,
-    permissionId,
-    createdAt,
+    const roleIdentifier = role.id ?? name;
+
+    return {
+      key: String(roleIdentifier),
+      id: roleIdentifier,
+      name,
+      permissionName,
+      permissionId,
+      createdAt,
+    };
   };
-};
 
   const fetchRoles = async () => {
     setIsLoadingRoles(true);
@@ -218,7 +226,8 @@ export default function ManageRolePage() {
     return grouped;
   }, [users]);
 
-  const handleBack = () => router.push("/user"); // adjust if you have a settings/admin route
+  const handleBack = () => router.push("/user");
+
   const handleAddRole = async () => {
     const result = await Swal.fire({
       html: `
@@ -287,7 +296,9 @@ export default function ManageRolePage() {
             },
             body: JSON.stringify({
               name: roleName,
-              permission_id: permissionId,
+              permission: {
+                id: permissionId,
+              },
             }),
           });
 
@@ -331,7 +342,7 @@ export default function ManageRolePage() {
 
   const handleEditRole = async (role: ListedRole) => {
     const selectedPermissionId = role.permissionId ?? null;
-    
+
     const result = await Swal.fire({
       html: `
       <div class="text-left">
@@ -389,7 +400,9 @@ export default function ManageRolePage() {
             body: JSON.stringify({
               id: role.id,
               name: role.name,
-              permission_id: permissionId,
+              permission: {
+                id: permissionId,
+              },
             }),
           });
           const data = (await response.json()) as { error?: string };
@@ -426,10 +439,6 @@ export default function ManageRolePage() {
           "bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition",
       },
     });
-  };
-
-  const handleViewRole = (roleName: string) => {
-    router.push(`/roles/view?name=${encodeURIComponent(roleName)}`);
   };
 
   const handleViewRoleUsers = async (roleName: string) => {
@@ -477,15 +486,10 @@ export default function ManageRolePage() {
   };
 
   const handleDeleteRole = (roleName: string) => {
-    // Replace with a confirm modal + API call
     const ok = window.confirm(
       `Delete role "${roleName}"? This cannot be undone.`,
     );
     if (!ok) return;
-
-    // TODO: call delete API, then refresh
-    // Example:
-    // await fetch(`/api/roles/${encodeURIComponent(roleName)}`, { method: 'DELETE' })
   };
 
   // permission helpers
@@ -562,93 +566,6 @@ export default function ManageRolePage() {
         <div class="text-left">
           <h2 class="font-lexend text-lg font-semibold text-[#0F172A] mb-2">Permission Added</h2>
           <p class="font-inter text-sm text-slate-500">The new permission has been added successfully.</p>
-        </div>
-      `,
-      showConfirmButton: true,
-      confirmButtonText: "OK",
-      buttonsStyling: false,
-      background: "#ffffff",
-      customClass: {
-        popup: "rounded-xl p-6 shadow-lg",
-        confirmButton:
-          "bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition",
-      },
-    });
-  };
-
-  const handleEditPermission = async (perm: ApiPermission) => {
-    const result = await Swal.fire({
-      html: `
-        <div class="text-left">
-          <h2 class="font-lexend text-lg font-semibold text-[#0F172A] mb-2">Edit Permission</h2>
-          <p class="font-inter text-sm text-slate-500 mb-4">Update the permission name below.</p>
-          <label class="font-inter block text-xs font-medium text-slate-600 mb-1">Permission Name</label>
-          <input
-            id="permission-name-input"
-            class="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
-            placeholder="Enter permission name"
-            value="${perm.name ?? ""}"
-          />
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: "Save Changes",
-      cancelButtonText: "Cancel",
-      reverseButtons: true,
-      buttonsStyling: false,
-      background: "#ffffff",
-      customClass: {
-        popup: "rounded-xl p-6 shadow-lg",
-        confirmButton:
-          "bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition",
-        cancelButton:
-          "border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition mr-2",
-      },
-      preConfirm: async () => {
-        const input = document.getElementById(
-          "permission-name-input",
-        ) as HTMLInputElement | null;
-        const permissionName = input?.value?.trim() ?? "";
-
-        if (!permissionName) {
-          Swal.showValidationMessage("Permission name is required.");
-          return null;
-        }
-
-        try {
-          const response = await fetch("/api/permissions/update", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ id: perm.id, name: permissionName }),
-          });
-
-          const data = (await response.json()) as { error?: string };
-          if (!response.ok) {
-            Swal.showValidationMessage(
-              data.error ?? "Failed to update permission.",
-            );
-            return null;
-          }
-
-          return permissionName;
-        } catch {
-          Swal.showValidationMessage("Unable to connect to server.");
-          return null;
-        }
-      },
-    });
-
-    if (!result.isConfirmed) return;
-
-    await fetchPermissions();
-
-    await Swal.fire({
-      html: `
-        <div class="text-left">
-          <h2 class="font-lexend text-lg font-semibold text-[#0F172A] mb-2">Permission Updated</h2>
-          <p class="font-inter text-sm text-slate-500">Changes have been saved.</p>
         </div>
       `,
       showConfirmButton: true,
@@ -784,7 +701,7 @@ export default function ManageRolePage() {
                           className={`font-inter px-3 py-3 text-sm text-slate-600`}
                         >
                           <div className="flex flex-wrap gap-2">
-                            <span className="rounded bg-slate-50 px-2 py-1 text-xs text-slate-600">
+                            <span className="rounded bg-slate-50 px-2 py-1 text-xs text-slate-600 border border-gray-200">
                               {role.permissionName}
                             </span>
                           </div>
@@ -813,15 +730,6 @@ export default function ManageRolePage() {
 
                         <td className="px-3 py-3">
                           <div className="flex justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleViewRole(role.name)}
-                              className={`font-inter inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-gray-50 cursor-pointer`}
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                              View
-                            </button>
-
                             <button
                               type="button"
                               onClick={() => handleEditRole(role)}
