@@ -10,11 +10,9 @@ export default function ConditionalLayout({
 }) {
   const pathname = usePathname();
 
-  // "/" is your login page -> NO sidebar
   if (pathname === '/') {
     return <>{children}</>;
   }
 
-  // everything else -> sidebar
   return <MainLayout>{children}</MainLayout>;
 }

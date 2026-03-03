@@ -1,5 +1,3 @@
-// app/page.tsx
-
 import LoginComponent from '../components/LoginComponent';
 
 export default function HomePage() {

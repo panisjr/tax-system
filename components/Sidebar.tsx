@@ -1,114 +1,84 @@
-'use client';
+"use client";
 
-import { Inter } from 'next/font/google';
-
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  variable: '--font-inter',
-});
-
-import { Lexend } from 'next/font/google';
-
-const lexend = Lexend({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  variable: '--font-lexend',
-});
-
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import Image from 'next/image';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import Image from "next/image";
 import {
   LayoutDashboard,
   Building2,
   Users,
+  Wallet,
   FileText,
-  CreditCard,
   MapPin,
   Bell,
-  FolderOpen,
+  Folder,
   UserCog,
-} from 'lucide-react';
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from '@/components/ui/accordion';
+} from "lucide-react";
 
-const menuItems = [
-  { name: 'Dashboard', path: '#', icon: LayoutDashboard },
+type SubmenuItem = {
+  name: string;
+  path: string;
+};
+
+type MenuItem = {
+  name: string;
+  path: string;
+  icon: React.ComponentType<{ className?: string }>;
+  subtitle?: string;
+  submenu?: SubmenuItem[];
+};
+
+const menuItems: MenuItem[] = [
+  { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   {
-    name: 'Property Registry',
-    path: '#',
+    name: "Property Registry",
+    path: "/property/registry",
     icon: Building2,
-    subtitle: '(Assessor)',
-    submenu: [
-      { name: 'Add Property', path: '#' },
-      { name: 'View Properties', path: '#' },
-      { name: 'Edit Property', path: '#' },
-    ],
+    subtitle: "(Assessor)",
   },
+  { name: "Taxpayer Records", path: "/taxpayers", icon: Users },
   {
-    name: 'Taxpayer Records',
-    path: '#',
-    icon: Users,
-    submenu: [
-      { name: 'Active Taxpayers', path: '#' },
-      { name: 'Inactive Taxpayers', path: '#' },
-      { name: 'New Registration', path: '#' },
-    ],
+    name: "Assessment & Billing",
+    path: "/assessment",
+    icon: Wallet,
+    subtitle: "(Treasurer)",
   },
-  {
-    name: 'Assessment & Billing',
-    path: '#',
-    icon: FileText,
-    subtitle: '(Treasurer)',
-    submenu: [
-      { name: 'Create Assessment', path: '#' },
-      { name: 'Generate Bills', path: '#' },
-      { name: 'View Bills', path: '#' },
-    ],
-  },
-  {
-    name: 'Payments & QR Monitoring',
-    path: '#',
-    icon: CreditCard,
-    submenu: [
-      { name: 'Payment Logs', path: '#' },
-      { name: 'QR Code Status', path: '#' },
-    ],
-  },
-  { name: 'Barangay Performance', path: '#', icon: MapPin },
-  { name: 'Delinquencies & Notices', path: '#', icon: Bell },
-  { name: 'Document Tracking', path: '#', icon: FolderOpen },
-  { name: 'User & Role Management', path: '#', icon: UserCog },
+  { name: "Payments & QR Monitoring", path: "/payments", icon: FileText },
+  { name: "Barangay Performance", path: "/barangay", icon: MapPin },
+  { name: "Delinquencies & Notices", path: "/deliquencies", icon: Bell },
+  { name: "Document Tracking", path: "/document", icon: Folder },
+  { name: "User & Role Management", path: "/user", icon: UserCog },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  isCollapsed: boolean;
+}
+
+export default function Sidebar({ isCollapsed }: SidebarProps) {
   const pathname = usePathname();
 
   return (
     <aside
-      className={`${inter.className} h-screen w-64 bg-white border-r border-gray-200 flex flex-col`}
+      className={`font-inter ${isCollapsed ? "w-20" : "w-64"} shrink-0 h-full bg-white border-r border-gray-200 flex flex-col transition-all duration-200`}
     >
       {/* Header with Logo */}
-      <div className='p-5 border-b border-gray-200'>
-        <div className='flex items-center gap-3 mb-2'>
-          <div className='relative w-12 h-12'>
+      <div className="border-b border-gray-200 px-2 py-3">
+        <div className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"}`}>
+          <div className="relative w-12 h-12 shrink-0">
             <Image
-              src='/img/sta.rita_logo.png'
-              alt='Sta. Rita Logo'
+              src="/img/sta.rita_logo.png"
+              alt="Sta. Rita Logo"
               fill
-              className='object-contain'
+              className="object-contain"
             />
           </div>
-          <div>
-            <h1 className={`${lexend.className} text-lg font-bold text-[#666D7D]`}>
+          <div className={isCollapsed ? "hidden" : "block"}>
+            <h1
+              className={`font-lexend text-lg font-bold text-[#666D7D]`}
+            >
               Sta. Rita, Samar
             </h1>
-            <p className='text-xs text-gray-600'>
+            <p className="font-lexend text-xs text-gray-600">
               Real Property Tax Monitoring
             </p>
           </div>
@@ -116,63 +86,39 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className='flex-1 p-4 max-h-[calc(100vh-140px)] overflow-y-auto'>
-        <Accordion type='single' collapsible>
+      <nav className="flex-1 p-4 max-h-[calc(100vh-140px)] overflow-y-auto">
+        <div>
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const hasSubmenu = item.submenu && item.submenu.length > 0;
 
             return (
-              <div key={item.name}>
-                {hasSubmenu ? (
-                  <AccordionItem value={item.name}>
-                    <AccordionTrigger className='text-[#A0A5B2] hover:text-gray-900 hover:bg-gray-50 px-2 rounded-lg py-3 cursor-pointer overflow-hidden'>
-                      <div className='flex items-center gap-3 flex-1 overflow-hidden'>
-                        <Icon className='w-5 h-5 shrink-0 text-[#00154A]' />
-                        <div className='flex-1 min-w-0 text-left overflow-hidden'>
-                          <div className='text-sm font-medium truncate'>{item.name}</div>
-                          {item.subtitle && (
-                            <div className='text-xs text-gray-500 truncate'>{item.subtitle}</div>
-                          )}
-                        </div>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className='pl-11 pt-0 pb-2'>
-                      <div className='space-y-1'>
-                        {item.submenu?.map((subitem) => (
-                          <Link
-                            key={subitem.name}
-                            href={subitem.path}
-                            className={`flex items-center px-4 py-2 text-sm rounded-lg transition cursor-pointer [text-decoration:none] ${
-                              pathname === subitem.path
-                                ? 'bg-blue-50 text-blue-600 font-medium'
-                                : 'text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900'
-                            }`}
-                          >
-                            {subitem.name}
-                          </Link>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ) : (
-                  <Link
-                    href={item.path}
-                    className='flex items-center gap-3 px-4 py-3 rounded-lg transition text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900 cursor-pointer [text-decoration:none] overflow-hidden'
-                  >
-                    <Icon className='w-5 h-5 shrink-0 text-[#00154A]' />
-                    <div className='flex-1 min-w-0 text-left overflow-hidden'>
-                      <div className='text-sm font-medium truncate'>{item.name}</div>
-                      {item.subtitle && (
-                        <div className='text-xs text-gray-500 truncate'>{item.subtitle}</div>
-                      )}
+              <Link
+                key={item.name}
+                href={item.path}
+                className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"} px-2 py-3 rounded-lg transition cursor-pointer [text-decoration:none] overflow-hidden ${
+                  pathname === item.path
+                    ? "bg-blue-50 text-blue-600 font-medium"
+                    : "text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900 hover:font-semibold"
+                }`}
+                title={item.name}
+              >
+                <Icon className="w-5 h-5 shrink-0 text-[#00154A]" />
+
+                <div className={`flex-1 min-w-0 text-left overflow-hidden ${isCollapsed ? "hidden" : "block"}`}>
+                  <div className="text-sm font-medium truncate">
+                    {item.name}
+                  </div>
+
+                  {item.subtitle && (
+                    <div className="text-xs text-gray-500 truncate">
+                      {item.subtitle}
                     </div>
-                  </Link>
-                )}
-              </div>
+                  )}
+                </div>
+              </Link>
             );
           })}
-        </Accordion>
+        </div>
       </nav>
     </aside>
   );
