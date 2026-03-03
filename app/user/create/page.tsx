@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -83,6 +83,14 @@ const initialFormState: FormState = {
 };
 
 export default function CreateUserPage() {
+  return (
+    <Suspense fallback={null}>
+      <CreateUserPageContent />
+    </Suspense>
+  );
+}
+
+function CreateUserPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editingEmpID = searchParams.get("empID")?.trim() ?? "";
