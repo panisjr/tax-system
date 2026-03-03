@@ -8,6 +8,15 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
+import {
+  Table,
+  TableContainer,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 
 const logs = [
   {
@@ -77,58 +86,32 @@ export default function PaymentsLogsPage() {
             </h2>
           </div>
 
-          <div className="w-full overflow-x-auto">
-            <table className="w-full border-collapse text-xs sm:text-sm">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="font-inter px-2 py-2 sm:px-3 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-500">
-                    OR No.
-                  </th>
-                  <th className="font-inter px-2 py-2 sm:px-3 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-500">
-                    Payer / Account
-                  </th>
-                  <th className="font-inter px-2 py-2 sm:px-3 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-500">
-                    Description
-                  </th>
-                  <th className="font-inter px-2 py-2 sm:px-3 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-500">
-                    Channel
-                  </th>
-                  <th className="font-inter px-2 py-2 sm:px-3 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-500">
-                    Date / Time
-                  </th>
-                  <th className="font-inter px-2 py-2 sm:px-3 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-500">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
+          <TableContainer>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>OR No.</TableHead>
+                  <TableHead>Payer / Account</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Channel</TableHead>
+                  <TableHead>Date / Time</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {logs.map((log, index) => (
-                  <tr key={index} className="border-b border-gray-100">
-                    <td className="font-inter px-2 py-2 sm:px-3 sm:py-3 text-[11px] sm:text-sm text-slate-700">
-                      {log.orNumber}
-                    </td>
-
-                    <td className="font-inter px-2 py-2 sm:px-3 sm:py-3 text-[11px] sm:text-sm text-slate-600">
-                      {log.payer}
-                    </td>
-
-                    <td className="font-inter px-2 py-2 sm:px-3 sm:py-3 text-[11px] sm:text-sm text-slate-600">
-                      {log.description}
-                    </td>
-
-                    <td className="font-inter px-2 py-2 sm:px-3 sm:py-3 text-[11px] sm:text-sm text-slate-600">
-                      {log.channel}
-                    </td>
-
-                    <td className="font-inter px-2 py-2 sm:px-3 sm:py-3 text-[11px] sm:text-sm text-slate-500">
+                  <TableRow key={index}>
+                    <TableCell className="text-slate-700">{log.orNumber}</TableCell>
+                    <TableCell>{log.payer}</TableCell>
+                    <TableCell>{log.description}</TableCell>
+                    <TableCell>{log.channel}</TableCell>
+                    <TableCell className="text-slate-500">
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-slate-400" />
                         {log.time}
                       </div>
-                    </td>
-
-                    <td className="font-inter px-2 py-2 sm:px-3 sm:py-3 text-[11px] sm:text-sm">
+                    </TableCell>
+                    <TableCell>
                       <span
                         className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs ${
                           log.status === "Posted"
@@ -143,12 +126,12 @@ export default function PaymentsLogsPage() {
                         )}
                         {log.status}
                       </span>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
         </section>
       </main>
     </div>

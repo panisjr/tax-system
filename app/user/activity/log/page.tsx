@@ -9,6 +9,15 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
+import {
+  Table,
+  TableContainer,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 
 const logs = [
   {
@@ -81,54 +90,35 @@ export default function UserLogsPage() {
             </h2>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-xs sm:text-sm">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500">
-                    User
-                  </th>
-                  <th className="font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500">
-                    Action
-                  </th>
-                  <th className="font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500">
-                    Module
-                  </th>
-                  <th className="font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500">
-                    Date / Time
-                  </th>
-                  <th className="font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
+          <TableContainer>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Action</TableHead>
+                  <TableHead>Module</TableHead>
+                  <TableHead>Date / Time</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {logs.map((log, index) => (
-                  <tr key={index} className="border-b border-gray-100">
-                    <td className="font-inter px-3 py-3 text-sm text-slate-700">
+                  <TableRow key={index}>
+                    <TableCell className="text-slate-700">
                       <div className="flex items-center gap-2">
                         <ShieldCheck className="h-4 w-4 text-slate-400" />
                         {log.user}
                       </div>
-                    </td>
-
-                    <td className="font-inter px-3 py-3 text-sm text-slate-600">
-                      {log.action}
-                    </td>
-
-                    <td className="font-inter px-3 py-3 text-sm text-slate-600">
-                      {log.module}
-                    </td>
-
-                    <td className="font-inter px-3 py-3 text-sm text-slate-500">
+                    </TableCell>
+                    <TableCell>{log.action}</TableCell>
+                    <TableCell>{log.module}</TableCell>
+                    <TableCell className="text-slate-500">
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-slate-400" />
                         {log.time}
                       </div>
-                    </td>
-
-                    <td className="font-inter px-3 py-3 text-sm">
+                    </TableCell>
+                    <TableCell>
                       <span
                         className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs ${
                           log.status === "Success"
@@ -143,12 +133,12 @@ export default function UserLogsPage() {
                         )}
                         {log.status}
                       </span>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
         </section>
       </main>
     </div>
