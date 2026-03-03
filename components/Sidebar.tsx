@@ -32,7 +32,7 @@ const menuItems: MenuItem[] = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   {
     name: "Property Registry",
-    path: "/property/registry",
+    path: "/property",
     icon: Building2,
     subtitle: "(Assessor)",
   },
