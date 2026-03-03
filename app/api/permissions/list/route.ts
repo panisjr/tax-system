@@ -4,18 +4,18 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 export async function GET() {
 	try {
 		const { data, error } = await supabaseAdmin
-			.from('users')
-			.select('empID, firstname, middlename, lastname, suffix, role_id, status, email, roles(name)')
-			.order('firstname', { ascending: true });
+			.from('permissions')
+			.select('id, name, created_at')
+			.order('name', { ascending: true });
 
 		if (error) {
 			return NextResponse.json({ error: error.message }, { status: 400 });
 		}
 
-		return NextResponse.json({ users: data ?? [] });
+		return NextResponse.json({ permissions: data ?? [] });
 	} catch {
 		return NextResponse.json(
-			{ error: 'Unable to load users.' },
+			{ error: 'Unable to load permissions.' },
 			{ status: 500 },
 		);
 	}
