@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -29,10 +29,16 @@ type FormState = {
   password: string;
   email: string;
   phone: string;
-  role: string;
+  role_id: string;
   department: string;
   position: string;
   status: boolean;
+};
+
+type RoleOption = {
+  id: number;
+  name: string;
+  created_at?: string;
 };
 
 const initialFormState: FormState = {
@@ -48,7 +54,7 @@ const initialFormState: FormState = {
   password: "",
   email: "",
   phone: "",
-  role: "",
+  role_id: "",
   department: "",
   position: "",
   status: true,
@@ -60,6 +66,8 @@ export default function CreateUserPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showTempPassword, setShowTempPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [roles, setRoles] = useState<RoleOption[]>([]);
+  const [isLoadingRoles, setIsLoadingRoles] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(initialFormState);
@@ -67,6 +75,30 @@ export default function CreateUserPage() {
   const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      setIsLoadingRoles(true);
+
+      try {
+        const response = await fetch("/api/roles/list", { cache: "no-store" });
+        const data = (await response.json()) as { error?: string; roles?: RoleOption[] };
+
+        if (!response.ok) {
+          setRoles([]);
+          return;
+        }
+
+        setRoles(data.roles ?? []);
+      } catch {
+        setRoles([]);
+      } finally {
+        setIsLoadingRoles(false);
+      }
+    };
+
+    fetchRoles();
+  }, []);
 
   const missingRequiredFields = useMemo(() => {
     const requiredValues = [
@@ -79,7 +111,7 @@ export default function CreateUserPage() {
       form.password,
       form.email,
       form.phone,
-      form.role,
+      form.role_id,
       form.department,
       form.position,
     ];
@@ -119,7 +151,10 @@ export default function CreateUserPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          role_id: Number(form.role_id),
+        }),
       });
 
       const data = (await response.json()) as { error?: string; message?: string };
@@ -213,7 +248,7 @@ export default function CreateUserPage() {
               <Field
                 label="Birthdate"
                 required
-                placeholder="yyyy-mm-dd"
+                inputType="date"
                 value={form.birthdate}
                 onChange={(v) => updateField("birthdate", v)}
               />
@@ -229,11 +264,13 @@ export default function CreateUserPage() {
                     label="Male"
                     checked={form.sex}
                     onClick={() => updateField("sex", true)}
+                    className="cursor-pointer"
                   />
                   <BooleanChip
                     label="Female"
                     checked={!form.sex}
                     onClick={() => updateField("sex", false)}
+                    className="cursor-pointer"
                   />
                 </div>
               </div>
@@ -271,27 +308,20 @@ export default function CreateUserPage() {
                   </span>
                   <span className="ml-1 text-rose-500">*</span>
                 </label>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <RoleRadio
-                    label="Admin"
-                    checked={form.role === "Admin"}
-                    onChange={() => updateField("role", "Admin")}
-                  />
-                  <RoleRadio
-                    label="Assessor"
-                    checked={form.role === "Assessor"}
-                    onChange={() => updateField("role", "Assessor")}
-                  />
-                  <RoleRadio
-                    label="Treasurer"
-                    checked={form.role === "Treasurer"}
-                    onChange={() => updateField("role", "Treasurer")}
-                  />
-                  <RoleRadio
-                    label="Viewer"
-                    checked={form.role === "Viewer"}
-                    onChange={() => updateField("role", "Viewer")}
-                  />
+                <div className="mt-1 flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-slate-200">
+                  <select
+                    value={form.role_id}
+                    onChange={(event) => updateField("role_id", event.target.value)}
+                    className="w-full bg-transparent text-sm text-slate-900 outline-none"
+                    disabled={isLoadingRoles}
+                  >
+                    <option value="">{isLoadingRoles ? "Loading roles..." : "Select role"}</option>
+                    {roles.map((role) => (
+                      <option key={role.id} value={String(role.id)}>
+                        {role.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <Field
@@ -318,11 +348,13 @@ export default function CreateUserPage() {
                     label="Active"
                     checked={form.status}
                     onClick={() => updateField("status", true)}
+                    className="cursor-pointer"
                   />
                   <BooleanChip
                     label="Inactive"
                     checked={!form.status}
                     onClick={() => updateField("status", false)}
+                    className="cursor-pointer"
                   />
                 </div>
               </div>
@@ -368,7 +400,10 @@ export default function CreateUserPage() {
             <div className="mt-4 space-y-3 text-sm">
               <SummaryRow label="Name" value={`${form.firstname} ${form.middlename} ${form.lastname} ${form.suffix}`.trim() || "(Required)"} />
               <SummaryRow label="Emp ID" value={form.empID || "(Required)"} />
-              <SummaryRow label="Role" value={form.role || "(Required)"} />
+              <SummaryRow
+                label="Role"
+                value={roles.find((role) => String(role.id) === form.role_id)?.name || "(Required)"}
+              />
               <SummaryRow label="Status" value={form.status ? "Active" : "Inactive"} />
             </div>
 
@@ -388,6 +423,7 @@ function Field({
   label,
   placeholder,
   leftIcon,
+  inputType = "text",
   value,
   onChange,
   required = false,
@@ -395,6 +431,7 @@ function Field({
   label: string;
   placeholder?: string;
   leftIcon?: React.ReactNode;
+  inputType?: "text" | "date" | "email" | "tel";
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
@@ -408,9 +445,12 @@ function Field({
       <div className="mt-1 flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-slate-200">
         {leftIcon}
         <input
+          type={inputType}
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+          className={`w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 ${
+            inputType === "date" ? "cursor-pointer" : ""
+          }`}
           placeholder={placeholder}
         />
       </div>
@@ -452,7 +492,7 @@ function PasswordField({
           className="rounded p-1 text-slate-500 hover:bg-gray-50 hover:text-slate-900"
           aria-label="Toggle password visibility"
         >
-          {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {show ? <EyeOff className="h-4 w-4 cursor-pointer" /> : <Eye className="h-4 w-4 cursor-pointer" />}
         </button>
       </div>
     </div>
@@ -463,10 +503,12 @@ function BooleanChip({
   label,
   checked,
   onClick,
+  className,
 }: {
   label: string;
   checked: boolean;
   onClick: () => void;
+  className?: string;
 }) {
   return (
     <button
@@ -476,7 +518,7 @@ function BooleanChip({
         checked
           ? "border-blue-200 bg-blue-50 text-blue-700"
           : "border-gray-200 bg-white text-slate-600 hover:bg-gray-50"
-      }`}
+      } ${className || ""}`}
     >
       {label}
     </button>
