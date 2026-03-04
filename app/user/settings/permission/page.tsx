@@ -76,9 +76,9 @@ export default function PermissionSettingsPage() {
 			customClass: {
 				popup: 'rounded-xl p-6 shadow-lg',
 				confirmButton:
-					'bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition',
+					'cursor-pointer bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition',
 				cancelButton:
-					'border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition mr-2',
+					'cursor-pointer border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition mr-2',
 			},
 			preConfirm: () => {
 				const input = document.getElementById('permission-name-input') as HTMLInputElement | null;
@@ -152,9 +152,9 @@ export default function PermissionSettingsPage() {
 			customClass: {
 				popup: 'rounded-xl p-6 shadow-lg',
 				confirmButton:
-					'bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition',
+					'cursor-pointer bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition',
 				cancelButton:
-					'border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition mr-2',
+					'cursor-pointer border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition mr-2',
 			},
 			preConfirm: () => {
 				const input = document.getElementById('edit-permission-name-input') as HTMLInputElement | null;
@@ -222,9 +222,9 @@ export default function PermissionSettingsPage() {
 			customClass: {
 				popup: 'rounded-xl p-6 shadow-lg',
 				confirmButton:
-					'bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition',
+					'cursor-pointer bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition',
 				cancelButton:
-					'border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition mr-2',
+					'cursor-pointer border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition mr-2',
 			},
 		});
 
