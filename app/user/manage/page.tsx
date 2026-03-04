@@ -85,6 +85,7 @@ export default function ManageRolePage() {
   const [permissionPickerOpen, setPermissionPickerOpen] = useState(false);
   const [permissionSearch, setPermissionSearch] = useState('');
   const [isSavingRole, setIsSavingRole] = useState(false);
+  const [isDeletingRole, setIsDeletingRole] = useState(false);
   const [selectedRoleUsers, setSelectedRoleUsers] = useState<{ roleName: string; names: string[] } | null>(null);
   const [rolePendingDelete, setRolePendingDelete] = useState<string | null>(null);
   const permissionPickerRef = useRef<HTMLDivElement | null>(null);
@@ -314,11 +315,37 @@ export default function ManageRolePage() {
     setRolePendingDelete(roleName);
   };
 
-  const confirmDeleteRole = () => {
+  const confirmDeleteRole = async () => {
     if (!rolePendingDelete) return;
 
-    toast.info(`Delete for ${rolePendingDelete} is not yet implemented.`);
-    setRolePendingDelete(null);
+    setIsDeletingRole(true);
+
+    try {
+      const response = await fetch('/api/roles/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: rolePendingDelete }),
+      });
+
+      const data = (await response.json()) as { error?: string; message?: string };
+
+      if (!response.ok) {
+        toast.error(data.error ?? 'Failed to delete role.');
+        return;
+      }
+
+      setRolePendingDelete(null);
+      await fetchRoles();
+      toast.success('Role deleted', {
+        description: data.message ?? 'Role deleted successfully.',
+      });
+    } catch {
+      toast.error('Unable to connect to server.');
+    } finally {
+      setIsDeletingRole(false);
+    }
   };
 
   return (
@@ -676,15 +703,17 @@ export default function ManageRolePage() {
                   type="button"
                   onClick={() => setRolePendingDelete(null)}
                   className="border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition cursor-pointer"
+                  disabled={isDeletingRole}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={confirmDeleteRole}
-                  className="bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition cursor-pointer"
+                  className="bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={isDeletingRole}
                 >
-                  Delete Role
+                  {isDeletingRole ? 'Deleting...' : 'Delete Role'}
                 </button>
               </div>
             </div>
