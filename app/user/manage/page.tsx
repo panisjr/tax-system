@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
@@ -87,6 +87,7 @@ export default function ManageRolePage() {
   const [isSavingRole, setIsSavingRole] = useState(false);
   const [selectedRoleUsers, setSelectedRoleUsers] = useState<{ roleName: string; names: string[] } | null>(null);
   const [rolePendingDelete, setRolePendingDelete] = useState<string | null>(null);
+  const permissionPickerRef = useRef<HTMLDivElement | null>(null);
 
   const mapRole = (role: ApiRole, index: number): ListedRole => {
     const rawName = role.name ?? '';
@@ -173,6 +174,18 @@ export default function ManageRolePage() {
   useEffect(() => {
     fetchRoles();
     fetchPermissions();
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (!permissionPickerRef.current) return;
+      if (!permissionPickerRef.current.contains(event.target as Node)) {
+        setPermissionPickerOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const usersByRole = useMemo(() => {
@@ -500,7 +513,7 @@ export default function ManageRolePage() {
                 <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
                   Permissions
                 </label>
-                <div className="relative">
+                <div ref={permissionPickerRef} className="relative">
                   <button
                     type="button"
                     onClick={() => setPermissionPickerOpen((prev) => !prev)}
