@@ -12,6 +12,7 @@ import {
   Trash2,
   Eye,
 } from 'lucide-react';
+import { confirmDelete } from '@/components/DeleteUserAction';
 
 type ApiUser = {
   firstname?: string;
@@ -328,10 +329,9 @@ export default function ManageRolePage() {
     });
   };
 
-  const handleDeleteRole = (roleName: string) => {
-    // Replace with a confirm modal + API call
-    const ok = window.confirm(`Delete role "${roleName}"? This cannot be undone.`);
-    if (!ok) return;
+  const handleDeleteRole = async (roleName: string) => {
+    const confirmed = await confirmDelete(roleName, 'Role');
+    if (!confirmed) return;
 
     // TODO: call delete API, then refresh
     // Example:
