@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, UsersRound, ShieldCheck, Activity, Pencil, Trash2 } from 'lucide-react';
-import { deleteUser } from '@/components/DeleteUserAction';
+import { confirmDelete, showError, showDeleteSuccess } from '@/components/DeleteUserAction';
 
 type ListedUser = {
 	empID: string;
@@ -20,6 +20,9 @@ type ApiUser = {
 	lastname?: string;
 	suffix?: string;
 	role?: string;
+	roles?: {
+		name?: string;
+	} | null;
 	status?: boolean;
 	email?: string;
 };
@@ -61,7 +64,7 @@ export default function ViewUserPage() {
 					return {
 						empID: user.empID || user.email || Math.random().toString(36),
 						name: fullname || 'Unnamed User',
-						role: user.role || 'Unassigned',
+						role: user.roles?.name || user.role || 'Unassigned',
 						status: user.status ? 'Active' : 'Inactive',
 						email: user.email || '',
 					} as ListedUser;
@@ -93,9 +96,28 @@ export default function ViewUserPage() {
 
 
 const handleDeleteUser = async (empID: string, name: string) => {
-	const success = await deleteUser(empID, name);
-	if (success) {
+	const confirmed = await confirmDelete(name);
+	if (!confirmed) return;
+
+	try {
+		const res = await fetch('/api/user/delete', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ empID }),
+		});
+
+		const data = await res.json();
+
+		if (!res.ok) {
+			await showError(data.error || 'An error occurred while deleting the user.', 'Unable to delete user');
+			return;
+		}
+
 		setUsers((prev) => prev.filter((user) => user.empID !== empID));
+
+		await showDeleteSuccess(name);
+	} catch (err) {
+		await showError('Unable to connect to server.');
 	}
 };
 

@@ -3,10 +3,13 @@
 import Swal from 'sweetalert2';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import {
 	ArrowLeft,
 	KeyRound,
+	Pencil,
 	Plus,
+	Trash2,
 } from 'lucide-react';
 
 type Permission = {
@@ -21,6 +24,8 @@ export default function PermissionSettingsPage() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [isAdding, setIsAdding] = useState(false);
+	const [editingPermissionId, setEditingPermissionId] = useState<number | null>(null);
+	const [deletingPermissionId, setDeletingPermissionId] = useState<number | null>(null);
 
 	const fetchPermissions = async () => {
 		setIsLoading(true);
@@ -104,65 +109,157 @@ export default function PermissionSettingsPage() {
 			const data = (await response.json()) as { error?: string; message?: string };
 
 			if (!response.ok) {
-				await Swal.fire({
-					html: `
-						<div class="text-left">
-							<h2 class="font-lexend text-lg font-semibold text-[#0F172A] mb-2">Unable to Add Permission</h2>
-							<p class="font-inter text-sm text-slate-500">${data.error ?? 'Failed to create permission.'}</p>
-						</div>
-					`,
-					showConfirmButton: true,
-					confirmButtonText: 'OK',
-					buttonsStyling: false,
-					background: '#ffffff',
-					customClass: {
-						popup: 'rounded-xl p-6 shadow-lg',
-						confirmButton:
-							'bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition',
-					},
+				toast.error('Unable to Add Permission', {
+					description: data.error ?? 'Failed to create permission.',
 				});
 				return;
 			}
 
 			await fetchPermissions();
-
-			await Swal.fire({
-				html: `
-					<div class="text-left">
-						<h2 class="font-lexend text-lg font-semibold text-[#0F172A] mb-2">Permission Added</h2>
-						<p class="font-inter text-sm text-slate-500">${data.message ?? 'Permission added successfully.'}</p>
-					</div>
-				`,
-				showConfirmButton: true,
-				confirmButtonText: 'OK',
-				buttonsStyling: false,
-				background: '#ffffff',
-				customClass: {
-					popup: 'rounded-xl p-6 shadow-lg',
-					confirmButton:
-						'bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition',
-				},
+			toast.success('Permission Added', {
+				description: data.message ?? 'Permission added successfully.',
 			});
 		} catch {
-			await Swal.fire({
-				html: `
-					<div class="text-left">
-						<h2 class="font-lexend text-lg font-semibold text-[#0F172A] mb-2">Unable to Connect</h2>
-						<p class="font-inter text-sm text-slate-500">Please try again.</p>
-					</div>
-				`,
-				showConfirmButton: true,
-				confirmButtonText: 'OK',
-				buttonsStyling: false,
-				background: '#ffffff',
-				customClass: {
-					popup: 'rounded-xl p-6 shadow-lg',
-					confirmButton:
-						'bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition',
-				},
+			toast.error('Unable to Connect', {
+				description: 'Please try again.',
 			});
 		} finally {
 			setIsAdding(false);
+		}
+	};
+
+	const handleEditPermission = async (permission: Permission) => {
+		const result = await Swal.fire({
+			html: `
+				<div class="text-left">
+					<h2 class="font-lexend text-lg font-semibold text-[#0F172A] mb-2">Edit Permission</h2>
+					<p class="font-inter text-sm text-slate-500 mb-4">Update the permission name.</p>
+					<label class="font-inter block text-xs font-medium text-slate-600 mb-1">Permission Name</label>
+					<input
+						id="edit-permission-name-input"
+						class="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
+						placeholder="Enter permission name"
+						value="${permission.name.replace(/"/g, '&quot;')}"
+					/>
+				</div>
+			`,
+			showCancelButton: true,
+			confirmButtonText: 'Save Changes',
+			cancelButtonText: 'Cancel',
+			reverseButtons: true,
+			buttonsStyling: false,
+			background: '#ffffff',
+			customClass: {
+				popup: 'rounded-xl p-6 shadow-lg',
+				confirmButton:
+					'bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition',
+				cancelButton:
+					'border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition mr-2',
+			},
+			preConfirm: () => {
+				const input = document.getElementById('edit-permission-name-input') as HTMLInputElement | null;
+				const permissionName = input?.value?.trim() ?? '';
+
+				if (!permissionName) {
+					Swal.showValidationMessage('Permission name is required.');
+					return null;
+				}
+
+				return permissionName;
+			},
+		});
+
+		if (!result.isConfirmed || !result.value) return;
+
+		setEditingPermissionId(permission.id);
+
+		try {
+			const response = await fetch('/api/permissions/update', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ id: permission.id, name: result.value }),
+			});
+
+			const data = (await response.json()) as { error?: string; message?: string };
+
+			if (!response.ok) {
+				toast.error('Unable to Update Permission', {
+					description: data.error ?? 'Failed to update permission.',
+				});
+				return;
+			}
+
+			await fetchPermissions();
+			toast.success('Permission Updated', {
+				description: data.message ?? 'Permission updated successfully.',
+			});
+		} catch {
+			toast.error('Unable to Connect', {
+				description: 'Please try again.',
+			});
+		} finally {
+			setEditingPermissionId(null);
+		}
+	};
+
+	const handleDeletePermission = async (permission: Permission) => {
+		const result = await Swal.fire({
+			html: `
+				<div class="text-left">
+					<h2 class="font-lexend text-lg font-semibold text-[#0F172A] mb-2">Delete Permission?</h2>
+					<p class="font-inter text-sm text-slate-500">You are about to remove <span class="font-semibold text-[#0F172A]">${permission.name}</span>.</p>
+					<p class="font-inter mt-2 text-xs text-rose-500">This action cannot be undone.</p>
+				</div>
+			`,
+			showCancelButton: true,
+			confirmButtonText: 'Delete Permission',
+			cancelButtonText: 'Cancel',
+			reverseButtons: true,
+			buttonsStyling: false,
+			background: '#ffffff',
+			customClass: {
+				popup: 'rounded-xl p-6 shadow-lg',
+				confirmButton:
+					'bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition',
+				cancelButton:
+					'border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition mr-2',
+			},
+		});
+
+		if (!result.isConfirmed) return;
+
+		setDeletingPermissionId(permission.id);
+
+		try {
+			const response = await fetch('/api/permissions/delete', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ id: permission.id }),
+			});
+
+			const data = (await response.json()) as { error?: string; message?: string };
+
+			if (!response.ok) {
+				toast.error('Unable to Delete Permission', {
+					description: data.error ?? 'Failed to delete permission.',
+				});
+				return;
+			}
+
+			await fetchPermissions();
+			toast.success('Permission Deleted', {
+				description: data.message ?? 'Permission deleted successfully.',
+			});
+		} catch {
+			toast.error('Unable to Connect', {
+				description: 'Please try again.',
+			});
+		} finally {
+			setDeletingPermissionId(null);
 		}
 	};
 
@@ -221,40 +318,85 @@ export default function PermissionSettingsPage() {
 						</div>
 					)}
 
-					<div className='space-y-4'>
-						{isLoading && (
-							<div className='rounded-md border border-gray-200 p-4'>
-								<p className='font-inter text-sm text-slate-500'>Loading permissions...</p>
-							</div>
-						)}
+					<div className='overflow-x-auto'>
+						<table className='w-full min-w-155 border-collapse'>
+							<thead>
+								<tr className='border-b border-gray-200'>
+									<th className='font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500'>
+										ID
+									</th>
+									<th className='font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500'>
+										Permission
+									</th>
+									<th className='font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500'>
+										Created
+									</th>
+									<th className='font-inter px-3 py-3 text-right text-xs font-semibold text-slate-500'>
+										Actions
+									</th>
+								</tr>
+							</thead>
 
-						{!isLoading && permissions.length === 0 && (
-							<div className='rounded-md border border-gray-200 p-4'>
-								<p className='font-inter text-sm text-slate-500'>No permissions found.</p>
-							</div>
-						)}
+							<tbody>
+								{isLoading && (
+									<tr>
+										<td className='font-inter px-3 py-8 text-center text-sm text-slate-500' colSpan={4}>
+											Loading permissions...
+										</td>
+									</tr>
+								)}
 
-						{!isLoading && permissions.length > 0 && (
-							<div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'>
-								{permissions.map((permission) => (
-									<div
-										key={permission.id}
-										className='rounded-md border border-gray-200 px-3 py-3'
-									>
-										<p className='font-inter text-xs text-slate-400'>Permission #{permission.id}</p>
-										<p className='font-inter mt-1 text-sm font-medium text-slate-700'>
-											{permission.name}
-										</p>
-										<p className='font-inter mt-1 text-xs text-slate-400'>
-											Created:{' '}
+								{!isLoading && permissions.length === 0 && (
+									<tr>
+										<td className='font-inter px-3 py-8 text-center text-sm text-slate-500' colSpan={4}>
+											No permissions found.
+										</td>
+									</tr>
+								)}
+
+								{!isLoading && permissions.map((permission) => (
+									<tr key={permission.id} className='border-b border-gray-100'>
+										<td className='font-inter px-3 py-3 text-sm text-slate-700'>
+											#{permission.id}
+										</td>
+										<td className='font-inter px-3 py-3 text-sm text-slate-700'>
+											<div className='inline-flex items-center gap-2'>
+												<KeyRound className='h-4 w-4 text-slate-400' />
+												{permission.name}
+											</div>
+										</td>
+										<td className='font-inter px-3 py-3 text-sm text-slate-600'>
 											{permission.created_at
 												? new Date(permission.created_at).toLocaleDateString()
 												: '-'}
-										</p>
-									</div>
+										</td>
+										<td className='px-3 py-3'>
+											<div className='flex justify-end gap-2'>
+												<button
+													type='button'
+													onClick={() => handleEditPermission(permission)}
+													disabled={editingPermissionId === permission.id || deletingPermissionId === permission.id}
+													className='font-inter inline-flex cursor-pointer items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60'
+												>
+													<Pencil className='h-3.5 w-3.5' />
+													{editingPermissionId === permission.id ? 'Saving...' : 'Edit'}
+												</button>
+
+												<button
+													type='button'
+													onClick={() => handleDeletePermission(permission)}
+													disabled={deletingPermissionId === permission.id || editingPermissionId === permission.id}
+													className='font-inter inline-flex cursor-pointer items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-rose-600 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60'
+												>
+													<Trash2 className='h-3.5 w-3.5' />
+													{deletingPermissionId === permission.id ? 'Deleting...' : 'Delete'}
+												</button>
+											</div>
+										</td>
+									</tr>
 								))}
-							</div>
-						)}
+							</tbody>
+						</table>
 					</div>
 				</section>
 			</main>
