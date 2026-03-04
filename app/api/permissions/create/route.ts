@@ -25,10 +25,7 @@ export async function POST(request: Request) {
 		}
 
 		if (existingPermission) {
-			return NextResponse.json(
-				{ error: 'Permission already exists.' },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: 'Permission already exists.' }, { status: 400 });
 		}
 
 		const { data, error } = await supabaseAdmin
@@ -41,10 +38,7 @@ export async function POST(request: Request) {
 			return NextResponse.json({ error: error.message }, { status: 400 });
 		}
 
-		return NextResponse.json({
-			message: 'Permission added successfully.',
-			permission: data,
-		});
+		return NextResponse.json({ message: 'Permission added successfully.', permission: data });
 	} catch {
 		return NextResponse.json(
 			{ error: 'Unable to process request.' },
