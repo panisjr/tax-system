@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const { data, error } = await supabaseAdmin
       .from('taxpayers')
-      .select('id, owner_name, tin')
+      .select('id, owner_name, first_name, middle_name, last_name, suffix, tin, address, owner_type, phone, email')
       .order('owner_name', { ascending: true });
 
     if (error) {
