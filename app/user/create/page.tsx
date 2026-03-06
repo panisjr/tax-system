@@ -1,6 +1,17 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+
+import { useMemo, useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -17,13 +28,20 @@ import {
   FilePenLine,
 } from "lucide-react";
 
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
+
 type FormState = {
   empID: string;
   firstname: string;
   middlename: string;
   lastname: string;
   suffix: string;
-  birthdate: string;
+  birthdate: Date | undefined;
   age: string;
   sex: boolean;
   temp_pass: string;
@@ -69,7 +87,7 @@ const initialFormState: FormState = {
   middlename: "",
   lastname: "",
   suffix: "",
-  birthdate: "",
+  birthdate: undefined,
   age: "",
   sex: true,
   temp_pass: "",
@@ -82,15 +100,7 @@ const initialFormState: FormState = {
   status: true,
 };
 
-export default function CreateUserPage() {
-  return (
-    <Suspense fallback={null}>
-      <CreateUserPageContent />
-    </Suspense>
-  );
-}
-
-function CreateUserPageContent() {
+function CreateUserForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editingEmpID = searchParams.get("empID")?.trim() ?? "";
@@ -102,12 +112,35 @@ function CreateUserPageContent() {
   const [isLoadingUser, setIsLoadingUser] = useState(false);
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [isLoadingRoles, setIsLoadingRoles] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(initialFormState);
+  
+  // FIX 1: Added missing initialLoadedForm state
   const [initialLoadedForm, setInitialLoadedForm] = useState<FormState | null>(null);
 
-  const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+  useEffect(() => {
+    if (!form.birthdate) {
+      updateField("age", "");
+      return;
+    }
+
+    const today = new Date();
+    let age = today.getFullYear() - form.birthdate.getFullYear();
+
+    const monthDiff = today.getMonth() - form.birthdate.getMonth();
+    const dayDiff = today.getDate() - form.birthdate.getDate();
+
+    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+      age--;
+    }
+
+    updateField("age", age.toString());
+  }, [form.birthdate]);
+
+  const updateField = <K extends keyof FormState>(
+    key: K,
+    value: FormState[K],
+  ) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -146,7 +179,6 @@ function CreateUserPageContent() {
 
     const fetchUserDetails = async () => {
       setIsLoadingUser(true);
-      setErrorMessage(null);
       setSuccessMessage(null);
 
       try {
@@ -158,7 +190,9 @@ function CreateUserPageContent() {
 
         if (!response.ok) {
           if (isMounted) {
-            setErrorMessage(data.error ?? "Failed to load user details.");
+            toast.error("Unable to load user details", {
+              description: data.error || "An error occurred while loading user details.",
+            });
           }
           return;
         }
@@ -170,17 +204,15 @@ function CreateUserPageContent() {
           middlename: user?.middlename?.trim() ?? "",
           lastname: user?.lastname?.trim() ?? "",
           suffix: user?.suffix?.trim() ?? "",
-          birthdate: user?.birthdate?.trim() ?? "",
+          // FIX 2: Safely parse birthdate string back into a Date object
+          birthdate: user?.birthdate ? new Date(user.birthdate) : undefined, 
           age: user?.age?.trim() ?? "",
           sex: typeof user?.sex === "boolean" ? user.sex : true,
           temp_pass: "",
           password: "",
           email: user?.email?.trim() ?? "",
           phone: user?.phone?.trim() ?? "",
-          role_id:
-            typeof user?.role_id === "number"
-              ? String(user.role_id)
-              : "",
+          role_id: typeof user?.role_id === "number" ? String(user.role_id) : "",
           department: user?.department?.trim() ?? "",
           position: user?.position?.trim() ?? "",
           status: typeof user?.status === "boolean" ? user.status : true,
@@ -192,7 +224,9 @@ function CreateUserPageContent() {
         }
       } catch {
         if (isMounted) {
-          setErrorMessage("Unable to connect to server.");
+          toast.error("Connection Error", {
+            description: "Unable to connect to server.",
+          });
         }
       } finally {
         if (isMounted) {
@@ -209,41 +243,38 @@ function CreateUserPageContent() {
   }, [editingEmpID, isEditMode]);
 
   const missingRequiredFields = useMemo(() => {
-    const requiredValues = [
-      form.empID,
-      form.firstname,
-      form.lastname,
-      form.birthdate,
-      form.age,
-      form.email,
-      form.phone,
-      form.role_id,
-      form.department,
-      form.position,
-    ];
-
-    if (!isEditMode) {
-      requiredValues.push(form.temp_pass, form.password);
-    }
-
-    return requiredValues.some((value) => value.trim().length === 0);
-  }, [form, isEditMode]);
+    return (
+      !form.empID.trim() ||
+      !form.firstname.trim() ||
+      !form.lastname.trim() ||
+      !form.birthdate ||
+      !form.age.trim() ||
+      !form.temp_pass.trim() ||
+      !form.password.trim() ||
+      !form.email.trim() ||
+      !form.phone.trim() ||
+      !form.role_id.trim() || // FIX 3: Changed form.role to form.role_id
+      !form.department.trim() ||
+      !form.position.trim()
+    );
+  }, [form]);
 
   const isBirthdateValid = useMemo(() => {
     if (!form.birthdate) return true;
-    return /^\d{4}-\d{2}-\d{2}$/.test(form.birthdate);
+    return !isNaN(form.birthdate.getTime());
   }, [form.birthdate]);
 
   const hasFormChanges = useMemo(() => {
     if (!isEditMode || !initialLoadedForm) return true;
 
+    // FIX 4: Prevent calling .trim() on Date object which causes crashes
     const normalize = (value: FormState) => ({
       empID: value.empID.trim(),
       firstname: value.firstname.trim(),
       middlename: value.middlename.trim(),
       lastname: value.lastname.trim(),
       suffix: value.suffix.trim(),
-      birthdate: value.birthdate.trim(),
+      birthdate: value.birthdate ? format(value.birthdate, "yyyy-MM-dd") : "",
       age: value.age.trim(),
       sex: value.sex,
       email: value.email.trim(),
@@ -258,31 +289,62 @@ function CreateUserPageContent() {
   }, [form, initialLoadedForm, isEditMode]);
 
   const handleSave = async () => {
-    setErrorMessage(null);
     setSuccessMessage(null);
 
     if (isEditMode && isLoadingUser) {
-      setErrorMessage("User data is still loading.");
+      toast("User data is still loading.");
       return;
     }
 
     if (missingRequiredFields) {
-      setErrorMessage("Please fill out all required fields.");
+      toast.error("Required Field Error", {
+        description: "Please fill out all required fields.",
+      });
       return;
     }
 
-    if (!isBirthdateValid) {
-      setErrorMessage("Birthdate must be in yyyy-mm-dd format.");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      toast.error("Email Error", {
+        description: "Please enter a valid email address (e.g., name@example.com).",
+      });
       return;
     }
 
-    if (!isEditMode && form.temp_pass !== form.password) {
-      setErrorMessage("Temporary password and password must match.");
+    const strippedPhone = form.phone.replace(/[\s-]/g, ""); 
+    const phoneRegex = /^(?:\+63|63|0)9\d{9}$/;
+    if (!phoneRegex.test(strippedPhone)) {
+      toast.error("Phone Number Error", {
+        description: "Please enter a valid 11-digit mobile number (e.g., 09171234567 or +63 917 123 4567).",
+      });
+      return;
+    }
+
+    if (form.password.length < 8) {
+      toast.error("Password Error", {
+        description: "Password must be at least 8 characters long.",
+      });
+      return;
+    }
+    
+    if (!/[A-Z]/.test(form.password) || !/[0-9]/.test(form.password)) {
+      toast.error("Password Error", {
+        description: "Password must contain at least one uppercase letter and one number.",
+      });
+      return;
+    }
+
+    if (form.temp_pass !== form.password) {
+      toast.error("Password Error", {
+        description: "Temporary password and password must match.",
+      });
       return;
     }
 
     if (isEditMode && !hasFormChanges) {
-      setErrorMessage("No changes detected. Update at least one field before saving.");
+      toast.error("No Changes Detected", {
+        description: "Update at least one field before saving.",
+      });
       return;
     }
 
@@ -297,7 +359,7 @@ function CreateUserPageContent() {
             middlename: form.middlename,
             lastname: form.lastname,
             suffix: form.suffix,
-            birthdate: form.birthdate,
+            birthdate: form.birthdate ? format(form.birthdate, "yyyy-MM-dd") : null,
             age: form.age,
             sex: form.sex,
             email: form.email,
@@ -309,25 +371,26 @@ function CreateUserPageContent() {
           }
         : {
             ...form,
+            birthdate: form.birthdate ? format(form.birthdate, "yyyy-MM-dd") : null,
             role_id: Number(form.role_id),
           };
 
       const response = await fetch(isEditMode ? "/api/user/update" : "/api/user/create", {
         method: isEditMode ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       const data = (await response.json()) as { error?: string; message?: string };
 
       if (!response.ok) {
-        setErrorMessage(data.error ?? `Failed to ${isEditMode ? "update" : "create"} user.`);
+        toast.error("Failed to Save User", {
+          description: data.error ?? `Failed to ${isEditMode ? "update" : "create"} user.`,
+        });
         return;
       }
 
-      setSuccessMessage(data.message ?? `User ${isEditMode ? "updated" : "created"} successfully.`);
+      toast.success(data.message ?? `User ${isEditMode ? "updated" : "created"} successfully.`);
 
       if (!isEditMode) {
         setForm(initialFormState);
@@ -337,7 +400,9 @@ function CreateUserPageContent() {
         router.push("/user/view");
       }, 1200);
     } catch {
-      setErrorMessage("Unable to connect to server.");
+      toast.error("Connection Error", {
+        description: "Unable to connect to server.",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -402,18 +467,6 @@ function CreateUserPageContent() {
         </div>
       )}
 
-      {(errorMessage || successMessage) && (
-        <div
-          className={`mb-4 rounded-md border px-4 py-3 text-sm ${
-            errorMessage
-              ? "border-rose-200 bg-rose-50 text-rose-700"
-              : "border-emerald-200 bg-emerald-50 text-emerald-700"
-          }`}
-        >
-          {errorMessage ?? successMessage}
-        </div>
-      )}
-
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
@@ -421,23 +474,90 @@ function CreateUserPageContent() {
               <div className="rounded-md bg-slate-100 p-2">
                 <UserRound className="h-5 w-5 text-[#00154A]" />
               </div>
-              <h2 className="font-inter text-sm font-semibold text-[#848794]">Personal Information</h2>
+              <h2 className="font-inter text-sm font-semibold text-[#848794]">
+                Personal Information
+              </h2>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Emp ID" required value={form.empID} onChange={(v) => updateField("empID", v)} />
-              <Field label="First Name" required value={form.firstname} onChange={(v) => updateField("firstname", v)} />
-              <Field label="Middle Name" value={form.middlename} onChange={(v) => updateField("middlename", v)} />
-              <Field label="Last Name" required value={form.lastname} onChange={(v) => updateField("lastname", v)} />
-              <Field label="Suffix" value={form.suffix} onChange={(v) => updateField("suffix", v)} />
               <Field
-                label="Birthdate"
+                label="Emp ID"
                 required
-                inputType="date"
-                value={form.birthdate}
-                onChange={(v) => updateField("birthdate", v)}
+                value={form.empID}
+                onChange={(v) => updateField("empID", v)}
               />
-              <Field label="Age" required value={form.age} onChange={(v) => updateField("age", v)} />
+              <Field
+                label="First Name"
+                required
+                value={form.firstname}
+                onChange={(v) => updateField("firstname", v)}
+              />
+              <Field
+                label="Middle Name"
+                value={form.middlename}
+                onChange={(v) => updateField("middlename", v)}
+              />
+              <Field
+                label="Last Name"
+                required
+                value={form.lastname}
+                onChange={(v) => updateField("lastname", v)}
+              />
+              <div>
+                <label className="font-inter text-xs font-medium text-slate-600">
+                  Suffix
+                </label>
+                <SuffixDropdown
+                  value={form.suffix}
+                  onChange={(v) => updateField("suffix", v)}
+                />
+              </div>
+              <div>
+                <label className="font-inter text-xs font-medium text-slate-600">
+                  Birthdate
+                  <span className="ml-1 text-rose-500">*</span>
+                </label>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="mt-1 w-full justify-start text-left font-normal cursor-pointer"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
+                      {form.birthdate ? (
+                        format(form.birthdate, "yyyy-MM-dd")
+                      ) : (
+                        <span className="text-slate-400">Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      disabled={(date) => date > new Date()}
+                      mode="single"
+                      selected={form.birthdate}
+                      onSelect={(date) => updateField("birthdate", date)}
+                      captionLayout="dropdown"
+                      fromYear={1950}
+                      toYear={new Date().getFullYear()}
+                      initialFocus
+                      className="rounded-lg border bg-white"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              {/* FIX 6: Removed duplicate age/birthdate field and set Age to readOnly */}
+              <Field 
+                label="Age" 
+                required 
+                readOnly
+                value={form.age} 
+                onChange={(v) => updateField("age", v)} 
+              />
 
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
@@ -467,12 +587,16 @@ function CreateUserPageContent() {
               <div className="rounded-md bg-slate-100 p-2">
                 <Mail className="h-5 w-5 text-[#00154A]" />
               </div>
-              <h2 className="font-inter text-sm font-semibold text-[#848794]">Contact & Work Details</h2>
+              <h2 className="font-inter text-sm font-semibold text-[#848794]">
+                Contact & Work Details
+              </h2>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field
                 label="Email"
+                type="email"
+                placeholder="name@example.com"
                 required
                 value={form.email}
                 leftIcon={<Mail className="h-4 w-4 text-slate-400" />}
@@ -480,10 +604,15 @@ function CreateUserPageContent() {
               />
               <Field
                 label="Phone"
+                type="tel"
+                placeholder="+63 917 123 4567"
                 required
                 value={form.phone}
                 leftIcon={<Phone className="h-4 w-4 text-slate-400" />}
-                onChange={(v) => updateField("phone", v)}
+                onChange={(v) => {
+                  const sanitized = v.replace(/[^0-9+\s-]/g, "");
+                  updateField("phone", sanitized);
+                }}
               />
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
@@ -494,19 +623,21 @@ function CreateUserPageContent() {
                   <span className="ml-1 text-rose-500">*</span>
                 </label>
                 <div className="mt-2 grid grid-cols-2 gap-2">
-                  <select
-                    value={form.role_id}
-                    onChange={(event) => updateField("role_id", event.target.value)}
-                    className="font-inter w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-slate-700 outline-none focus:ring-2 focus:ring-slate-200 sm:col-span-2"
-                    disabled={isLoadingRoles}
-                  >
-                    <option value="">{isLoadingRoles ? "Loading roles..." : "Select role"}</option>
-                    {roles.map((roleOption) => (
-                      <option key={roleOption.id} value={String(roleOption.id)}>
-                        {roleOption.name}
-                      </option>
-                    ))}
-                  </select>
+                  {/* FIX 7: Render dynamic roles from API state */}
+                  {isLoadingRoles ? (
+                     <span className="text-xs text-slate-400 col-span-2">Loading roles...</span>
+                  ) : roles.length > 0 ? (
+                     roles.map((role) => (
+                       <RoleRadio
+                         key={role.id}
+                         label={role.name}
+                         checked={form.role_id === String(role.id)}
+                         onChange={() => updateField("role_id", String(role.id))}
+                       />
+                     ))
+                  ) : (
+                     <span className="text-xs text-rose-500 col-span-2">No roles configured</span>
+                  )}
                 </div>
               </div>
               <Field
@@ -546,40 +677,40 @@ function CreateUserPageContent() {
             </div>
           </section>
 
-          {!isEditMode && (
-            <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-4 flex items-center gap-2">
-                <div className="rounded-md bg-slate-100 p-2">
-                  <KeyRound className="h-5 w-5 text-[#00154A]" />
-                </div>
-                <h2 className="font-inter text-sm font-semibold text-[#848794]">Security</h2>
+          <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <div className="rounded-md bg-slate-100 p-2">
+                <KeyRound className="h-5 w-5 text-[#00154A]" />
               </div>
+              <h2 className="font-inter text-sm font-semibold text-[#848794]">Security</h2>
+            </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <PasswordField
-                  label="Temp Pass"
-                  required
-                  value={form.temp_pass}
-                  show={showTempPassword}
-                  onToggle={() => setShowTempPassword((v) => !v)}
-                  onChange={(v) => updateField("temp_pass", v)}
-                />
-                <PasswordField
-                  label="Password"
-                  required
-                  value={form.password}
-                  show={showPassword}
-                  onToggle={() => setShowPassword((v) => !v)}
-                  onChange={(v) => updateField("password", v)}
-                />
-              </div>
-            </section>
-          )}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <PasswordField
+                label="Temp Pass"
+                required
+                value={form.temp_pass}
+                show={showTempPassword}
+                onToggle={() => setShowTempPassword((v) => !v)}
+                onChange={(v) => updateField("temp_pass", v)}
+              />
+              <PasswordField
+                label="Password"
+                required
+                value={form.password}
+                show={showPassword}
+                onToggle={() => setShowPassword((v) => !v)}
+                onChange={(v) => updateField("password", v)}
+              />
+            </div>
+          </section>
         </div>
 
         <div className="space-y-6">
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="font-inter text-sm font-semibold text-[#848794]">Summary</h2>
+            <h2 className="font-inter text-sm font-semibold text-[#848794]">
+              Summary
+            </h2>
             <p className="font-inter mt-1 text-xs text-slate-400">
               {isEditMode
                 ? "Required fields must be complete. Birthdate format: yyyy-mm-dd."
@@ -587,16 +718,25 @@ function CreateUserPageContent() {
             </p>
 
             <div className="mt-4 space-y-3 text-sm">
-              <SummaryRow label="Name" value={`${form.firstname} ${form.middlename} ${form.lastname} ${form.suffix}`.trim() || "(Required)"} />
-              <SummaryRow label="Emp ID" value={form.empID || "(Required)"} />
               <SummaryRow
-                label="Role"
-                value={roles.find((roleOption) => String(roleOption.id) === form.role_id)?.name || "(Required)"}
+                label="Name"
+                value={
+                  `${form.firstname} ${form.middlename} ${form.lastname} ${form.suffix}`.trim() ||
+                  "(Required)"
+                }
               />
+              <SummaryRow label="Emp ID" value={form.empID || "(Required)"} />
+              
+              {/* FIX 8: Display the dynamic role name instead of the ID */}
+              <SummaryRow 
+                label="Role" 
+                value={roles.find(r => String(r.id) === form.role_id)?.name || "(Required)"} 
+              />
+              
               <SummaryRow label="Status" value={form.status ? "Active" : "Inactive"} />
             </div>
 
-            {(missingRequiredFields || !isBirthdateValid || (isEditMode && !hasFormChanges)) && (
+            {(missingRequiredFields || !isBirthdateValid) && (
               <p className="font-inter mt-4 text-xs text-rose-600">
                 {isEditMode && !hasFormChanges
                   ? "No changes detected yet. Update at least one field before saving."
@@ -610,22 +750,30 @@ function CreateUserPageContent() {
   );
 }
 
+// ----------------------------------------------------
+// HELPER COMPONENTS
+// ----------------------------------------------------
+
 function Field({
   label,
+  type = "text",
   placeholder,
   leftIcon,
   inputType = "text",
   value,
   onChange,
   required = false,
+  readOnly = false,
 }: {
   label: string;
+  type?: "text" | "email" | "tel";
   placeholder?: string;
   leftIcon?: React.ReactNode;
   inputType?: "text" | "date" | "email" | "tel";
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
+  readOnly?: boolean;
 }) {
   return (
     <div>
@@ -633,15 +781,15 @@ function Field({
         {label}
         {required && <span className="ml-1 text-rose-500">*</span>}
       </label>
-      <div className="mt-1 flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-slate-200">
+      <div className={`mt-1 flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 ${readOnly ? "bg-gray-50 opacity-80" : "bg-white focus-within:ring-2 focus-within:ring-slate-200"}`}>
         {leftIcon}
         <input
-          type={inputType}
           value={value}
+          readOnly={readOnly}
           onChange={(event) => onChange(event.target.value)}
           className={`w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 ${
             inputType === "date" ? "cursor-pointer" : ""
-          }`}
+          } ${readOnly ? "cursor-not-allowed text-slate-500" : ""}`}
           placeholder={placeholder}
         />
       </div>
@@ -716,11 +864,80 @@ function BooleanChip({
   );
 }
 
+function RoleRadio({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <label className="font-inter inline-flex cursor-pointer items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-xs text-slate-700 hover:bg-gray-50">
+      <input type="radio" name="role" checked={checked} onChange={onChange} className="h-4 w-4" />
+      {label}
+    </label>
+  );
+}
+
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <span className="font-inter text-slate-500">{label}</span>
       <span className="font-inter font-medium text-slate-900">{value}</span>
     </div>
+  );
+}
+
+export default function CreateUserPage() {
+  return (
+    <Suspense fallback={<div className="p-10 text-slate-500">Loading form...</div>}>
+      <CreateUserForm />
+    </Suspense>
+  );
+}
+
+function SuffixDropdown({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const options = ["", "Jr.", "Sr.", "II", "III", "IV", "V"];
+
+  return (
+    <Accordion
+      type="single"
+      collapsible
+      value={open ? "suffix" : undefined}
+      onValueChange={(v) => setOpen(!!v)}
+      className="mt-1 relative"
+    >
+      <AccordionItem value="suffix" className="border-none">
+        <AccordionTrigger className="w-full flex items-center justify-between gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 focus-within:ring-2 focus-within:ring-slate-200 hover:no-underline">
+          <span className="font-inter font-normal">{value || "Select suffix"}</span>
+        </AccordionTrigger>
+        <AccordionContent className="mt-1 border border-gray-200 rounded-md bg-white shadow-sm absolute z-10 w-full md:w-auto min-w-120px">
+          <div className="flex flex-col gap-1 p-1">
+            {options.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                className="text-left font-inter w-full rounded px-2 py-1.5 text-sm hover:bg-gray-100 transition-colors"
+                onClick={() => {
+                  onChange(opt);
+                  setOpen(false);
+                }}
+              >
+                {opt || "(none)"}
+              </button>
+            ))}
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }
