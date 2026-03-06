@@ -700,13 +700,13 @@ function CreateUserForm() {
           </section>
         </div>
 
-        <div className="space-y-6 lg:sticky lg:top-8 lg:self-start flex flex-col-reverse md:flex-col">
-          {/* add buttons here */}
-          <div className="sticky top-0 z-40 mb-6 flex justify-end py-1.5 sm:px-0">
-            <div className="flex items-center gap-2 mb-2">
+        <div className="space-y-6 lg:sticky lg:top-8 lg:self-start flex flex-col-reverse lg:flex-col">
+          <div className="sticky top-0 z-40 mb-6 flex justify-end py-1.5 w-full px-4 md:px-0">
+            {/* mt-20 is the "Small Screen" version. md:mt-0 is the "Big Screen" fix. */}
+            <div className="flex w-full items-center gap-2 mb-2 mt-4 md:mt-0 md:w-auto">
               <Link
                 href="/user"
-                className="font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50"
+                className="flex-1 justify-center md:flex-none font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50"
               >
                 Cancel
               </Link>
@@ -714,7 +714,7 @@ function CreateUserForm() {
               <button
                 type="button"
                 disabled={isSubmitting || isLoadingUser}
-                className="font-inter h-10 inline-flex cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex-1 justify-center md:flex-none font-inter h-10 inline-flex cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={handleSave}
               >
                 {isEditMode ? (
@@ -722,7 +722,7 @@ function CreateUserForm() {
                 ) : (
                   <Save className="h-4 w-4" />
                 )}
-                <span>
+                <span className="whitespace-nowrap">
                   {isSubmitting
                     ? isEditMode
                       ? "Updating..."
