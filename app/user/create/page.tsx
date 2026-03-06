@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 
 import { Combobox } from "@/components/ui/combobox";
+import { ValidatedInput } from "@/components/ui/ValidatedInput";
 
 const Suffix = ["Jr.", "Sr.", "II", "III", "IV", "V"] as const;
 
@@ -587,7 +588,7 @@ function CreateUserForm() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field
+              <ValidatedInput
                 label="Email"
                 type="email"
                 placeholder="name@example.com"
@@ -596,17 +597,14 @@ function CreateUserForm() {
                 leftIcon={<Mail className="h-4 w-4 text-slate-400" />}
                 onChange={(v) => updateField("email", v)}
               />
-              <Field
+              <ValidatedInput
                 label="Phone"
-                type="tel"
-                placeholder="+63 917 123 4567"
+                type="phone"
+                placeholder="917 123 4567"
                 required
                 value={form.phone}
                 leftIcon={<Phone className="h-4 w-4 text-slate-400" />}
-                onChange={(v) => {
-                  const sanitized = v.replace(/[^0-9+\s-]/g, "");
-                  updateField("phone", sanitized);
-                }}
+                onChange={(value) => updateField("phone", value)}
               />
               {/* Role Combobox */}
               <div>

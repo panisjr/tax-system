@@ -124,6 +124,14 @@ export function ValidatedInput({
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value;
+      
+      // For email fields, don't apply cursor manipulation
+      if (resolvedValidator === 'email') {
+        if (!validateOnBlur) setTouched(true);
+        onChange(raw, validatorRule.validate(raw));
+        return;
+      }
+      
       const cursorPos = e.target.selectionStart ?? raw.length;
       const nDigitsBefore = digitsBeforeCursor(raw, cursorPos);
       const masked = maskFn(raw);
@@ -132,7 +140,7 @@ export function ValidatedInput({
       if (!validateOnBlur) setTouched(true);
       onChange(masked, validatorRule.validate(masked));
     },
-    [maskFn, validatorRule, validateOnBlur, onChange],
+    [maskFn, validatorRule, validateOnBlur, onChange, resolvedValidator],
   );
 
   const handleFocus = useCallback(
@@ -198,14 +206,14 @@ export function ValidatedInput({
           id={id}
           value={displayValue}
           onChange={handleChange}
-          onKeyDown={handleKeyDown}
+          onKeyDown={resolvedValidator === 'email' ? undefined : handleKeyDown}
           onFocus={handleFocus}
           onClick={handleClick}
           onBlur={handleBlur}
           disabled={disabled}
           required={required}
           placeholder={placeholder}
-          inputMode="numeric"
+          inputMode={resolvedValidator === 'email' ? 'email' : 'numeric'}
           autoComplete="off"
           className={cn(
             'flex h-9 w-full rounded-md border bg-white px-3 py-1 font-inter text-sm text-slate-900',

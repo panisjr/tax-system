@@ -17,7 +17,8 @@ export type MaskKey =
   | 'phone'
   | 'rpt-id'
   | 'barangay-code'
-  | 'text';
+  | 'text'
+  | 'email';
 
 export type MaskFn = (raw: string) => string;
 
@@ -66,6 +67,13 @@ export function maskText(raw: string): string {
   return raw;
 }
 
+// ── Email ───────────────────────────────────────────────────────────────────
+// Email doesn't need masking, just return as-is
+
+export function maskEmail(raw: string): string {
+  return raw;
+}
+
 // ── RPT ID ────────────────────────────────────────────────────────────────────
 // Format: ##-###-#### (9 digits)
 
@@ -94,4 +102,5 @@ export const MASKS: Record<MaskKey, MaskFn> = {
   'rpt-id': maskRptId,
   'barangay-code': maskBarangayCode,
   'text': maskText,
+  'email': maskEmail,
 };

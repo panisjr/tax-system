@@ -17,7 +17,8 @@ export type ValidatorKey =
   | 'phone'
   | 'rpt-id'
   | 'barangay-code'
-  | 'text';
+  | 'text'
+  | 'email';
 
 export interface Validator {
   /** Returns true when the fully-formatted value is complete and valid. */
@@ -60,5 +61,12 @@ export const VALIDATORS: Record<ValidatorKey, Validator> = {
   'text': {
     validate: () => true,
     errorMessage: '',
+  },
+
+  // ── Email: name@example.com
+  'email': {
+    // Matches: [any characters] @ [any characters] . [any characters (2 or more)]
+    validate: (v) => /^.+@.+\..+$/.test(v),
+    errorMessage: 'Email must follow the format: name@example.com',
   },
 };
