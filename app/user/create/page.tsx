@@ -29,11 +29,15 @@ import {
 } from "lucide-react";
 
 import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
+
+const Suffix = ["Jr.", "Sr.", "II", "III", "IV", "V"] as const;
 
 type FormState = {
   empID: string;
@@ -114,9 +118,11 @@ function CreateUserForm() {
   const [isLoadingRoles, setIsLoadingRoles] = useState(true);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(initialFormState);
-  
+
   // FIX 1: Added missing initialLoadedForm state
-  const [initialLoadedForm, setInitialLoadedForm] = useState<FormState | null>(null);
+  const [initialLoadedForm, setInitialLoadedForm] = useState<FormState | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!form.birthdate) {
@@ -150,7 +156,10 @@ function CreateUserForm() {
 
       try {
         const response = await fetch("/api/roles/list", { cache: "no-store" });
-        const data = (await response.json()) as { error?: string; roles?: RoleOption[] };
+        const data = (await response.json()) as {
+          error?: string;
+          roles?: RoleOption[];
+        };
 
         if (!response.ok) {
           setRoles([]);
@@ -182,16 +191,23 @@ function CreateUserForm() {
       setSuccessMessage(null);
 
       try {
-        const response = await fetch(`/api/user/detail?empID=${encodeURIComponent(editingEmpID)}`, {
-          cache: "no-store",
-        });
+        const response = await fetch(
+          `/api/user/detail?empID=${encodeURIComponent(editingEmpID)}`,
+          {
+            cache: "no-store",
+          },
+        );
 
-        const data = (await response.json()) as { error?: string; user?: ApiUserDetails };
+        const data = (await response.json()) as {
+          error?: string;
+          user?: ApiUserDetails;
+        };
 
         if (!response.ok) {
           if (isMounted) {
             toast.error("Unable to load user details", {
-              description: data.error || "An error occurred while loading user details.",
+              description:
+                data.error || "An error occurred while loading user details.",
             });
           }
           return;
@@ -205,14 +221,15 @@ function CreateUserForm() {
           lastname: user?.lastname?.trim() ?? "",
           suffix: user?.suffix?.trim() ?? "",
           // FIX 2: Safely parse birthdate string back into a Date object
-          birthdate: user?.birthdate ? new Date(user.birthdate) : undefined, 
+          birthdate: user?.birthdate ? new Date(user.birthdate) : undefined,
           age: user?.age?.trim() ?? "",
           sex: typeof user?.sex === "boolean" ? user.sex : true,
           temp_pass: "",
           password: "",
           email: user?.email?.trim() ?? "",
           phone: user?.phone?.trim() ?? "",
-          role_id: typeof user?.role_id === "number" ? String(user.role_id) : "",
+          role_id:
+            typeof user?.role_id === "number" ? String(user.role_id) : "",
           department: user?.department?.trim() ?? "",
           position: user?.position?.trim() ?? "",
           status: typeof user?.status === "boolean" ? user.status : true,
@@ -285,7 +302,10 @@ function CreateUserForm() {
       status: value.status,
     });
 
-    return JSON.stringify(normalize(form)) !== JSON.stringify(normalize(initialLoadedForm));
+    return (
+      JSON.stringify(normalize(form)) !==
+      JSON.stringify(normalize(initialLoadedForm))
+    );
   }, [form, initialLoadedForm, isEditMode]);
 
   const handleSave = async () => {
@@ -306,34 +326,24 @@ function CreateUserForm() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email)) {
       toast.error("Email Error", {
-        description: "Please enter a valid email address (e.g., name@example.com).",
+        description:
+          "Please enter a valid email address (e.g., name@example.com).",
       });
       return;
     }
 
-    const strippedPhone = form.phone.replace(/[\s-]/g, ""); 
+    const strippedPhone = form.phone.replace(/[\s-]/g, "");
     const phoneRegex = /^(?:\+63|63|0)9\d{9}$/;
     if (!phoneRegex.test(strippedPhone)) {
       toast.error("Phone Number Error", {
-        description: "Please enter a valid 11-digit mobile number (e.g., 09171234567 or +63 917 123 4567).",
+        description:
+          "Please enter a valid 11-digit mobile number (e.g., 09171234567).",
       });
       return;
     }
 
-    if (form.password.length < 8) {
-      toast.error("Password Error", {
-        description: "Password must be at least 8 characters long.",
-      });
-      return;
-    }
-    
-    if (!/[A-Z]/.test(form.password) || !/[0-9]/.test(form.password)) {
-      toast.error("Password Error", {
-        description: "Password must contain at least one uppercase letter and one number.",
-      });
-      return;
-    }
-
+    // REMOVED: Length, Uppercase, and Number restrictions.
+    // KEPT: Match check to ensure the user didn't make a typo.
     if (form.temp_pass !== form.password) {
       toast.error("Password Error", {
         description: "Temporary password and password must match.",
@@ -359,7 +369,9 @@ function CreateUserForm() {
             middlename: form.middlename,
             lastname: form.lastname,
             suffix: form.suffix,
-            birthdate: form.birthdate ? format(form.birthdate, "yyyy-MM-dd") : null,
+            birthdate: form.birthdate
+              ? format(form.birthdate, "yyyy-MM-dd")
+              : null,
             age: form.age,
             sex: form.sex,
             email: form.email,
@@ -368,33 +380,45 @@ function CreateUserForm() {
             department: form.department,
             position: form.position,
             status: form.status,
+            // Only send password if user typed something (useful for edits)
+            ...(form.password ? { password: form.password } : {}),
           }
         : {
             ...form,
-            birthdate: form.birthdate ? format(form.birthdate, "yyyy-MM-dd") : null,
+            birthdate: form.birthdate
+              ? format(form.birthdate, "yyyy-MM-dd")
+              : null,
             role_id: Number(form.role_id),
           };
 
-      const response = await fetch(isEditMode ? "/api/user/update" : "/api/user/create", {
-        method: isEditMode ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        isEditMode ? "/api/user/update" : "/api/user/create",
+        {
+          method: isEditMode ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
 
-      const data = (await response.json()) as { error?: string; message?: string };
+      const data = (await response.json()) as {
+        error?: string;
+        message?: string;
+      };
 
       if (!response.ok) {
         toast.error("Failed to Save User", {
-          description: data.error ?? `Failed to ${isEditMode ? "update" : "create"} user.`,
+          description:
+            data.error ?? `Failed to ${isEditMode ? "update" : "create"} user.`,
         });
         return;
       }
 
-      toast.success(data.message ?? `User ${isEditMode ? "updated" : "created"} successfully.`);
+      toast.success(
+        data.message ??
+          `User ${isEditMode ? "updated" : "created"} successfully.`,
+      );
 
-      if (!isEditMode) {
-        setForm(initialFormState);
-      }
+      if (!isEditMode) setForm(initialFormState);
 
       setTimeout(() => {
         router.push("/user/view");
@@ -446,7 +470,11 @@ function CreateUserForm() {
               className="font-inter h-10 inline-flex cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               onClick={handleSave}
             >
-              {isEditMode ? <FilePenLine className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+              {isEditMode ? (
+                <FilePenLine className="h-4 w-4" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
               <span>
                 {isSubmitting
                   ? isEditMode
@@ -507,10 +535,22 @@ function CreateUserForm() {
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Suffix
                 </label>
-                <SuffixDropdown
-                  value={form.suffix}
-                  onChange={(v) => updateField("suffix", v)}
-                />
+                <Combobox 
+                  items={Suffix}
+                  onValueChange={(v) => updateField("suffix", v)}
+                >
+                  <ComboboxInput placeholder="Select a framework" />
+                  <ComboboxContent>
+                    <ComboboxEmpty>No items found.</ComboboxEmpty>
+                    <ComboboxList>
+                      {(item) => (
+                        <ComboboxItem key={item} value={item}>
+                          {item}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
               </div>
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
@@ -549,14 +589,14 @@ function CreateUserForm() {
                   </PopoverContent>
                 </Popover>
               </div>
-              
+
               {/* FIX 6: Removed duplicate age/birthdate field and set Age to readOnly */}
-              <Field 
-                label="Age" 
-                required 
+              <Field
+                label="Age"
+                required
                 readOnly
-                value={form.age} 
-                onChange={(v) => updateField("age", v)} 
+                value={form.age}
+                onChange={(v) => updateField("age", v)}
               />
 
               <div>
@@ -614,6 +654,7 @@ function CreateUserForm() {
                   updateField("phone", sanitized);
                 }}
               />
+              {/* Role Combobox */}
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
                   <span className="inline-flex items-center gap-2">
@@ -622,22 +663,38 @@ function CreateUserForm() {
                   </span>
                   <span className="ml-1 text-rose-500">*</span>
                 </label>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  {/* FIX 7: Render dynamic roles from API state */}
-                  {isLoadingRoles ? (
-                     <span className="text-xs text-slate-400 col-span-2">Loading roles...</span>
-                  ) : roles.length > 0 ? (
-                     roles.map((role) => (
-                       <RoleRadio
-                         key={role.id}
-                         label={role.name}
-                         checked={form.role_id === String(role.id)}
-                         onChange={() => updateField("role_id", String(role.id))}
-                       />
-                     ))
-                  ) : (
-                     <span className="text-xs text-rose-500 col-span-2">No roles configured</span>
-                  )}
+                <div className="mt-1">
+                  <Combobox
+                    value={form.role_id}
+                    onValueChange={(val) => updateField("role_id", val ?? "")}
+                  >
+                    {/* We find the role object that matches the ID in state to show its name */}
+                    <ComboboxInput
+                      placeholder={
+                        isLoadingRoles ? "Loading..." : "Select a role"
+                      }
+                      value={
+                        roles.find((r) => String(r.id) === form.role_id)
+                          ?.name || ""
+                      }
+                    />
+                    <ComboboxContent>
+                      <ComboboxList>
+                        {roles.map((role) => (
+                          <ComboboxItem
+                            key={role.id}
+                            value={String(role.id)}
+                            // Some UI kits allow passing a label prop or children for display
+                          >
+                            {role.name}
+                          </ComboboxItem>
+                        ))}
+                      </ComboboxList>
+                      {roles.length === 0 && !isLoadingRoles && (
+                        <ComboboxEmpty>No roles found.</ComboboxEmpty>
+                      )}
+                    </ComboboxContent>
+                  </Combobox>
                 </div>
               </div>
               <Field
@@ -682,7 +739,9 @@ function CreateUserForm() {
               <div className="rounded-md bg-slate-100 p-2">
                 <KeyRound className="h-5 w-5 text-[#00154A]" />
               </div>
-              <h2 className="font-inter text-sm font-semibold text-[#848794]">Security</h2>
+              <h2 className="font-inter text-sm font-semibold text-[#848794]">
+                Security
+              </h2>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -719,21 +778,27 @@ function CreateUserForm() {
 
             <div className="mt-4 space-y-3 text-sm">
               <SummaryRow
-                label="Name"
+                label="Role"
                 value={
-                  `${form.firstname} ${form.middlename} ${form.lastname} ${form.suffix}`.trim() ||
+                  roles.find((r) => String(r.id) === form.role_id)?.name ||
                   "(Required)"
                 }
               />
               <SummaryRow label="Emp ID" value={form.empID || "(Required)"} />
-              
+
               {/* FIX 8: Display the dynamic role name instead of the ID */}
-              <SummaryRow 
-                label="Role" 
-                value={roles.find(r => String(r.id) === form.role_id)?.name || "(Required)"} 
+              <SummaryRow
+                label="Role"
+                value={
+                  roles.find((r) => String(r.id) === form.role_id)?.name ||
+                  "(Required)"
+                }
               />
-              
-              <SummaryRow label="Status" value={form.status ? "Active" : "Inactive"} />
+
+              <SummaryRow
+                label="Status"
+                value={form.status ? "Active" : "Inactive"}
+              />
             </div>
 
             {(missingRequiredFields || !isBirthdateValid) && (
@@ -781,7 +846,9 @@ function Field({
         {label}
         {required && <span className="ml-1 text-rose-500">*</span>}
       </label>
-      <div className={`mt-1 flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 ${readOnly ? "bg-gray-50 opacity-80" : "bg-white focus-within:ring-2 focus-within:ring-slate-200"}`}>
+      <div
+        className={`mt-1 flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 ${readOnly ? "bg-gray-50 opacity-80" : "bg-white focus-within:ring-2 focus-within:ring-slate-200"}`}
+      >
         {leftIcon}
         <input
           value={value}
@@ -831,7 +898,11 @@ function PasswordField({
           className="rounded p-1 text-slate-500 hover:bg-gray-50 hover:text-slate-900"
           aria-label="Toggle password visibility"
         >
-          {show ? <EyeOff className="h-4 w-4 cursor-pointer" /> : <Eye className="h-4 w-4 cursor-pointer" />}
+          {show ? (
+            <EyeOff className="h-4 w-4 cursor-pointer" />
+          ) : (
+            <Eye className="h-4 w-4 cursor-pointer" />
+          )}
         </button>
       </div>
     </div>
@@ -875,7 +946,13 @@ function RoleRadio({
 }) {
   return (
     <label className="font-inter inline-flex cursor-pointer items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-xs text-slate-700 hover:bg-gray-50">
-      <input type="radio" name="role" checked={checked} onChange={onChange} className="h-4 w-4" />
+      <input
+        type="radio"
+        name="role"
+        checked={checked}
+        onChange={onChange}
+        className="h-4 w-4"
+      />
       {label}
     </label>
   );
@@ -892,52 +969,10 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 
 export default function CreateUserPage() {
   return (
-    <Suspense fallback={<div className="p-10 text-slate-500">Loading form...</div>}>
+    <Suspense
+      fallback={<div className="p-10 text-slate-500">Loading form...</div>}
+    >
       <CreateUserForm />
     </Suspense>
-  );
-}
-
-function SuffixDropdown({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (val: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const options = ["", "Jr.", "Sr.", "II", "III", "IV", "V"];
-
-  return (
-    <Accordion
-      type="single"
-      collapsible
-      value={open ? "suffix" : undefined}
-      onValueChange={(v) => setOpen(!!v)}
-      className="mt-1 relative"
-    >
-      <AccordionItem value="suffix" className="border-none">
-        <AccordionTrigger className="w-full flex items-center justify-between gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 focus-within:ring-2 focus-within:ring-slate-200 hover:no-underline">
-          <span className="font-inter font-normal">{value || "Select suffix"}</span>
-        </AccordionTrigger>
-        <AccordionContent className="mt-1 border border-gray-200 rounded-md bg-white shadow-sm absolute z-10 w-full md:w-auto min-w-120px">
-          <div className="flex flex-col gap-1 p-1">
-            {options.map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                className="text-left font-inter w-full rounded px-2 py-1.5 text-sm hover:bg-gray-100 transition-colors"
-                onClick={() => {
-                  onChange(opt);
-                  setOpen(false);
-                }}
-              >
-                {opt || "(none)"}
-              </button>
-            ))}
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
   );
 }
