@@ -30,11 +30,6 @@ import {
 
 import {
   Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
 } from "@/components/ui/combobox";
 
 const Suffix = ["Jr.", "Sr.", "II", "III", "IV", "V"] as const;
@@ -535,27 +530,13 @@ function CreateUserForm() {
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Suffix
                 </label>
-
-                <div className="mt-1">
-                  <Combobox
-                    items={Suffix}
-                    onValueChange={(v) =>
-                      updateField("suffix", String(v ?? ""))
-                    }
-                  >
-                    <ComboboxInput />
-                    <ComboboxContent>
-                      <ComboboxEmpty>No items found.</ComboboxEmpty>
-                      <ComboboxList>
-                        {(item) => (
-                          <ComboboxItem key={item} value={item}>
-                            {item}
-                          </ComboboxItem>
-                        )}
-                      </ComboboxList>
-                    </ComboboxContent>
-                  </Combobox>
-                </div>
+                <Combobox
+                  options={Suffix.map(s => ({ value: s, label: s }))}
+                  value={form.suffix}
+                  onChange={(val) => updateField("suffix", val)}
+                  placeholder="Select suffix"
+                  searchPlaceholder="Search suffix..."
+                />
               </div>
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
@@ -670,36 +651,12 @@ function CreateUserForm() {
                 </label>
                 <div className="mt-1">
                   <Combobox
+                    options={roles.map(role => ({ value: String(role.id), label: role.name }))}
                     value={form.role_id}
-                    onValueChange={(val) => updateField("role_id", val ?? "")}
-                  >
-                    {/* We find the role object that matches the ID in state to show its name */}
-                    <ComboboxInput
-                      placeholder={
-                        isLoadingRoles ? "Loading..." : "Select a role"
-                      }
-                      value={
-                        roles.find((r) => String(r.id) === form.role_id)
-                          ?.name || ""
-                      }
-                    />
-                    <ComboboxContent>
-                      <ComboboxList>
-                        {roles.map((role) => (
-                          <ComboboxItem
-                            key={role.id}
-                            value={String(role.id)}
-                            // Some UI kits allow passing a label prop or children for display
-                          >
-                            {role.name}
-                          </ComboboxItem>
-                        ))}
-                      </ComboboxList>
-                      {roles.length === 0 && !isLoadingRoles && (
-                        <ComboboxEmpty>No roles found.</ComboboxEmpty>
-                      )}
-                    </ComboboxContent>
-                  </Combobox>
+                    onChange={(val) => updateField("role_id", val)}
+                    placeholder={isLoadingRoles ? "Loading..." : "Select a role"}
+                    searchPlaceholder="Search role..."
+                  />
                 </div>
               </div>
               <Field
@@ -770,7 +727,7 @@ function CreateUserForm() {
           </section>
         </div>
 
-        <div className="space-y-6 lg:sticky lg:top-8 lg:self-start">
+        <div className="space-y-6">
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="font-inter text-sm font-semibold text-[#848794]">
               Summary
