@@ -38,14 +38,11 @@ export function maskTin(raw: string): string {
 // The prefix is always preserved; only the digit portion is masked.
 
 export function maskTdNumber(raw: string): string {
-  // Strip any existing "TD-" / "TD" prefix (case-insensitive) before extracting digits.
-  // This gracefully handles paste operations that include the prefix.
   const withoutPrefix = raw.replace(/^[Tt][Dd]-?/, '');
   const d = withoutPrefix.replace(/\D/g, '').slice(0, 20);
 
   if (!d) return 'TD-';
 
-  // Group digits into chunks of 4
   const parts: string[] = [];
   for (let i = 0; i < d.length; i += 4) {
     parts.push(d.slice(i, i + 4));
@@ -53,8 +50,8 @@ export function maskTdNumber(raw: string): string {
   return 'TD-' + parts.join('-');
 }
 
-// ── Phone (Philippine mobile) ─────────────────────────────────────────────────
-// Format: 09##-###-#### (11 digits, must start with 09)
+// ── Phone ─────────────────────────────────────────────────────────────────────
+// Format: ### ### #### (10 digits, no leading zero)
 
 export function maskPhone(raw: string): string {
   const d = raw.replace(/\D/g, '').replace(/^0+/, '').slice(0, 10);
@@ -66,11 +63,11 @@ export function maskPhone(raw: string): string {
 }
 
 export function maskText(raw: string): string {
-  return raw; // No masking for plain text
+  return raw;
 }
 
 // ── RPT ID ────────────────────────────────────────────────────────────────────
-// Format: ##-###-#### (9 digits) — adjust grouping to match your spec
+// Format: ##-###-#### (9 digits)
 
 export function maskRptId(raw: string): string {
   const d = raw.replace(/\D/g, '').slice(0, 9);
@@ -80,7 +77,7 @@ export function maskRptId(raw: string): string {
 }
 
 // ── Barangay Code ─────────────────────────────────────────────────────────────
-// Format: ###-## (5 digits) — adjust grouping to match your spec
+// Format: ###-## (5 digits)
 
 export function maskBarangayCode(raw: string): string {
   const d = raw.replace(/\D/g, '').slice(0, 5);
@@ -96,5 +93,5 @@ export const MASKS: Record<MaskKey, MaskFn> = {
   'phone': maskPhone,
   'rpt-id': maskRptId,
   'barangay-code': maskBarangayCode,
-  'text': maskText
+  'text': maskText,
 };

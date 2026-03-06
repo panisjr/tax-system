@@ -39,27 +39,26 @@ export const VALIDATORS: Record<ValidatorKey, Validator> = {
     errorMessage: 'TD Number must be at least TD-####-#### (e.g. TD-2024-0001)',
   },
 
-'phone': {
-  // Strict format check: 3 digits, space, 3 digits, space, 4 digits
-  validate: (v) => /^\d{3} \d{3} \d{4}$/.test(v),
-  errorMessage: 'Phone must be in ### ### #### format',
-},
-  // ── RPT ID: ##-###-#### (adjust regex to match actual spec)
+  // ── Phone: ### ### #### (no leading zero)
+  'phone': {
+    validate: (v) => /^[1-9]\d{2} \d{3} \d{4}$/.test(v),
+    errorMessage: 'Phone must be in ### ### #### format',
+  },
+
+  // ── RPT ID: ##-###-####
   'rpt-id': {
     validate: (v) => /^\d{2}-\d{3}-\d{4}$/.test(v),
     errorMessage: 'RPT ID must be ##-###-####',
   },
 
-  // ── Barangay Code: ###-## (adjust regex to match actual spec)
+  // ── Barangay Code: ###-##
   'barangay-code': {
     validate: (v) => /^\d{3}-\d{2}$/.test(v),
     errorMessage: 'Barangay code must be ###-##',
-    
   },
 
   'text': {
-    validate: () => true, // Everything is valid for simple text
+    validate: () => true,
     errorMessage: '',
   },
-
 };

@@ -17,13 +17,11 @@ export interface ValidatedInputProps
     React.InputHTMLAttributes<HTMLInputElement>,
     'onChange' | 'value' | 'type'
   > {
-
   validator?: ValidatorKey;
   type?: ValidatorKey;
   value: string;
   onChange: (value: string, isValid: boolean) => void;
   label?: string;
-
   validateOnBlur?: boolean;
   className?: string;
   inputClassName?: string;
@@ -96,7 +94,7 @@ export function ValidatedInput({
       const { selectionStart: ss, selectionEnd: se } = e.currentTarget;
 
       if (resolvedValidator === 'td-number') {
-        const PREFIX = 3; // Length of 'TD-'
+        const PREFIX = 3;
         if (e.key === 'Backspace') {
           const caretAtPrefix = ss !== null && se !== null && ss === se && ss <= PREFIX;
           const selectionInPrefix = ss !== null && ss < PREFIX;
@@ -105,7 +103,6 @@ export function ValidatedInput({
             return;
           }
         }
-
         if (e.key === 'Delete' && ss !== null && ss < PREFIX) {
           e.preventDefault();
           return;
@@ -137,8 +134,9 @@ export function ValidatedInput({
     },
     [maskFn, validatorRule, validateOnBlur, onChange],
   );
+
   const handleFocus = useCallback(
-    (e: React.FocusEvent<HTMLInputElement>) => {
+    (_e: React.FocusEvent<HTMLInputElement>) => {
       setIsFocused(true);
 
       if (resolvedValidator === 'td-number') {
@@ -153,7 +151,8 @@ export function ValidatedInput({
       }
     },
     [resolvedValidator, value, onChange],
-  )
+  );
+
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLInputElement>) => {
       if (resolvedValidator === 'td-number') {
@@ -167,12 +166,15 @@ export function ValidatedInput({
     },
     [resolvedValidator],
   );
+
   const handleBlur = useCallback(() => {
     setIsFocused(false);
-    setTouched(true); 
+    setTouched(true);
   }, []);
+
   const displayValue =
     resolvedValidator === 'td-number' && !value ? 'TD-' : value;
+
   return (
     <div className={cn(className)}>
       {label && (
@@ -213,7 +215,6 @@ export function ValidatedInput({
             'disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60',
             leftIcon && 'pl-9',
             showValidationIcon && touched && 'pr-8',
-
             showError
               ? 'border-rose-400 focus:ring-rose-200'
               : showSuccess
@@ -224,25 +225,17 @@ export function ValidatedInput({
           {...rest}
         />
 
-        {/* Trailing validation icon */}
         {showValidationIcon && touched && (
           <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2">
             {isValid ? (
-              <CheckCircle2
-                className="h-4 w-4 text-emerald-500"
-                aria-hidden
-              />
+              <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden />
             ) : (
-              <AlertCircle
-                className="h-4 w-4 text-rose-400"
-                aria-hidden
-              />
+              <AlertCircle className="h-4 w-4 text-rose-400" aria-hidden />
             )}
           </span>
         )}
       </div>
 
-      {/* Inline error message */}
       {showError && (
         <p className="mt-1 font-inter text-xs text-rose-500" role="alert">
           {validatorRule.errorMessage}
