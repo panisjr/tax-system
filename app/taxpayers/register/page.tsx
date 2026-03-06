@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { ValidatedInput } from '@/components/ui/ValidatedInput';
 import {
   ArrowLeft,
   Save,
@@ -39,8 +40,6 @@ const initialForm: FormState = {
   email: '',
 };
 
-const TIN_REGEX = /^\d{3}-\d{3}-\d{3}(-\d{3})?$/;
-
 export default function RegisterTaxpayerPage() {
   const router = useRouter();
   const [form, setForm] = useState<FormState>(initialForm);
@@ -73,11 +72,6 @@ export default function RegisterTaxpayerPage() {
   async function handleSave() {
     setErrorMessage(null);
     setSuccessMessage(null);
-
-    if (form.tin && !TIN_REGEX.test(form.tin)) {
-      toast.error('TIN must be ###-###-### or ###-###-###-###');
-      return;
-    }
 
     if (missingRequired) {
       toast.error('Please fill out all required fields.');
@@ -202,8 +196,8 @@ export default function RegisterTaxpayerPage() {
                 value={form.suffix}
                 onChange={(v) => updateField('suffix', v)}
               />
-              <Field
-                label="TIN"
+              <ValidatedInput
+                type="tin"
                 placeholder="000-000-000 or 000-000-000-000"
                 value={form.tin}
                 onChange={(v) => updateField('tin', v)}
@@ -254,12 +248,15 @@ export default function RegisterTaxpayerPage() {
                   onChange={(v) => updateField('address', v)}
                 />
               </div>
-              <Field
-                label="Phone"
-                placeholder="09XX-XXX-XXXX"
-                value={form.phone}
-                leftIcon={<Phone className="h-4 w-4 text-slate-400" />}
-                onChange={(v) => updateField('phone', v)}
+                <ValidatedInput
+                  type="phone" // Important: Use 'phone' so it picks up your mask/validator
+                  label="Phone"
+                  placeholder="e.g. 912 345 6789"
+                  value={form.phone}
+                  leftIcon={<Phone className="h-4 w-4 text-slate-400" />}
+                  onChange={(maskedValue) => {
+                  updateField('phone', maskedValue);
+                }}
               />
               <Field
                 label="Email"
