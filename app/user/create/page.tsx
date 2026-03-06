@@ -727,7 +727,7 @@ function CreateUserForm() {
           </section>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 lg:sticky lg:top-8 lg:self-start">
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="font-inter text-sm font-semibold text-[#848794]">
               Summary
