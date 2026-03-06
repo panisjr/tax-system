@@ -537,7 +537,7 @@ function CreateUserForm() {
                 </label>
                 <Combobox 
                   items={Suffix}
-                  onValueChange={(v) => updateField("suffix", v)}
+                  onValueChange={(v) => updateField("suffix", String(v ?? ""))}
                 >
                   <ComboboxInput placeholder="Select a framework" />
                   <ComboboxContent>
