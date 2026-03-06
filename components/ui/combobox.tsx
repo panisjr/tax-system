@@ -146,7 +146,6 @@ export function Combobox({
           <PopoverPrimitive.Portal>
             <PopoverPrimitive.Content
               className="z-50 w-(--radix-popover-trigger-width) overflow-hidden rounded-md border border-gray-200 bg-white shadow-lg"
-              className="z-50 w-var(--radix-popover-trigger-width) overflow-hidden rounded-md border border-gray-200 bg-white shadow-lg"
               align="start"
               sideOffset={4}
             >
