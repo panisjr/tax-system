@@ -31,7 +31,7 @@ import {
 import { Combobox } from "@/components/ui/combobox";
 import { ValidatedInput } from "@/components/ui/ValidatedInput";
 
-const Suffix = ["Jr.", "Sr.", "II", "III", "IV", "V"] as const;
+const Suffix = ["Jr.", "Sr.", "II", "III", "IV", "V", "VI"] as const;
 
 type FormState = {
   empID: string;
@@ -313,25 +313,6 @@ function CreateUserForm() {
     if (missingRequiredFields) {
       toast.error("Required Field Error", {
         description: "Please fill out all required fields.",
-      });
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(form.email)) {
-      toast.error("Email Error", {
-        description:
-          "Please enter a valid email address (e.g., name@example.com).",
-      });
-      return;
-    }
-
-    const strippedPhone = form.phone.replace(/[\s-]/g, "");
-    const phoneRegex = /^(?:\+63|63|0)9\d{9}$/;
-    if (!phoneRegex.test(strippedPhone)) {
-      toast.error("Phone Number Error", {
-        description:
-          "Please enter a valid 11-digit mobile number (e.g., 09171234567).",
       });
       return;
     }
@@ -929,7 +910,12 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <span className="font-inter text-slate-500">{label}</span>
-      <span className="font-inter font-medium text-slate-900">{value}</span>
+      <span 
+        className="font-inter font-medium text-slate-900 truncate max-w-[150px]" 
+        title={value}
+      >
+        {value}
+      </span>
     </div>
   );
 }
