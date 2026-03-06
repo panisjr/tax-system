@@ -535,22 +535,27 @@ function CreateUserForm() {
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Suffix
                 </label>
-                <Combobox 
-                  items={Suffix}
-                  onValueChange={(v) => updateField("suffix", String(v ?? ""))}
-                >
-                  <ComboboxInput placeholder="Select a framework" />
-                  <ComboboxContent>
-                    <ComboboxEmpty>No items found.</ComboboxEmpty>
-                    <ComboboxList>
-                      {(item) => (
-                        <ComboboxItem key={item} value={item}>
-                          {item}
-                        </ComboboxItem>
-                      )}
-                    </ComboboxList>
-                  </ComboboxContent>
-                </Combobox>
+
+                <div className="mt-1">
+                  <Combobox
+                    items={Suffix}
+                    onValueChange={(v) =>
+                      updateField("suffix", String(v ?? ""))
+                    }
+                  >
+                    <ComboboxInput />
+                    <ComboboxContent>
+                      <ComboboxEmpty>No items found.</ComboboxEmpty>
+                      <ComboboxList>
+                        {(item) => (
+                          <ComboboxItem key={item} value={item}>
+                            {item}
+                          </ComboboxItem>
+                        )}
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
+                </div>
               </div>
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
@@ -765,7 +770,7 @@ function CreateUserForm() {
           </section>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 lg:sticky lg:top-8 lg:self-start">
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="font-inter text-sm font-semibold text-[#848794]">
               Summary
