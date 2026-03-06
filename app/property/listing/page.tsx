@@ -126,7 +126,7 @@ export default function PropertyListingPage() {
               className="font-inter w-full rounded-sm border border-gray-200 py-2 pl-8 pr-3 text-xs text-[#595a5d] focus:outline-none focus:border-slate-400"
             />
           </div>
-          <div className="min-w-[160px]">
+          <div className="min-w-40">
             <Combobox
               placeholder="All Classifications"
               searchPlaceholder="Search classification..."
@@ -136,7 +136,7 @@ export default function PropertyListingPage() {
               triggerClassName="rounded-sm text-xs py-1.5 text-slate-500"
             />
           </div>
-          <div className="min-w-[160px]">
+          <div className="min-w-40">
             <Combobox
               placeholder="All Barangays"
               searchPlaceholder="Search barangay..."
@@ -146,7 +146,7 @@ export default function PropertyListingPage() {
               triggerClassName="rounded-sm text-xs py-1.5 text-slate-500"
             />
           </div>
-          <div className="min-w-[140px]">
+          <div className="min-w-35">
             <Combobox
               placeholder="All Statuses"
               searchPlaceholder="Search status..."
