@@ -28,9 +28,7 @@ import {
   FilePenLine,
 } from "lucide-react";
 
-import {
-  Combobox,
-} from "@/components/ui/combobox";
+import { Combobox } from "@/components/ui/combobox";
 
 const Suffix = ["Jr.", "Sr.", "II", "III", "IV", "V"] as const;
 
@@ -429,7 +427,7 @@ function CreateUserForm() {
 
   return (
     <div className="w-full">
-      <header className="mb-8">
+      <header>
         <button
           type="button"
           onClick={() => router.push("/user")}
@@ -438,60 +436,30 @@ function CreateUserForm() {
           <ArrowLeft className="h-4 w-4" />
           Back to User Management
         </button>
-
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="font-lexend text-2xl font-bold text-[#595a5d]">
-              {isEditMode ? "Edit User" : "Create New User"}
-            </h1>
-            <p className="font-inter mt-1 text-xs text-slate-400">
-              {isEditMode
-                ? "Update user information, role access details, and account status."
-                : "Add required user information and role access details."}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Link
-              href="/user"
-              className="font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50"
-            >
-              Cancel
-            </Link>
-
-            <button
-              type="button"
-              disabled={isSubmitting || isLoadingUser}
-              className="font-inter h-10 inline-flex cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-              onClick={handleSave}
-            >
-              {isEditMode ? (
-                <FilePenLine className="h-4 w-4" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              <span>
-                {isSubmitting
-                  ? isEditMode
-                    ? "Updating..."
-                    : "Saving..."
-                  : isEditMode
-                    ? "Update User"
-                    : "Save User"}
-              </span>
-            </button>
-          </div>
-        </div>
       </header>
 
+      {/* Sticky Action Buttons */}
+
       {isEditMode && isLoadingUser && (
-        <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+        <div className="mb4 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
           Loading selected user details...
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
+          <div className="flex mb-8 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="font-lexend text-2xl font-bold text-[#595a5d]">
+                {isEditMode ? "Edit User" : "Create New User"}
+              </h1>
+              <p className="font-inter mt-1 text-xs text-slate-400">
+                {isEditMode
+                  ? "Update user information, role access details, and account status."
+                  : "Add required user information and role access details."}
+              </p>
+            </div>
+          </div>
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
               <div className="rounded-md bg-slate-100 p-2">
@@ -531,7 +499,7 @@ function CreateUserForm() {
                   Suffix
                 </label>
                 <Combobox
-                  options={Suffix.map(s => ({ value: s, label: s }))}
+                  options={Suffix.map((s) => ({ value: s, label: s }))}
                   value={form.suffix}
                   onChange={(val) => updateField("suffix", val)}
                   placeholder="Select suffix"
@@ -651,10 +619,15 @@ function CreateUserForm() {
                 </label>
                 <div className="mt-1">
                   <Combobox
-                    options={roles.map(role => ({ value: String(role.id), label: role.name }))}
+                    options={roles.map((role) => ({
+                      value: String(role.id),
+                      label: role.name,
+                    }))}
                     value={form.role_id}
                     onChange={(val) => updateField("role_id", val)}
-                    placeholder={isLoadingRoles ? "Loading..." : "Select a role"}
+                    placeholder={
+                      isLoadingRoles ? "Loading..." : "Select a role"
+                    }
                     searchPlaceholder="Search role..."
                   />
                 </div>
@@ -727,7 +700,41 @@ function CreateUserForm() {
           </section>
         </div>
 
-        <div className="space-y-6 lg:sticky lg:top-8 lg:self-start">
+        <div className="space-y-6 lg:sticky lg:top-8 lg:self-start flex flex-col-reverse md:flex-col">
+          {/* add buttons here */}
+          <div className="sticky top-0 z-40 mb-6 flex justify-end py-1.5 sm:px-0">
+            <div className="flex items-center gap-2 mb-2">
+              <Link
+                href="/user"
+                className="font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50"
+              >
+                Cancel
+              </Link>
+
+              <button
+                type="button"
+                disabled={isSubmitting || isLoadingUser}
+                className="font-inter h-10 inline-flex cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={handleSave}
+              >
+                {isEditMode ? (
+                  <FilePenLine className="h-4 w-4" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                <span>
+                  {isSubmitting
+                    ? isEditMode
+                      ? "Updating..."
+                      : "Saving..."
+                    : isEditMode
+                      ? "Update User"
+                      : "Save User"}
+                </span>
+              </button>
+            </div>
+          </div>
+
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="font-inter text-sm font-semibold text-[#848794]">
               Summary
@@ -740,9 +747,9 @@ function CreateUserForm() {
 
             <div className="mt-4 space-y-3 text-sm">
               <SummaryRow
-                label="Role"
+                label="Name"
                 value={
-                  roles.find((r) => String(r.id) === form.role_id)?.name ||
+                  [form.firstname, form.lastname].filter(Boolean).join(" ") ||
                   "(Required)"
                 }
               />
