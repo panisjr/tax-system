@@ -34,6 +34,7 @@ export default function AssessmentBillingPage() {
 						title='Billing Generation'
 						description='Generate billing statements and assessment notices'
 						buttonText='Generate Bill'
+						href='/assessment/billing-generation'
 					/>
 					<RegistryCard
 						icon={Receipt}
