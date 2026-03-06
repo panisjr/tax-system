@@ -26,13 +26,12 @@ export interface ValidatedInputProps
   className?: string;
   inputClassName?: string;
   showValidationIcon?: boolean;
+
   leftIcon?: React.ReactNode;
 }
-
 function digitsBeforeCursor(str: string, cursorPos: number): number {
   return str.slice(0, cursorPos).replace(/\D/g, '').length;
 }
-
 function cursorAfterNthDigit(masked: string, n: number): number {
   if (n === 0) {
     return masked.startsWith('TD-') ? 3 : 0;
@@ -90,7 +89,6 @@ export function ValidatedInput({
       pendingCursor.current = null;
     }
   });
-
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       const { selectionStart: ss, selectionEnd: se } = e.currentTarget;
@@ -110,7 +108,6 @@ export function ValidatedInput({
           return;
         }
       }
-
       const PASSTHROUGH = [
         'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
         'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
@@ -124,7 +121,6 @@ export function ValidatedInput({
     },
     [resolvedValidator],
   );
-
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value;
