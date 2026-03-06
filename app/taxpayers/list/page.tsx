@@ -219,7 +219,13 @@ export default function TaxpayerListPage() {
                 ].map((h) => (
                   <th
                     key={h}
-                    className={`whitespace-nowrap px-4 py-3 text-left text-[#595a5d] font-semibold uppercase tracking-wide  ${h.toLocaleLowerCase() === "#" ? "md:sticky md:left-0 bg-gray-50" : ""} ${h.toLocaleLowerCase() === "full name" ? "md:sticky md:left-[45.5px] bg-gray-50" : ""}  ${h.toLocaleLowerCase() === "actions" ? "md:sticky md:right-0 bg-gray-50" : ""}`}
+                    className={`px-4 py-3 text-left text-[#595a5d] font-semibold uppercase tracking-wide  
+                      ${h.toLocaleLowerCase() === "#" ? "md:sticky md:left-0 bg-gray-50" : ""} 
+                      ${h.toLocaleLowerCase() === "full name" ? "md:sticky md:left-7.5 bg-gray-50" : "whitespace-nowrap"}
+                      ${h.toLocaleLowerCase() === "actions" ? "md:sticky md:right-0 bg-gray-50" : ""}
+                    
+                      ${h.toLowerCase() === "full name" ? "min-w-50" : ""}`
+                    }
                   >
                     {h}
                   </th>
