@@ -275,6 +275,15 @@ function CreateUserForm() {
     return !isNaN(form.birthdate.getTime());
   }, [form.birthdate]);
 
+  const passwordsMatch = useMemo(() => {
+    if (!form.temp_pass && !form.password) return true;
+    return form.temp_pass === form.password;
+  }, [form.temp_pass, form.password]);
+
+  const passwordTouched = useMemo(() => {
+    return form.temp_pass.length > 0 || form.password.length > 0;
+  }, [form.temp_pass, form.password]);
+
   const hasFormChanges = useMemo(() => {
     if (!isEditMode || !initialLoadedForm) return true;
 
@@ -453,16 +462,21 @@ function CreateUserForm() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field
+              <ValidatedInput
                 label="Emp ID"
                 required
                 value={form.empID}
+                maxLength={9}
+                validator="employee-Id"
+                type="employee-Id"
                 onChange={(v) => updateField("empID", v)}
               />
-              <Field
+              <ValidatedInput
                 label="First Name"
                 required
                 value={form.firstname}
+                validator="name"
+                type="name"
                 onChange={(v) => updateField("firstname", v)}
               />
               <Field
@@ -470,10 +484,12 @@ function CreateUserForm() {
                 value={form.middlename}
                 onChange={(v) => updateField("middlename", v)}
               />
-              <Field
+              <ValidatedInput
                 label="Last Name"
                 required
                 value={form.lastname}
+                validator="name"
+                type="name"
                 onChange={(v) => updateField("lastname", v)}
               />
               <div>
@@ -674,6 +690,8 @@ function CreateUserForm() {
                 show={showPassword}
                 onToggle={() => setShowPassword((v) => !v)}
                 onChange={(v) => updateField("password", v)}
+                error={passwordTouched && !passwordsMatch}
+                errorMessage="Passwords do not match"
               />
             </div>
           </section>
@@ -819,6 +837,8 @@ function PasswordField({
   value,
   onChange,
   required = false,
+  error = false,
+  errorMessage = "",
 }: {
   label: string;
   show: boolean;
@@ -826,6 +846,8 @@ function PasswordField({
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
+  error?: boolean;
+  errorMessage?: string;
 }) {
   return (
     <div>
@@ -833,7 +855,13 @@ function PasswordField({
         {label}
         {required && <span className="ml-1 text-rose-500">*</span>}
       </label>
-      <div className="mt-1 flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-slate-200">
+      <div
+        className={`mt-1 flex items-center gap-2 rounded-md border bg-white px-3 py-2 focus-within:ring-2 ${
+          error
+            ? "border-rose-400 focus-within:ring-rose-200"
+            : "border-gray-200 focus-within:ring-slate-200"
+        }`}
+      >
         <input
           value={value}
           onChange={(event) => onChange(event.target.value)}
@@ -853,6 +881,11 @@ function PasswordField({
           )}
         </button>
       </div>
+      {error && errorMessage && (
+        <p className="mt-1 font-inter text-xs text-rose-500" role="alert">
+          {errorMessage}
+        </p>
+      )}
     </div>
   );
 }
@@ -910,8 +943,8 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <span className="font-inter text-slate-500">{label}</span>
-      <span 
-        className="font-inter font-medium text-slate-900 truncate max-w-[150px]" 
+      <span
+        className="font-inter font-medium text-slate-900 truncate max-w-[150px]"
         title={value}
       >
         {value}

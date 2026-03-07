@@ -55,6 +55,7 @@ type ApiUser = {
   email?: string;
 };
 
+
 export default function ViewUserPage() {
   const router = useRouter();
   const [users, setUsers] = useState<ListedUser[]>([]);
@@ -126,35 +127,40 @@ export default function ViewUserPage() {
   };
 
   const handleDeleteUser = async (empID: string, name: string) => {
-    const confirmed = await confirmDelete(name);
+    const shortName = name.length > 20 ? name.substring(0, 20) + "..." : name;
+    
+    const confirmed = await confirmDelete(shortName);
     if (!confirmed) return;
 
     try {
       const res = await fetch("/api/user/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ empID }),
+        // SEND THE FULL empID HERE - No substring!
+        body: JSON.stringify({ empID: empID }), 
       });
 
       const data = await res.json();
-
+      
       if (!res.ok) {
         toast.error("Unable to delete user", {
-          description:
-            data.error || "An error occurred while deleting the user.",
+          description: data.error || "An error occurred.",
         });
         return;
       }
 
+      // Update local state and show success
       setUsers((prev) => prev.filter((user) => user.empID !== empID));
+      toast.success(`${shortName} has been deleted.`);
 
-      toast.success(`${name} has been deleted.`);
     } catch (err) {
       toast.error("Connection Error", {
         description: "Unable to connect to server.",
       });
     }
   };
+
+  
 
   const columns = useMemo(
     () => [

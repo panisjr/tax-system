@@ -108,6 +108,10 @@ export function ValidatedInput({
           return;
         }
       }
+      
+      // Allow all keys for 'name' validator (letters, spaces, special name characters)
+      if (resolvedValidator === 'name') return;
+      
       const PASSTHROUGH = [
         'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
         'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
@@ -129,6 +133,14 @@ export function ValidatedInput({
       if (resolvedValidator === 'email') {
         if (!validateOnBlur) setTouched(true);
         onChange(raw, validatorRule.validate(raw));
+        return;
+      }
+      
+      // For 'name' validator, just apply mask without cursor manipulation
+      if (resolvedValidator === 'name') {
+        const masked = maskFn(raw);
+        if (!validateOnBlur) setTouched(true);
+        onChange(masked, validatorRule.validate(masked));
         return;
       }
       

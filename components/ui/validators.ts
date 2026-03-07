@@ -18,7 +18,9 @@ export type ValidatorKey =
   | 'rpt-id'
   | 'barangay-code'
   | 'text'
-  | 'email';
+  | 'email'
+  | 'employee-Id'
+  | 'name';
 
 export interface Validator {
   /** Returns true when the fully-formatted value is complete and valid. */
@@ -63,10 +65,19 @@ export const VALIDATORS: Record<ValidatorKey, Validator> = {
     errorMessage: '',
   },
 
-  // ── Email: name@example.com
   'email': {
-    // Matches: [any characters] @ [any characters] . [any characters (2 or more)]
     validate: (v) => /^.+@.+\..+$/.test(v),
     errorMessage: 'Email must follow the format: name@example.com',
+  },
+
+  'employee-Id': {
+    validate: (v) => /^\d{4}-\d{4}$/.test(v),
+    errorMessage: 'ID must be in XXXX-XXXX format (8 digits)',
+  },
+
+  // ── Name: Letters, spaces, hyphens, periods, and apostrophes only
+  'name': {
+    validate: (v) => /^[a-zA-Z\s\-\.\']+$/.test(v),
+    errorMessage: 'Name can only contain letters, spaces, hyphens, periods, and apostrophes',
   },
 };
