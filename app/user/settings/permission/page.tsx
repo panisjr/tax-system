@@ -87,6 +87,7 @@ export default function PermissionSettingsPage() {
                         id="permission-name-input"
                         class="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
                         placeholder="Enter permission name"
+                        maxLength={250}
                     />
                 </div>
             `,
@@ -109,6 +110,11 @@ export default function PermissionSettingsPage() {
 
                 if (!permissionName) {
                     Swal.showValidationMessage('Permission name is required.');
+                    return null;
+                }
+
+                if (permissionName.length > 100) {
+                    Swal.showValidationMessage('Permission name must not exceed 100 characters.');
                     return null;
                 }
 
@@ -163,6 +169,7 @@ export default function PermissionSettingsPage() {
                         class="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
                         placeholder="Enter permission name"
                         value="${permission.name.replace(/"/g, '"')}"
+                        maxLength={250}
                     />
                 </div>
             `,
@@ -185,6 +192,11 @@ export default function PermissionSettingsPage() {
 
                 if (!permissionName) {
                     Swal.showValidationMessage('Permission name is required.');
+                    return null;
+                }
+
+                if (permissionName.length > 250) {
+                    Swal.showValidationMessage('Permission name must not exceed 250 characters.');
                     return null;
                 }
 
