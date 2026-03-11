@@ -46,6 +46,7 @@ export default function TaxPayersPage() {
             title='Linked Properties'
             description='View all properties owned by a taxpayer'
             buttonText='View Properties'
+            onButtonClick={() => router.push('/taxpayers/linked-properties')}
           />
           <RegistryCard
             icon={Wallet}
