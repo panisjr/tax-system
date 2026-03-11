@@ -1,7 +1,15 @@
+"use client";
+
 import Link from 'next/link';
+import { useState } from 'react';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   ArrowLeft,
   CalendarDays,
+  CalendarIcon,
   FileText,
   Printer,
   Save,
@@ -13,6 +21,8 @@ import {
 } from 'lucide-react';
 
 export default function BillingGenerationPage() {
+  const [dueDate, setDueDate] = useState<Date | undefined>(new Date('2026-03-31'));
+
   return (
     <div className='w-full'>
       <Link
@@ -33,14 +43,14 @@ export default function BillingGenerationPage() {
         <div className='flex items-center gap-2'>
           <button
             type='button'
-            className='font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50'
+            className='cursor-pointer font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50'
           >
             <Printer className='h-4 w-4' />
             Print Preview
           </button>
           <button
             type='button'
-            className='font-inter inline-flex h-10 items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800'
+            className='cursor-pointer font-inter inline-flex h-10 items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800'
           >
             <Save className='h-4 w-4' />
             Save Draft Bill
@@ -63,7 +73,7 @@ export default function BillingGenerationPage() {
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
               <InputField label='Billing Year' value='2026' />
               <InputField label='Quarter' value='1st' />
-              <InputField label='Due Date' value='2026-03-31' />
+              <DueDateField value={dueDate} onChange={setDueDate} />
               <InputField label='Billing Reference No.' value='BILL-2026-000124' />
             </div>
           </Section>
@@ -107,14 +117,14 @@ export default function BillingGenerationPage() {
             <div className='space-y-2'>
               <button
                 type='button'
-                className='font-inter inline-flex h-10 w-full items-center justify-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800'
+                className='cursor-pointer font-inter inline-flex h-10 w-full items-center justify-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800'
               >
                 <FileText className='h-4 w-4' />
                 Generate Statement
               </button>
               <button
                 type='button'
-                className='font-inter inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-gray-50'
+                className='cursor-pointer font-inter inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-gray-50'
               >
                 <Send className='h-4 w-4' />
                 Send to Taxpayer
@@ -163,6 +173,38 @@ function InputField({ label, value }: { label: string; value: string }) {
       <div className='mt-1 flex items-center rounded-md border border-gray-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-slate-200'>
         <input defaultValue={value} className='w-full bg-transparent font-inter text-sm text-slate-900 outline-none' />
       </div>
+    </div>
+  );
+}
+
+function DueDateField({ value, onChange }: { value?: Date; onChange: (date?: Date) => void }) {
+  return (
+    <div>
+      <label className='font-inter text-xs font-medium text-slate-600'>Due Date</label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            type='button'
+            variant='outline'
+            className='font-inter mt-1 h-10.5 w-full justify-start rounded-md border border-gray-200 bg-white px-3 py-2 text-left text-sm font-normal text-slate-900 shadow-none hover:bg-gray-50 cursor-pointer'
+          >
+            <CalendarIcon className='mr-2 h-4 w-4 text-slate-400' />
+            {<span className='text-slate-400'>Pick a date</span>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className='w-auto p-0' align='start'>
+          <Calendar
+            mode='single'
+            selected={value}
+            onSelect={onChange}
+            captionLayout='dropdown'
+            fromYear={2020}
+            toYear={2035}
+            initialFocus
+            className='rounded-lg border bg-white'
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
