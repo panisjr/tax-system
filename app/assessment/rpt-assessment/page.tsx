@@ -34,14 +34,14 @@ export default function RptAssessmentPage() {
         <div className='flex items-center gap-2'>
           <button
             type='button'
-            className='font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50'
+            className='cursor-pointer font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50'
           >
             <Printer className='h-4 w-4' />
             Print Draft
           </button>
           <button
             type='button'
-            className='font-inter inline-flex h-10 items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800'
+            className='cursor-pointer font-inter inline-flex h-10 items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800'
           >
             <Save className='h-4 w-4' />
             Save Assessment
@@ -82,7 +82,7 @@ export default function RptAssessmentPage() {
             </div>
             <button
               type='button'
-              className='font-inter mt-6 inline-flex h-10 w-full items-center justify-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800'
+              className='cursor-pointer font-inter mt-6 inline-flex h-10 w-full items-center justify-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800'
             >
               <Calculator className='h-4 w-4' />
               Recompute Tax
