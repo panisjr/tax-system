@@ -53,6 +53,7 @@ export default function AssessmentBillingPage() {
 						title='Billing Schedules'
 						description='Manage annual and quarterly billing cycles'
 						buttonText='View Schedules'
+						href='/assessment/view-schedule'
 						variant='secondary'
 					/>
 					<RegistryCard
