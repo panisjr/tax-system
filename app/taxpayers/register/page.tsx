@@ -1,19 +1,12 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { ValidatedInput } from '@/components/ui/ValidatedInput';
-import {
-  ArrowLeft,
-  Save,
-  UserRound,
-  MapPin,
-  Phone,
-  Mail,
-} from 'lucide-react';
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { ValidatedInput } from "@/components/ui/ValidatedInput";
+import { ArrowLeft, Save, UserRound, MapPin, Phone, Mail } from "lucide-react";
 
-const OWNER_TYPE_OPTIONS = ['Individual', 'Corporate', 'Government'] as const;
+const OWNER_TYPE_OPTIONS = ["Individual", "Corporate", "Government"] as const;
 type OwnerType = (typeof OWNER_TYPE_OPTIONS)[number];
 
 type FormState = {
@@ -22,22 +15,22 @@ type FormState = {
   last_name: string;
   suffix: string;
   tin: string;
-  owner_type: OwnerType | '';
+  owner_type: OwnerType | "";
   address: string;
   phone: string;
   email: string;
 };
 
 const initialForm: FormState = {
-  first_name: '',
-  middle_name: '',
-  last_name: '',
-  suffix: '',
-  tin: '',
-  owner_type: '',
-  address: '',
-  phone: '',
-  email: '',
+  first_name: "",
+  middle_name: "",
+  last_name: "",
+  suffix: "",
+  tin: "",
+  owner_type: "",
+  address: "",
+  phone: "",
+  email: "",
 };
 
 export default function RegisterTaxpayerPage() {
@@ -47,7 +40,10 @@ export default function RegisterTaxpayerPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+  const updateField = <K extends keyof FormState>(
+    key: K,
+    value: FormState[K],
+  ) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -60,13 +56,14 @@ export default function RegisterTaxpayerPage() {
     [form],
   );
 
-  let previewName = [form.first_name, form.middle_name, form.last_name, form.suffix]
-    .map((v) => v.trim())
-    .filter(Boolean)
-    .join(' ') || '(Required)';
+  let previewName =
+    [form.first_name, form.middle_name, form.last_name, form.suffix]
+      .map((v) => v.trim())
+      .filter(Boolean)
+      .join(" ") || "(Required)";
 
   if (previewName.length > 25) {
-    previewName = previewName.slice(0, 22) + '...';
+    previewName = previewName.slice(0, 22) + "...";
   }
 
   async function handleSave() {
@@ -74,33 +71,30 @@ export default function RegisterTaxpayerPage() {
     setSuccessMessage(null);
 
     if (missingRequired) {
-      toast.error('Please fill out all required fields.');
+      toast.error("Please fill out all required fields.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const res = await fetch('/api/taxpayers/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/taxpayers/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
 
-      const data = (await res.json()) as { error?: string; message?: string; };
+      const data = (await res.json()) as { error?: string; message?: string };
 
       if (!res.ok) {
-        toast.error(data.error ?? 'Failed to register taxpayer.');
+        toast.error(data.error ?? "Failed to register taxpayer.");
         return;
       }
 
-      toast.success(data.message ?? 'Taxpayer registered successfully.');
+      toast.success(data.message ?? "Taxpayer registered successfully.");
       setForm(initialForm);
-
-      setTimeout(() => {
-        router.push('/taxpayers/list');
-      }, 1200);
+      router.push("/taxpayers/list");
     } catch {
-      toast.error('Unable to connect to server.');
+      toast.error("Unable to connect to server.");
     } finally {
       setIsSubmitting(false);
     }
@@ -111,7 +105,7 @@ export default function RegisterTaxpayerPage() {
       <header className="mb-8">
         <button
           type="button"
-          onClick={() => router.push('/taxpayers')}
+          onClick={() => router.push("/taxpayers")}
           className="font-lexend mb-5 inline-flex cursor-pointer items-center gap-2 text-sm text-slate-500 transition-colors hover:text-slate-700"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -120,7 +114,9 @@ export default function RegisterTaxpayerPage() {
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-lexend text-2xl font-bold text-[#595a5d]">Register New Taxpayer</h1>
+            <h1 className="font-lexend text-2xl font-bold text-[#595a5d]">
+              Register New Taxpayer
+            </h1>
             <p className="font-inter mt-1 text-xs text-slate-400">
               Create a new taxpayer profile in the system.
             </p>
@@ -129,7 +125,7 @@ export default function RegisterTaxpayerPage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => router.push('/taxpayers')}
+              onClick={() => router.push("/taxpayers")}
               className="font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50"
             >
               Cancel
@@ -141,7 +137,7 @@ export default function RegisterTaxpayerPage() {
               className="font-inter h-10 inline-flex cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Save className="h-4 w-4" />
-              {isSubmitting ? 'Saving...' : 'Save Taxpayer'}
+              {isSubmitting ? "Saving..." : "Save Taxpayer"}
             </button>
           </div>
         </div>
@@ -151,8 +147,8 @@ export default function RegisterTaxpayerPage() {
         <div
           className={`mb-4 rounded-md border px-4 py-3 text-sm ${
             errorMessage
-              ? 'border-rose-200 bg-rose-50 text-rose-700'
-              : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+              ? "border-rose-200 bg-rose-50 text-rose-700"
+              : "border-emerald-200 bg-emerald-50 text-emerald-700"
           }`}
         >
           {errorMessage ?? successMessage}
@@ -177,30 +173,30 @@ export default function RegisterTaxpayerPage() {
                 label="First Name"
                 required
                 value={form.first_name}
-                onChange={(v) => updateField('first_name', v)}
+                onChange={(v) => updateField("first_name", v)}
               />
               <Field
                 label="Middle Name"
                 value={form.middle_name}
-                onChange={(v) => updateField('middle_name', v)}
+                onChange={(v) => updateField("middle_name", v)}
               />
               <Field
                 label="Last Name"
                 required
                 value={form.last_name}
-                onChange={(v) => updateField('last_name', v)}
+                onChange={(v) => updateField("last_name", v)}
               />
               <Field
                 label="Suffix"
                 placeholder="Jr., Sr., III…"
                 value={form.suffix}
-                onChange={(v) => updateField('suffix', v)}
+                onChange={(v) => updateField("suffix", v)}
               />
               <ValidatedInput
                 type="tin"
                 placeholder="000-000-000 or 000-000-000-000"
                 value={form.tin}
-                onChange={(v) => updateField('tin', v)}
+                onChange={(v) => updateField("tin", v)}
               />
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
@@ -212,11 +208,11 @@ export default function RegisterTaxpayerPage() {
                     <button
                       key={type}
                       type="button"
-                      onClick={() => updateField('owner_type', type)}
+                      onClick={() => updateField("owner_type", type)}
                       className={`font-inter rounded-md border px-3 py-2 text-xs transition cursor-pointer ${
                         form.owner_type === type
-                          ? 'border-blue-200 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 bg-white text-slate-600 hover:bg-gray-50'
+                          ? "border-blue-200 bg-blue-50 text-blue-700"
+                          : "border-gray-200 bg-white text-slate-600 hover:bg-gray-50"
                       }`}
                     >
                       {type}
@@ -245,17 +241,17 @@ export default function RegisterTaxpayerPage() {
                   required
                   placeholder="Street, Barangay, Municipality"
                   value={form.address}
-                  onChange={(v) => updateField('address', v)}
+                  onChange={(v) => updateField("address", v)}
                 />
               </div>
-                <ValidatedInput
-                  type="phone" // Important: Use 'phone' so it picks up your mask/validator
-                  label="Phone"
-                  placeholder="e.g. 912 345 6789"
-                  value={form.phone}
-                  leftIcon={<Phone className="h-4 w-4 text-slate-400" />}
-                  onChange={(maskedValue) => {
-                  updateField('phone', maskedValue);
+              <ValidatedInput
+                type="phone" // Important: Use 'phone' so it picks up your mask/validator
+                label="Phone"
+                placeholder="e.g. 912 345 6789"
+                value={form.phone}
+                leftIcon={<Phone className="h-4 w-4 text-slate-400" />}
+                onChange={(maskedValue) => {
+                  updateField("phone", maskedValue);
                 }}
               />
               <Field
@@ -264,7 +260,7 @@ export default function RegisterTaxpayerPage() {
                 inputType="email"
                 value={form.email}
                 leftIcon={<Mail className="h-4 w-4 text-slate-400" />}
-                onChange={(v) => updateField('email', v)}
+                onChange={(v) => updateField("email", v)}
               />
             </div>
           </section>
@@ -273,18 +269,23 @@ export default function RegisterTaxpayerPage() {
         {/* Summary */}
         <div>
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="font-inter text-sm font-semibold text-[#848794]">Summary</h2>
+            <h2 className="font-inter text-sm font-semibold text-[#848794]">
+              Summary
+            </h2>
             <p className="font-inter mt-1 text-xs text-slate-400">
               Required fields: First Name, Last Name, Owner Type, Address.
             </p>
 
             <div className="mt-4 space-y-3">
               <SummaryRow label="Full Name" value={previewName} />
-              <SummaryRow label="TIN"       value={form.tin.trim() || '—'} />
-              <SummaryRow label="Type"      value={form.owner_type || '(Required)'} />
+              <SummaryRow label="TIN" value={form.tin.trim() || "—"} />
+              <SummaryRow
+                label="Type"
+                value={form.owner_type || "(Required)"}
+              />
               <SummaryRow
                 label="Address"
-                value={form.address.trim() ? form.address.trim() : '(Required)'}
+                value={form.address.trim() ? form.address.trim() : "(Required)"}
               />
             </div>
 
@@ -304,7 +305,7 @@ function Field({
   label,
   placeholder,
   leftIcon,
-  inputType = 'text',
+  inputType = "text",
   value,
   onChange,
   required = false,
@@ -312,7 +313,7 @@ function Field({
   label: string;
   placeholder?: string;
   leftIcon?: React.ReactNode;
-  inputType?: 'text' | 'email' | 'tel';
+  inputType?: "text" | "email" | "tel";
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
@@ -340,8 +341,12 @@ function Field({
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <span className="font-inter text-xs text-slate-500 shrink-0">{label}</span>
-      <span className="font-inter text-xs font-medium text-slate-900 text-right wrap-break-word">{value}</span>
+      <span className="font-inter text-xs text-slate-500 shrink-0">
+        {label}
+      </span>
+      <span className="font-inter text-xs font-medium text-slate-900 text-right wrap-break-word">
+        {value}
+      </span>
     </div>
   );
 }
