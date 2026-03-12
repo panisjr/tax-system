@@ -52,6 +52,7 @@ export default function PropertyRegistryPage() {
             description="Number of taxpayers and properties per barangay" 
             buttonText="View Summary" 
             variant="secondary"
+            onButtonClick={() => router.push('/barangay/tax_payer-summary')}
           />
           <RegistryCard 
             icon={FileChartColumnIncreasing} 
