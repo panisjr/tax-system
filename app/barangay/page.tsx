@@ -36,6 +36,7 @@ export default function PropertyRegistryPage() {
             title="Deliquency Hotspots" 
             description="Identify barangays with high deliquency rates" 
             buttonText="Analyze" 
+            onButtonClick={() => router.push('/barangay/deliquency-hotspots')}
           />
           <RegistryCard
             icon={MapPinned}
