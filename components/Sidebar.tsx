@@ -43,7 +43,7 @@ const menuItems: MenuItem[] = [
     icon: Wallet,
     subtitle: "(Treasurer)",
   },
-  { name: "Payments & QR Monitoring", path: "/payments", icon: FileText },
+  { name: "Payments & OR Monitoring", path: "/payments", icon: FileText },
   { name: "Barangay Performance", path: "/barangay", icon: MapPin },
   { name: "Delinquencies & Notices", path: "/deliquencies", icon: Bell },
   { name: "Document Tracking", path: "/document", icon: Folder },
