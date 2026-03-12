@@ -33,12 +33,14 @@ export default function AssessmentBillingPage() {
 						title='RPT Assessment'
 						description='Compute real property tax based on assessed values'
 						buttonText='Compute Tax'
+						href='/assessment/rpt-assessment'
 					/>
 					<RegistryCard
 						icon={FileText}
 						title='Billing Generation'
 						description='Generate billing statements and assessment notices'
 						buttonText='Generate Bill'
+						href='/assessment/billing-generation'
 					/>
 					<RegistryCard
 						icon={Receipt}
