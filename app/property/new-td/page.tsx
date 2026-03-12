@@ -1,28 +1,15 @@
 'use client';
 
-/**
- * New Tax Declaration — app/property/new-td/page.tsx
- *
- * Select dropdowns replaced with shadcn-style Combobox (Radix Popover):
- *  1. Declaration Type → Combobox (static options)
- *  2. Owner / Taxpayer → Combobox (fetched from /api/taxpayers/list)
- *  3. Barangay         → Combobox (fetched from /api/barangays/list)
- *  4. Classification   → Combobox (static options)
- *  5. Structural Type  → Combobox (static options)
- *  6. Quarter          → kept as plain <select> (4 options, no search needed)
- *
- * Data fetching strategy:
- *  • Barangays: GET /api/barangays/list — 23 rows, fetched once at mount.
- *  • Taxpayers: GET /api/taxpayers/list — fetched once at mount; if dataset
- *    grows past ~5 000 rows, add a server-side search param to filter by name.
- */
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Save, MapPin, Layers, Home, BarChart3, FileText, User,
+  ArrowLeft, Save, MapPin, Layers, Home, BarChart3, FileText, User, Printer,
 } from 'lucide-react';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
+import {
+  TaxDeclarationPrint,
+  type TaxDeclarationData,
+} from '@/components/print/TaxDeclarationPrint';
 
 // ── Static option sets (small, no DB fetch needed) ────────────────────────────
 const DECLARATION_TYPES: ComboboxOption[] = [
@@ -43,11 +30,11 @@ const CLASSIFICATIONS: ComboboxOption[] = [
 ];
 
 const STRUCTURAL_TYPES: ComboboxOption[] = [
-  { value: 'Type I – Wood',            label: 'Type I – Wood' },
-  { value: 'Type II – Mixed',          label: 'Type II – Mixed' },
-  { value: 'Type III – Masonry/Steel', label: 'Type III – Masonry/Steel' },
-  { value: 'Type IV – Steel/RC',       label: 'Type IV – Steel/RC' },
-  { value: 'Type V – RC',              label: 'Type V – RC' },
+  { value: 'Type I Wood',            label: 'Type I Wood' },
+  { value: 'Type II Mixed',          label: 'Type II Mixed' },
+  { value: 'Type III Masonry/Steel', label: 'Type III Masonry/Steel' },
+  { value: 'Type IV Steel/RC',       label: 'Type IV Steel/RC' },
+  { value: 'Type V RC',              label: 'Type V RC' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -59,7 +46,14 @@ export default function NewTaxDeclarationPage() {
   const [barangayOptions, setBarangayOptions] = useState<ComboboxOption[]>([]);
   const [taxpayerOptions, setTaxpayerOptions] = useState<ComboboxOption[]>([]);
   const [loading, setLoading]                 = useState(true);
-
+  
+  type TaxpayerRecord = {
+    tin: string | null;
+    address: string | null;
+    owner_type: string | null;
+  };
+  const [taxpayerMap, setTaxpayerMap] = useState<Map<string, TaxpayerRecord>>(new Map());
+  
   useEffect(() => {
     async function loadReferenceData() {
       const [barangayRes, taxpayerRes] = await Promise.all([
@@ -76,13 +70,21 @@ export default function NewTaxDeclarationPage() {
           label: b.name,
         }))
       );
+
+      type RawTaxpayer = { id: number; owner_name: string; tin: string | null; address: string | null; owner_type: string | null };
       setTaxpayerOptions(
-        taxpayers.map((t: { id: number; owner_name: string; tin: string | null }) => ({
+        taxpayers.map((t: RawTaxpayer) => ({
           value: String(t.id),
           label: t.owner_name,
           sublabel: t.tin ? `TIN: ${t.tin}` : undefined,
         }))
       );
+      const map = new Map<string, TaxpayerRecord>();
+        taxpayers.forEach((t: RawTaxpayer) => {
+        map.set(String(t.id), { tin: t.tin, address: t.address, owner_type: t.owner_type });
+      });
+      setTaxpayerMap(map);
+
       setLoading(false);
     }
     loadReferenceData();
@@ -147,6 +149,87 @@ export default function NewTaxDeclarationPage() {
   const selectedBarangayLabel  = barangayOptions.find((b) => b.value === barangayId)?.label ?? '';
   const selectedTaxpayerLabel  = taxpayerOptions.find((t) => t.value === taxpayerId)?.label ?? '';
 
+  // ── Print state — null until the button is clicked ───────────────────────
+  // TaxDeclarationPrint is NOT mounted until handlePrint() fires.
+  // It is unmounted again via the browser's afterprint event.
+  const [printData, setPrintData] = useState<TaxDeclarationData | null>(null);
+
+  // Fire window.print() one tick after printData is set so React has time
+  // to flush TaxDeclarationPrint into the DOM first.
+  useEffect(() => {
+    if (!printData) return;
+    const t = setTimeout(() => {
+      window.print();
+      // Clean up: unmount TaxDeclarationPrint after the dialog closes
+      window.addEventListener('afterprint', () => setPrintData(null), { once: true });
+    }, 80);
+    return () => clearTimeout(t);
+  }, [printData]);
+
+  // ── Build a snapshot of the form at the moment the button is clicked ──────
+  // Only called on demand — never runs during normal typing / re-renders.
+  function buildPrintSnapshot(): TaxDeclarationData {
+    return {
+      id: 0,
+      td_number:             tdNumber   || '(DRAFT)',
+      arp_number:            arpNumber  || null,
+      declaration_type:      (declarationType as TaxDeclarationData['declaration_type']) || 'New',
+      tax_year:              parseInt(taxYear)          || new Date().getFullYear(),
+      effectivity_year:      parseInt(effectivityYear)  || new Date().getFullYear(),
+      effectivity_quarter:   (effectivityQuarter as TaxDeclarationData['effectivity_quarter']),
+      previous_td_id:        prevTd ? parseInt(prevTd) : null,
+      classification:        (classification as TaxDeclarationData['classification']),
+      actual_use:            actualUse || null,
+      land_area:             parseFloat(landArea)          || null,
+      land_unit_value:       parseFloat(landUnitValue)     || null,
+      land_market_value:     parseFloat(landMarketValue)   || null,
+      land_assessment_level: parseFloat(landAssessLevel)   || null,
+      land_assessed_value:   parseFloat(landAssessedValue) || null,
+      total_market_value:    (parseFloat(landMarketValue)  || 0) + (parseFloat(bldgMarketValue)  || 0) || null,
+      total_assessed_value:  (parseFloat(landAssessedValue)|| 0) + (parseFloat(bldgAssessedValue)|| 0) || null,
+      status:                'Active',
+      created_at:            new Date().toISOString(),
+      updated_at:            new Date().toISOString(),
+      taxpayers: {
+        id:         parseInt(taxpayerId) || 0,
+        owner_name: selectedTaxpayerLabel || '(Not selected)',
+        first_name: null, middle_name: null, last_name: null, suffix: null,
+        tin:        tin || null,
+        address:    ownerAddress || null,
+        owner_type: (ownerType as TaxDeclarationData['taxpayers']['owner_type']),
+        phone: null, email: null,
+      },
+      properties: {
+        id: 0, pin: pin || '—',
+        municipality: 'Sta. Rita', province: 'Samar',
+        street: street || null, lot_number: lotNumber || null,
+        block_number: blockNumber || null, survey_number: surveyNumber || null,
+        barangays: {
+          id: parseInt(barangayId) || 0,
+          name: selectedBarangayLabel || '—',
+          municipality: 'Sta. Rita', province: 'Samar',
+        },
+      },
+      buildings: (buildingKind || structuralType || floorArea || yearBuilt) ? [{
+        id: 0, td_id: 0,
+        kind_of_building: buildingKind || null,
+        structural_type:  (structuralType as TaxDeclarationData['buildings'][0]['structural_type']) || null,
+        floor_area:       parseFloat(floorArea)  || null,
+        year_built:       parseInt(yearBuilt)    || null,
+        age_years:        yearBuilt ? new Date().getFullYear() - parseInt(yearBuilt) : null,
+        condition:        null,
+        market_value:     parseFloat(bldgMarketValue)   || null,
+        assessment_level: parseFloat(bldgAssessLevel)   || null,
+        assessed_value:   parseFloat(bldgAssessedValue) || null,
+        created_at:       new Date().toISOString(),
+      }] : [],
+    };
+  }
+
+  function handlePrint() {
+    setPrintData(buildPrintSnapshot());
+  }
+
   // ── Save handler (wire to server action / API route) ─────────────────────
   function handleSave() {
     // TODO: call POST /api/tax-declarations or a Server Action
@@ -173,24 +256,50 @@ export default function NewTaxDeclarationPage() {
             Create Tax Declaration for Newly Declared Properties – Municipality of Sta. Rita, Samar
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => router.push('/property')}
-            className="font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800"
-          >
-            <Save className="h-4 w-4" />
-            Save Tax Declaration
-          </button>
-        </div>
       </header>
+
+      {/* Sticky Action Buttons */}
+      <div className="lg:sticky lg:top-0 lg:z-40 lg:bg-white lg:border-b lg:border-gray-200 lg:py-3 lg:-mt-2">
+        <div className="flex justify-end">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push('/property')}
+              className="font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            {/* ── Print Review ─────────────────────────────────────────────
+                Renders the hidden TaxDeclarationPrint with current form data,
+                then calls window.print(). The @media print CSS in that component
+                hides everything except the A4 layout automatically.
+            ───────────────────────────────────────────────────────────────── */}
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded border border-gray-300 bg-white px-4 text-xs font-medium text-slate-600 transition-colors hover:bg-gray-50 print:hidden"
+            >
+              <Printer className="h-4 w-4" />
+              Print Review
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800"
+            >
+              <Save className="h-4 w-4" />
+              Save Tax Declaration
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mounted only while printing — unmounted by the afterprint event */}
+      {printData && (
+        <div className="sr-only print:not-sr-only">
+          <TaxDeclarationPrint data={printData} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">

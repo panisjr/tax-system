@@ -1,21 +1,79 @@
 "use client";
 
+import * as React from "react";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+
 import {
   ArrowLeft,
   Printer,
   Search,
   ReceiptText,
   FileText,
+  CalendarIcon,
 } from "lucide-react";
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+import { Combobox } from "@/components/ui/combobox";
+import type { ComboboxOption } from "@/components/ui/combobox";
+
+// ButtonDemo and FundType replaced with new searchable Combobox
+
+export function CalendarInput({ className }: { className?: string }) {
+  const [date, setDate] = React.useState<Date | undefined>(new Date());
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          // We merge the default button styling with any custom classes you pass in
+          className={`w-full justify-start text-left font-normal ${
+            !date ? "text-slate-400" : "text-slate-900"
+          } ${className || ""}`}
+        >
+          <CalendarIcon className="mr-2 h-4 w-4" />
+          {/* This formats the date as MM/dd/yyyy. Example: 03/15/2026 */}
+          {date ? format(date, "MM/dd/yyyy") : <span>Pick a date</span>}
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={setDate}
+          className="rounded-lg border bg-white shadow-md"
+          captionLayout="dropdown"
+          fromYear={1950} // Optional: limits how far back they can scroll
+          toYear={2050} // Optional: limits how far forward they can scroll
+          initialFocus
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+const fundOptions: ComboboxOption[] = [
+  { value: 'general', label: 'General Fund' },
+  { value: 'sef', label: 'Special Education Fund (SEF)' },
+  { value: 'trust', label: 'Trust Fund' }
+];
 
 export default function IssueReceiptPage() {
   const router = useRouter();
+  const [fundType, setFundType] = React.useState('');
 
   return (
     <main>
       <div className="flex-1">
-        {/* Header Section */}
         <header className="mb-8">
           <button
             type="button"
@@ -57,7 +115,6 @@ export default function IssueReceiptPage() {
         </header>
 
         <div className="space-y-6">
-          {/* Section 1: Find Payment */}
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-5 flex items-center gap-3">
               <div className="rounded-md bg-slate-100 p-2">
@@ -84,13 +141,12 @@ export default function IssueReceiptPage() {
                   className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 placeholder:text-slate-400 text-slate-900"
                 />
               </div>
-              <button className="font-inter h-9.5 px-6 rounded bg-[#00154A] text-white text-xs font-medium hover:bg-blue-900 transition-colors">
+              <button className="font-inter h-10 px-6 rounded bg-[#00154A] text-white text-xs font-medium hover:bg-blue-900 transition-colors">
                 Search
               </button>
             </div>
           </section>
 
-          {/* Section 2: Receipt Details */}
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-5 flex items-center gap-3">
               <div className="rounded-md bg-slate-100 p-2">
@@ -116,9 +172,8 @@ export default function IssueReceiptPage() {
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Date of Issue <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="date"
-                  className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 text-slate-900 cursor-pointer"
+                <CalendarInput 
+                  className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-slate-200" 
                 />
               </div>
               <div>
@@ -126,8 +181,8 @@ export default function IssueReceiptPage() {
                   Issued By (Cashier/Treasurer){" "}
                   <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
+                  <input
+                    type="text"
                   placeholder="Juan Dela Cruz"
                   className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 placeholder:text-slate-400 text-slate-900"
                 />
@@ -136,11 +191,14 @@ export default function IssueReceiptPage() {
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Fund Type <span className="text-rose-500">*</span>
                 </label>
-                <select className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 bg-white text-slate-900">
-                  <option value="general">General Fund</option>
-                  <option value="sef">Special Education Fund (SEF)</option>
-                  <option value="trust">Trust Fund</option>
-                </select>
+                <Combobox
+                  label=""
+                  options={fundOptions}
+                  value={fundType}
+                  onChange={setFundType}
+                  required
+                  className="mt-1"
+                />
               </div>
             </div>
           </section>
