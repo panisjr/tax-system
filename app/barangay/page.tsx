@@ -1,7 +1,12 @@
+"use client";
+
 import RegistryCard from '@/components/RegistryCard';
-import { ChartColumn, TrendingUp, Type, MapPinned, Users, FileChartColumnIncreasing } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ChartColumn, TrendingUp, Type, Users, FileChartColumnIncreasing, MapPinned } from 'lucide-react';
 
 export default function PropertyRegistryPage() {
+  const router = useRouter();
+
   return (
     <div className="flex">
       
@@ -30,12 +35,13 @@ export default function PropertyRegistryPage() {
             description="Identify barangays with high deliquency rates" 
             buttonText="Analyze" 
           />
-          <RegistryCard 
-            icon={MapPinned} 
-            title="Barangay Map View" 
-            description="Geographic visualization of RPT performance" 
-            buttonText="Open Map" 
+          <RegistryCard
+            icon={MapPinned}
+            title="Barangay Map View"
+            description="Pinned Sta. Rita barangays with quick RPT performance"
+            buttonText="Open Map"
             variant="secondary"
+            onButtonClick={() => router.push('/barangay/map')}
           />
           <RegistryCard 
             icon={Users} 

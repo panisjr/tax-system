@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "leaflet/dist/leaflet.css";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import { Toaster } from "@/components/ui/sonner";
 import { Lexend } from "next/font/google";
