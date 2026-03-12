@@ -22,6 +22,7 @@ export default function PropertyRegistryPage() {
             title="Collection Performance" 
             description="RPT collections per barangay with trend comparison" 
             buttonText="View Performance" 
+            onButtonClick={() => router.push('/barangay/collection-performance')}
           />
           <RegistryCard 
             icon={TrendingUp} 
