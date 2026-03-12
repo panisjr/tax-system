@@ -6,7 +6,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
+import {  
   ArrowLeft,
   Save,
   UserRound,
@@ -21,9 +21,7 @@ import {
 
 import { Combobox } from "@/components/ui/combobox";
 import type { ComboboxOption } from "@/components/ui/combobox";
-
-
-// PaymentCombobox replaced with new searchable Combobox
+import { ValidatedInput } from "@/components/ui/ValidatedInput";
 
 export function CalendarInput({ className }: { className?: string }) {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
@@ -69,6 +67,9 @@ const paymentOptions: ComboboxOption[] = [
 export default function RecordPaymentPage() {
   const router = useRouter();
   const [paymentMethod, setPaymentMethod] = React.useState('');
+  const [tdn, setTdn] = React.useState('');
+  const [taxpayerName, setTaxpayerName] = React.useState('');
+  const [ORnumber, setOrNumber] = React.useState('');
 
   return (
     <div className="flex">
@@ -132,20 +133,24 @@ export default function RecordPaymentPage() {
                   Tax Declaration No. (TDN){" "}
                   <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 12-3456-789"
-                  className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 placeholder:text-slate-400 text-slate-900"
+                <ValidatedInput
+                  validator="td-number"
+                  value={tdn}
+                  placeholder="TD-2024-0001"
+                  onChange={setTdn}
+                  className="font-inter mt-1"
                 />
               </div>
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Taxpayer Name <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
+                <ValidatedInput
+                  validator="name"
+                  value={taxpayerName}
+                  onChange={setTaxpayerName}
                   placeholder="Juan Dela Cruz"
-                  className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 placeholder:text-slate-400 text-slate-900"
+                  className="font-inter mt-1"
                 />
               </div>
             </div>
@@ -191,10 +196,13 @@ export default function RecordPaymentPage() {
                   Official Receipt (O.R.) Number{" "}
                   <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 9876543"
-                  className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 placeholder:text-slate-400 text-slate-900"
+                <ValidatedInput
+                  validator="ORnumber"
+                  value={ORnumber}
+                  onChange={setOrNumber}
+                  placeholder="OR-2026-000123"
+                  className="font-inter mt-1"
+                  maxLength={14}
                 />
               </div>
               <div>

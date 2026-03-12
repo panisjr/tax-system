@@ -4,10 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Building2, Wallet, CreditCard } from "lucide-react";
 import { Combobox } from "@/components/ui/combobox";
+import { ValidatedInput } from "@/components/ui/ValidatedInput";
+
 
 export default function PaymentChannelsPage() {
   const router = useRouter();
   const [selectedBank, setSelectedBank] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+
 
   return (
     <main>
@@ -103,11 +107,14 @@ export default function PaymentChannelsPage() {
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Account Number <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 1234-5678-90"
-                  className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 placeholder:text-slate-400 text-slate-900"
+                <ValidatedInput
+                  validator="account-number"
+                  value={accountNumber}
+                  onChange={setAccountNumber}
+                  placeholder="1234-5678-90"
+                  className="mt-1"
                 />
+
               </div>
             </div>
 

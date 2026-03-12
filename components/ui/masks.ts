@@ -20,10 +20,21 @@ export type MaskKey =
   | 'text'
   | 'email'
   | 'employee-Id'
-  | 'name';
+  | 'ORnumber' 
+  | 'name'
+  | 'account-number';
 
 export type MaskFn = (raw: string) => string;
 
+// ── Account Number ───────────────────────────────────────────────────────────
+// Format: XXXX-XXXX-XX (10 digits: 4-4-2 with dashes)
+
+export function maskAccountNumber(raw: string): string {
+  const d = raw.replace(/\D/g, '').slice(0, 10);
+  if (d.length <= 4) return d;
+  if (d.length <= 8) return `${d.slice(0, 4)}-${d.slice(4)}`;
+  return `${d.slice(0, 4)}-${d.slice(4, 8)}-${d.slice(8)}`;
+}
 
 // ── TIN ───────────────────────────────────────────────────────────────────────
 // Format: ###-###-###  or  ###-###-###-###  (9 or 12 digits, dash-separated)
@@ -111,6 +122,19 @@ export function maskName(raw: string): string {
   return raw.replace(/[^a-zA-Z\s\-\.\']/g, '');
 }
 
+// ── OR Number ────────────────────────────────────────────────────────────────
+// Prefix: "OR-" | Format: OR-####-###### | Up to 10 digits
+
+export function maskORNumber(raw: string): string {
+  const withoutPrefix = raw.replace(/^[Oo][Rr]-?/, '');
+  const d = withoutPrefix.replace(/\D/g, '').slice(0, 10);
+
+  if (!d) return 'OR-';
+  if (d.length <= 4) return `OR-${d}`;
+  return `OR-${d.slice(0, 4)}-${d.slice(4)}`;
+}
+
+
 // ── Registry ──────────────────────────────────────────────────────────────────
 
 export const MASKS: Record<MaskKey, MaskFn> = {
@@ -123,4 +147,7 @@ export const MASKS: Record<MaskKey, MaskFn> = {
   'email': maskEmail,
   'employee-Id': maskEmployeeId,
   'name': maskName,
+  'ORnumber': maskORNumber,
+  'account-number': maskAccountNumber,
 };
+
