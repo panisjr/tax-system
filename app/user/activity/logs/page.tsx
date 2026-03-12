@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
+
 import {
   Table,
   TableContainer,
@@ -54,8 +55,8 @@ export default function UserLogsPage() {
   const router = useRouter();
 
   return (
-    <div className="flex">
-      <main className="flex-1">
+    <div className="flex w-full overflow-x-hidden">
+      <main className="flex-1 w-full">
         {/* Header */}
         <header className="mb-8">
           <button
@@ -80,7 +81,7 @@ export default function UserLogsPage() {
         </header>
 
         {/* Logs Table */}
-        <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <section className="w-full rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <div className="mb-5 flex items-center gap-3">
             <div className="rounded-md bg-slate-100 p-2">
               <Activity className="h-5 w-5 text-[#00154A]" />
@@ -91,7 +92,7 @@ export default function UserLogsPage() {
           </div>
 
           <TableContainer>
-            <Table>
+            <Table className="min-w-175">
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
@@ -101,18 +102,26 @@ export default function UserLogsPage() {
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
                 {logs.map((log, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="text-slate-700">
+                  <TableRow key={index} className="hover:bg-slate-50 transition-colors">
+                    <TableCell>
                       <div className="flex items-center gap-2">
                         <ShieldCheck className="h-4 w-4 text-slate-400" />
-                        {log.user}
+                        <span className="text-slate-700 font-medium">{log.user}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{log.action}</TableCell>
-                    <TableCell>{log.module}</TableCell>
-                    <TableCell className="text-slate-500">
+
+                    <TableCell>
+                      {log.action}
+                    </TableCell>
+
+                    <TableCell>
+                      {log.module}
+                    </TableCell>
+
+                    <TableCell>
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-slate-400" />
                         {log.time}
@@ -144,3 +153,4 @@ export default function UserLogsPage() {
     </div>
   );
 }
+
