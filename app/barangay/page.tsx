@@ -60,6 +60,7 @@ export default function PropertyRegistryPage() {
             description="Export barangay-level performance audit reports" 
             buttonText="Generate Reports" 
             variant="secondary"
+            onButtonClick={() => router.push('/barangay/barangay-reports')}
           />
         </div>
       </main>
