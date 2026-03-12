@@ -17,7 +17,10 @@ export type MaskKey =
   | 'phone'
   | 'rpt-id'
   | 'barangay-code'
-  | 'text';
+  | 'text'
+  | 'email'
+  | 'employee-Id'
+  | 'name';
 
 export type MaskFn = (raw: string) => string;
 
@@ -66,6 +69,13 @@ export function maskText(raw: string): string {
   return raw;
 }
 
+// ── Email ───────────────────────────────────────────────────────────────────
+// Email doesn't need masking, just return as-is
+
+export function maskEmail(raw: string): string {
+  return raw;
+}
+
 // ── RPT ID ────────────────────────────────────────────────────────────────────
 // Format: ##-###-#### (9 digits)
 
@@ -85,6 +95,22 @@ export function maskBarangayCode(raw: string): string {
   return `${d.slice(0, 3)}-${d.slice(3)}`;
 }
 
+// ── Employee ID ─────────────────────────────────────────────────────────────
+// Format: XXXX-XXXX (8 digits with hyphen in middle)
+
+export function maskEmployeeId(raw: string): string {
+  const d = raw.replace(/\D/g, '').slice(0, 8);
+  if (d.length <= 4) return d;
+  return `${d.slice(0, 4)}-${d.slice(4)}`;
+}
+
+// ── Name ─────────────────────────────────────────────────────────────────────
+// Allows only letters, spaces, hyphens, periods, and apostrophes
+
+export function maskName(raw: string): string {
+  return raw.replace(/[^a-zA-Z\s\-\.\']/g, '');
+}
+
 // ── Registry ──────────────────────────────────────────────────────────────────
 
 export const MASKS: Record<MaskKey, MaskFn> = {
@@ -94,4 +120,7 @@ export const MASKS: Record<MaskKey, MaskFn> = {
   'rpt-id': maskRptId,
   'barangay-code': maskBarangayCode,
   'text': maskText,
+  'email': maskEmail,
+  'employee-Id': maskEmployeeId,
+  'name': maskName,
 };
