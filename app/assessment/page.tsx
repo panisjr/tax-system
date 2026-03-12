@@ -1,4 +1,7 @@
+"use client";
+
 import RegistryCard from '@/components/RegistryCard';
+import { useRouter } from 'next/navigation';
 
 import {
 	Calculator,
@@ -10,6 +13,8 @@ import {
 } from 'lucide-react';
 
 export default function AssessmentBillingPage() {
+	const router = useRouter();
+
 	return (
 		<div className='flex'>
 			<main className='flex-1'>
@@ -49,6 +54,7 @@ export default function AssessmentBillingPage() {
 						description='Apply early payment discounts and late penalties'
 						buttonText='Configure'
 						variant='secondary'
+						onButtonClick={() => router.push('/assessment/discounts-penalties')}
 					/>
 					<RegistryCard
 						icon={CalendarDays}
