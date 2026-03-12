@@ -256,37 +256,43 @@ export default function NewTaxDeclarationPage() {
             Create Tax Declaration for Newly Declared Properties – Municipality of Sta. Rita, Samar
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => router.push('/property')}
-            className="font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          {/* ── Print Review ─────────────────────────────────────────────
-              Renders the hidden TaxDeclarationPrint with current form data,
-              then calls window.print(). The @media print CSS in that component
-              hides everything except the A4 layout automatically.
-          ───────────────────────────────────────────────────────────────── */}
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded border border-gray-300 bg-white px-4 text-xs font-medium text-slate-600 transition-colors hover:bg-gray-50 print:hidden"
-          >
-            <Printer className="h-4 w-4" />
-            Print Review
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800"
-          >
-            <Save className="h-4 w-4" />
-            Save Tax Declaration
-          </button>
-        </div>
       </header>
+
+      {/* Sticky Action Buttons */}
+      <div className="lg:sticky lg:top-0 lg:z-40 lg:bg-white lg:border-b lg:border-gray-200 lg:py-3 lg:-mt-2">
+        <div className="flex justify-end">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push('/property')}
+              className="font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            {/* ── Print Review ─────────────────────────────────────────────
+                Renders the hidden TaxDeclarationPrint with current form data,
+                then calls window.print(). The @media print CSS in that component
+                hides everything except the A4 layout automatically.
+            ───────────────────────────────────────────────────────────────── */}
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded border border-gray-300 bg-white px-4 text-xs font-medium text-slate-600 transition-colors hover:bg-gray-50 print:hidden"
+            >
+              <Printer className="h-4 w-4" />
+              Print Review
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800"
+            >
+              <Save className="h-4 w-4" />
+              Save Tax Declaration
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Mounted only while printing — unmounted by the afterprint event */}
       {printData && (
