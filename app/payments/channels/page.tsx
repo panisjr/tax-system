@@ -3,31 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Building2, Wallet, CreditCard } from "lucide-react";
-
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@/components/ui/combobox";
-
-const bankOptions = [
-  "Landbank of the Philippines",
-  "Development Bank of the Philippines",
-  "Other Commercial Bank",
-] as const;
+import { Combobox } from "@/components/ui/combobox";
 
 export default function PaymentChannelsPage() {
   const router = useRouter();
-  const [bankDropdownOpen, setBankDropdownOpen] = useState(false);
-  const bankOptions = [
-    "Landbank of the Philippines",
-    "Development Bank of the Philippines",
-    "Other Commercial Bank",
-  ] as const;
-  const [selectedBank, setSelectedBank] = useState<string>(bankOptions[0]);
+  const [selectedBank, setSelectedBank] = useState('');
 
   return (
     <main>
@@ -96,19 +76,18 @@ export default function PaymentChannelsPage() {
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Bank Name <span className="text-rose-500">*</span>
                 </label>
-                <Combobox items={bankOptions}>
-                  <ComboboxInput placeholder="Select Bank" />
-                  <ComboboxContent>
-                    <ComboboxEmpty>No items found.</ComboboxEmpty>
-                    <ComboboxList>
-                      {(item) => (
-                        <ComboboxItem key={item} value={item}>
-                          {item}
-                        </ComboboxItem>
-                      )}
-                    </ComboboxList>
-                  </ComboboxContent>
-                </Combobox>
+                <Combobox
+                  label=""
+                  options={[
+                    { value: 'landbank', label: 'Landbank of the Philippines' },
+                    { value: 'dbp', label: 'Development Bank of the Philippines' },
+                    { value: 'other', label: 'Other Commercial Bank' }
+                  ]}
+                  value={selectedBank}
+                  onChange={setSelectedBank}
+                  required
+                  className="mt-1"
+                />
               </div>
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
