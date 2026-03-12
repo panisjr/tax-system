@@ -18,7 +18,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from "@/components/table";
+} from "@/components/ui/table";
 
 const logs = [
   {
@@ -127,7 +127,6 @@ export default function UserLogsPage() {
                         {log.time}
                       </div>
                     </TableCell>
-
                     <TableCell>
                       <span
                         className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs ${
