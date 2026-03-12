@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import ConditionalLayout from "@/components/ConditionalLayout";
+import { Toaster } from "@/components/ui/sonner";
 import { Lexend } from "next/font/google";
 
 const lexend = Lexend({
@@ -23,6 +24,7 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body className={`${lexend.variable} h-full antialiased hsansen overflow-hidden font-(--font-lexend)`}>
         <ConditionalLayout>{children}</ConditionalLayout>
+        <Toaster position="top-right" />
       </body>
     </html>
   );
