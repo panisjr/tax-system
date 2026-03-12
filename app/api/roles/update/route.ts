@@ -1,87 +1,118 @@
-import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 type UpdateRolePayload = {
-  id: string | number;
-  name: string;
-  permission_id?: number;
-  permission_ids?: number[];
+    id: number | string;
+    name: string;
+    permission_id?: number;
+    permission_ids?: number[];
 };
 
 export async function POST(request: Request) {
-  try {
-    const body = (await request.json()) as Partial<UpdateRolePayload>;
+    try {
+        const body = (await request.json()) as Partial<UpdateRolePayload>;
+        
+        const roleId = Number(body.id);
+        const name = body.name?.trim() ?? '';
+        
+        // Handle both single permission_id and array of permission_ids from frontend
+        const rawPermissionIds = Array.isArray(body.permission_ids)
+            ? body.permission_ids
+            : body.permission_id !== undefined
+                ? [body.permission_id]
+                : [];
 
-    const id = body.id;
-    const name = body.name?.trim() ?? "";
-    const permissionIdFromArray =
-      Array.isArray(body.permission_ids) && body.permission_ids.length > 0
-        ? Number(body.permission_ids[0])
-        : null;
-    const permissionId = Number(
-      permissionIdFromArray ?? body.permission_id ?? NaN,
-    );
+        const permissionIds = [...new Set(rawPermissionIds.map((value) => Number(value)))].filter(
+            (value) => Number.isInteger(value) && value > 0,
+        );
 
-    if (!id) {
-      return NextResponse.json({ error: "id is required." }, { status: 400 });
+        if (!Number.isInteger(roleId) || roleId <= 0) {
+            return NextResponse.json({ error: 'Valid role ID is required.' }, { status: 400 });
+        }
+
+        if (!name) {
+            return NextResponse.json({ error: 'name is required.' }, { status: 400 });
+        }
+
+        // 1. Check if the new name is already taken by a DIFFERENT role
+        const { data: existingRole, error: existingRoleError } = await supabaseAdmin
+            .from('roles')
+            .select('id, name')
+            .ilike('name', name)
+            .neq('id', roleId) // Exclude the current role we are editing
+            .limit(1)
+            .maybeSingle();
+
+        if (existingRoleError) {
+            return NextResponse.json({ error: existingRoleError.message }, { status: 400 });
+        }
+
+        if (existingRole) {
+            return NextResponse.json({ error: 'Another role with this name already exists.' }, { status: 409 });
+        }
+
+        // 2. Validate that the submitted permissions actually exist in the DB
+        const { data: permissionRows, error: permissionError } = await supabaseAdmin
+            .from('permissions')
+            .select('id')
+            .in('id', permissionIds);
+
+        if (permissionError || (permissionRows ?? []).length !== permissionIds.length) {
+            return NextResponse.json(
+                { error: 'One or more selected permissions are invalid.' },
+                { status: 400 },
+            );
+        }
+
+        // 3. Update the Role Name
+        const { error: updateRoleError } = await supabaseAdmin
+            .from('roles')
+            .update({ name })
+            .eq('id', roleId);
+
+        if (updateRoleError) {
+            if (updateRoleError.code === '23505') {
+                return NextResponse.json({ error: 'Role already exists.' }, { status: 409 });
+            }
+            return NextResponse.json({ error: updateRoleError.message }, { status: 400 });
+        }
+
+        // 4. Wipe the old permissions for this role
+        const { error: deletePermsError } = await supabaseAdmin
+            .from('role_permissions')
+            .delete()
+            .eq('role_id', roleId);
+
+        if (deletePermsError) {
+            return NextResponse.json({ error: 'Failed to clear old permissions: ' + deletePermsError.message }, { status: 400 });
+        }
+
+        // 5. Insert the newly selected permissions
+        const rolePermissionRows = permissionIds.map((permissionId) => ({
+            role_id: roleId,
+            permission_id: permissionId,
+        }));
+
+        const { error: rolePermissionsError } = await supabaseAdmin
+            .from('role_permissions')
+            .insert(rolePermissionRows);
+
+        if (rolePermissionsError) {
+            return NextResponse.json(
+                { error: 'Failed to assign new permissions: ' + rolePermissionsError.message },
+                { status: 400 },
+            );
+        }
+
+        return NextResponse.json({
+            message: 'Role updated successfully.',
+            role_id: roleId,
+            permission_ids: permissionIds,
+        });
+    } catch {
+        return NextResponse.json(
+            { error: 'Unable to process request.' },
+            { status: 500 },
+        );
     }
-
-    if (!name) {
-      return NextResponse.json({ error: "name is required." }, { status: 400 });
-    }
-
-    if (!Number.isInteger(permissionId) || permissionId <= 0) {
-      return NextResponse.json(
-        { error: "permission_id is required." },
-        { status: 400 },
-      );
-    }
-
-    // verify role exists
-    const { data: existing, error: fetchError } = await supabaseAdmin
-      .from("roles")
-      .select("id")
-      .eq("id", id)
-      .single();
-
-    if (fetchError || !existing) {
-      return NextResponse.json({ error: "Role not found." }, { status: 404 });
-    }
-
-    // verify permission exists
-    const { data: permission, error: permissionError } = await supabaseAdmin
-      .from("permissions")
-      .select("id")
-      .eq("id", permissionId)
-      .single();
-
-    if (permissionError || !permission) {
-      return NextResponse.json(
-        { error: "Selected permission is invalid." },
-        { status: 400 },
-      );
-    }
-
-    // update role
-    const { data, error } = await supabaseAdmin
-      .from("roles")
-      .update({ name, permission_id: permissionId })
-      .eq("id", id)
-      .select("*")
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json({
-      message: "Role updated successfully.",
-      role: data,
-    });
-  } catch {
-    return NextResponse.json(
-      { error: "Unable to process request." },
-      { status: 500 },
-    );
-  }
 }

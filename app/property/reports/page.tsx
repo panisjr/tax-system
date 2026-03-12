@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -11,7 +11,13 @@ import {
   MapPin,
   Shield,
   ClipboardList,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
+import {
+  TaxDeclarationPrint,
+  type TaxDeclarationData,
+} from '@/components/print/TaxDeclarationPrint';
 
 const barangays = [
   'All Barangays', 'Bacubac', 'Bagacay', 'Balonga-as', 'Barayong', 'Binalayan',
@@ -71,18 +77,99 @@ const reportTypes = [
   },
 ];
 
+// Reports that use TaxDeclarationPrint + the by-number API
+const TD_PRINT_REPORTS = new Set(['td-print', 'certified-copy']);
+
+type FetchState = 'idle' | 'loading' | 'ready' | 'error';
+
 export default function ReportsCertificationsPage() {
   const router = useRouter();
+
+  // ── Report selection ───────────────────────────────────────────────────────
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
-  const [year, setYear] = useState('2024');
-  const [barangay, setBarangay] = useState('All Barangays');
+
+  // ── Form params ───────────────────────────────────────────────────────────
+  const [year,           setYear]           = useState('2024');
+  const [barangay,       setBarangay]       = useState('All Barangays');
   const [classification, setClassification] = useState('');
-  const [tdNumber, setTdNumber] = useState('');
+  const [tdNumber,       setTdNumber]       = useState('');
+
+  // ── TD fetch state (used by td-print + certified-copy) ────────────────────
+  const [fetchState,  setFetchState]  = useState<FetchState>('idle');
+  const [fetchError,  setFetchError]  = useState<string | null>(null);
+  const [printData,   setPrintData]   = useState<TaxDeclarationData | null>(null);
+
+  // triggerPrint: set to 'preview' or 'download' after data is ready so
+  // useEffect can call window.print() on the next render (data + DOM ready).
+  const printIntent = useRef<'preview' | 'download' | null>(null);
 
   const selected = reportTypes.find((r) => r.id === selectedReport);
 
+  // ── Reset fetch state when report type or tdNumber changes ─────────────────
+  useEffect(() => {
+    setFetchState('idle');
+    setFetchError(null);
+    setPrintData(null);
+    printIntent.current = null;
+  }, [selectedReport, tdNumber]);
+
+  // ── Trigger window.print() once printData is rendered in the DOM ──────────
+  useEffect(() => {
+    if (fetchState === 'ready' && printData && printIntent.current) {
+      // Small timeout lets React flush the TaxDeclarationPrint render first
+      const t = setTimeout(() => window.print(), 120);
+      return () => clearTimeout(t);
+    }
+  }, [fetchState, printData]);
+
+  // ── Fetch TD data from API, then set intent ────────────────────────────────
+  async function fetchAndPrint(intent: 'preview' | 'download') {
+    if (!tdNumber.trim()) return;
+
+    setFetchState('loading');
+    setFetchError(null);
+    setPrintData(null);
+    printIntent.current = intent;
+
+    try {
+      const res = await fetch(
+        `/api/tax-declarations/by-number?td_number=${encodeURIComponent(tdNumber.trim())}`,
+      );
+      const json = await res.json();
+
+      if (!res.ok) {
+        setFetchError(json.error ?? 'Failed to load tax declaration.');
+        setFetchState('error');
+        printIntent.current = null;
+        return;
+      }
+
+      setPrintData(json.td as TaxDeclarationData);
+      setFetchState('ready');
+      // window.print() fires in the useEffect above once render is complete
+    } catch {
+      setFetchError('Network error. Please try again.');
+      setFetchState('error');
+      printIntent.current = null;
+    }
+  }
+
+  const isTDReport    = selectedReport ? TD_PRINT_REPORTS.has(selectedReport) : false;
+  const isLoading     = fetchState === 'loading';
+  const canGenerate   = isTDReport ? tdNumber.trim().length > 0 && !isLoading : true;
+
   return (
     <div className="w-full">
+      {/* ── Hidden TaxDeclarationPrint mount ─────────────────────────────────
+          Invisible on screen (sr-only). Becomes visible via @media print CSS
+          inside TaxDeclarationPrint itself (#td-print-root visibility trick).
+      ──────────────────────────────────────────────────────────────────────── */}
+      {printData && (
+        <div className="sr-only print:not-sr-only">
+          <TaxDeclarationPrint data={printData} />
+        </div>
+      )}
+
       <button
         type="button"
         onClick={() => router.push('/property')}
@@ -101,7 +188,7 @@ export default function ReportsCertificationsPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-        {/* Report Type Cards */}
+        {/* ── Report Type Cards ─────────────────────────────────────────────── */}
         <div className="lg:col-span-2">
           <p className="font-inter mb-4 text-xs text-slate-400">Select a report type to configure and generate.</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -135,7 +222,7 @@ export default function ReportsCertificationsPage() {
           </div>
         </div>
 
-        {/* Generation Panel */}
+        {/* ── Generation Panel ─────────────────────────────────────────────── */}
         <div>
           <div className="sticky top-6 rounded-sm border border-gray-200 bg-white p-6 shadow-sm">
             {!selected ? (
@@ -158,6 +245,7 @@ export default function ReportsCertificationsPage() {
                   </div>
                 </div>
 
+                {/* ── Parameter fields ────────────────────────────────────── */}
                 <div className="space-y-4">
                   {selected.fields.includes('tdNumber') && (
                     <div>
@@ -216,26 +304,79 @@ export default function ReportsCertificationsPage() {
                   )}
                 </div>
 
+                {/* ── Error message ────────────────────────────────────────── */}
+                {fetchState === 'error' && fetchError && (
+                  <div className="mt-4 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+                    <p className="font-inter text-xs text-red-700">{fetchError}</p>
+                  </div>
+                )}
+
+                {/* ── Ready confirmation ───────────────────────────────────── */}
+                {fetchState === 'ready' && printData && (
+                  <div className="mt-4 rounded-md border border-green-200 bg-green-50 px-3 py-2">
+                    <p className="font-inter text-xs text-green-700">
+                      ✓ TD loaded — print dialog should have opened. If not,{' '}
+                      <button
+                        type="button"
+                        className="underline underline-offset-2 hover:text-green-900"
+                        onClick={() => window.print()}
+                      >
+                        click here to retry
+                      </button>
+                      .
+                    </p>
+                  </div>
+                )}
+
+                {/* ── Action buttons ───────────────────────────────────────── */}
                 <div className="mt-6 space-y-2">
                   <button
                     type="button"
-                    className="font-inter w-full inline-flex cursor-pointer items-center justify-center gap-2 rounded bg-[#0f1729] px-4 py-2.5 text-xs font-medium text-[#8A9098] hover:bg-slate-800 transition-colors"
+                    disabled={!canGenerate}
+                    onClick={() =>
+                      isTDReport
+                        ? fetchAndPrint('download')
+                        : console.log('TODO: generate', selectedReport)
+                    }
+                    className="font-inter w-full inline-flex cursor-pointer items-center justify-center gap-2 rounded bg-[#0f1729] px-4 py-2.5 text-xs font-medium text-[#8A9098] hover:bg-slate-800 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <FileDown className="h-4 w-4" />
-                    Generate & Download
+                    {isLoading && printIntent.current === 'download'
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : <FileDown className="h-4 w-4" />
+                    }
+                    {isLoading && printIntent.current === 'download'
+                      ? 'Loading…'
+                      : 'Generate & Download'
+                    }
                   </button>
                   <button
                     type="button"
-                    className="font-inter w-full inline-flex cursor-pointer items-center justify-center gap-2 rounded border border-gray-200 bg-white px-4 py-2.5 text-xs font-medium text-slate-600 hover:bg-gray-50 transition-colors"
+                    disabled={!canGenerate}
+                    onClick={() =>
+                      isTDReport
+                        ? fetchAndPrint('preview')
+                        : console.log('TODO: preview', selectedReport)
+                    }
+                    className="font-inter w-full inline-flex cursor-pointer items-center justify-center gap-2 rounded border border-gray-200 bg-white px-4 py-2.5 text-xs font-medium text-slate-600 hover:bg-gray-50 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <Printer className="h-4 w-4" />
-                    Print Preview
+                    {isLoading && printIntent.current === 'preview'
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : <Printer className="h-4 w-4" />
+                    }
+                    {isLoading && printIntent.current === 'preview'
+                      ? 'Loading…'
+                      : 'Print Preview'
+                    }
                   </button>
                 </div>
 
                 <div className="mt-4 rounded-md border border-gray-100 bg-gray-50 p-3">
                   <p className="font-inter text-xs text-slate-400">
-                    Generated reports are in PDF format and will include the official municipality header and certification signature block.
+                    {isTDReport
+                      ? 'Fetches the saved TD from the database and opens the browser print dialog. Use "Save as PDF" in the dialog to download.'
+                      : 'Generated reports are in PDF format and will include the official municipality header and certification signature block.'
+                    }
                   </p>
                 </div>
               </>
