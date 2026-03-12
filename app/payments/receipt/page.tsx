@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { ValidatedInput } from "@/components/ui/ValidatedInput";
 
 import {
   ArrowLeft,
@@ -62,14 +63,16 @@ export function CalendarInput({ className }: { className?: string }) {
 }
 
 const fundOptions: ComboboxOption[] = [
-  { value: 'general', label: 'General Fund' },
-  { value: 'sef', label: 'Special Education Fund (SEF)' },
-  { value: 'trust', label: 'Trust Fund' }
+  { value: "general", label: "General Fund" },
+  { value: "sef", label: "Special Education Fund (SEF)" },
+  { value: "trust", label: "Trust Fund" },
 ];
 
 export default function IssueReceiptPage() {
   const router = useRouter();
-  const [fundType, setFundType] = React.useState('');
+  const [fundType, setFundType] = React.useState("");
+  const [ORnumber, setOrNumber] = React.useState("");
+  const [taxpayerName, setTaxpayerName] = React.useState("");
 
   return (
     <main>
@@ -162,29 +165,32 @@ export default function IssueReceiptPage() {
                 <label className="font-inter text-xs font-medium text-slate-600">
                   O.R. Number <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  placeholder="e.g. 9876543"
-                  className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 placeholder:text-slate-400 text-slate-900"
+                <ValidatedInput
+                  validator="ORnumber"
+                  value={ORnumber}
+                  onChange={setOrNumber}
+                  placeholder="OR-2026-000123"
+                  className="font-inter mt-1"
+                  maxLength={14}
                 />
               </div>
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Date of Issue <span className="text-rose-500">*</span>
                 </label>
-                <CalendarInput 
-                  className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-slate-200" 
-                />
+                <CalendarInput className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-slate-200" />
               </div>
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Issued By (Cashier/Treasurer){" "}
-                  <span className="text-rose-500">*</span>
                 </label>
-                  <input
-                    type="text"
+                <span className="text-rose-500">*</span>
+                <ValidatedInput
+                  validator="name"
+                  value={taxpayerName}
+                  onChange={setTaxpayerName}
                   placeholder="Juan Dela Cruz"
-                  className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 placeholder:text-slate-400 text-slate-900"
+                  className="font-inter mt-1"
                 />
               </div>
               <div>

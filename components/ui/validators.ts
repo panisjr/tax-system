@@ -20,7 +20,9 @@ export type ValidatorKey =
   | 'text'
   | 'email'
   | 'employee-Id'
-  | 'name';
+  | 'name'
+  | 'account-number'
+  | 'ORnumber';
 
 export interface Validator {
   /** Returns true when the fully-formatted value is complete and valid. */
@@ -34,12 +36,6 @@ export const VALIDATORS: Record<ValidatorKey, Validator> = {
   'tin': {
     validate: (v) => /^\d{3}-\d{3}-\d{3}(-\d{3})?$/.test(v),
     errorMessage: 'TIN must be 123-456-789 or 123-456-789-000',
-  },
-
-  // ── TD Number: TD-####-#### up to TD-####-####-####-####-####
-  'td-number': {
-    validate: (v) => /^TD-\d{4}-\d{4}(-\d{4}){0,3}$/.test(v),
-    errorMessage: 'TD Number must be at least TD-####-#### (e.g. TD-2024-0001)',
   },
 
   // ── Phone: ### ### #### (no leading zero)
@@ -79,4 +75,21 @@ export const VALIDATORS: Record<ValidatorKey, Validator> = {
     validate: (v) => /^[a-zA-Z\s\-\.\']{3,50}$/.test(v),
     errorMessage: 'Name must be between 3 and 50 characters and contain only letters and basic punctuation',
   },
+
+  'ORnumber': {
+    validate: (v) => /^OR-\d{4}-\d{6}$/.test(v),
+    errorMessage: 'OR Number must be OR-XXXX-XXXXXX format',
+  },
+
+   // ── TD Number: TD-####-#### up to TD-####-####-####-####-####
+  'td-number': {
+    validate: (v) => /^TD-\d{4}-\d{4}(-\d{4}){0,3}$/.test(v),
+    errorMessage: 'TD Number must be at least TD-####-#### (e.g. TD-2024-0001)',
+  },
+
+  'account-number': {
+    validate: (v) => /^\d{4}-\d{4}-\d{2}$/.test(v),
+    errorMessage: 'Account number must be XXXX-XXXX-XX format (10 digits)',
+  },
+
 };

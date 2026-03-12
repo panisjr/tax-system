@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, {
   useCallback,
@@ -6,17 +6,16 @@ import React, {
   useLayoutEffect,
   useRef,
   useState,
-} from 'react';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { MASKS, MaskKey } from './masks';
-import { VALIDATORS, ValidatorKey } from './validators';
+} from "react";
+import { CheckCircle2, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { MASKS, MaskKey } from "./masks";
+import { VALIDATORS, ValidatorKey } from "./validators";
 
-export interface ValidatedInputProps
-  extends Omit<
-    React.InputHTMLAttributes<HTMLInputElement>,
-    'onChange' | 'value' | 'type'
-  > {
+export interface ValidatedInputProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "onChange" | "value" | "type"
+> {
   validator?: ValidatorKey;
   type?: ValidatorKey;
   value: string;
@@ -30,11 +29,11 @@ export interface ValidatedInputProps
   leftIcon?: React.ReactNode;
 }
 function digitsBeforeCursor(str: string, cursorPos: number): number {
-  return str.slice(0, cursorPos).replace(/\D/g, '').length;
+  return str.slice(0, cursorPos).replace(/\D/g, "").length;
 }
 function cursorAfterNthDigit(masked: string, n: number): number {
   if (n === 0) {
-    return masked.startsWith('TD-') ? 3 : 0;
+    return masked.startsWith("TD-") ? 3 : 0;
   }
   let count = 0;
   for (let i = 0; i < masked.length; i++) {
@@ -65,7 +64,7 @@ export function ValidatedInput({
 
   const resolvedValidator = (validator ?? type) as ValidatorKey;
   if (!resolvedValidator) {
-    throw new Error('<ValidatedInput> requires a `validator` or `type` prop.');
+    throw new Error("<ValidatedInput> requires a `validator` or `type` prop.");
   }
 
   const maskFn = MASKS[resolvedValidator as MaskKey];
@@ -74,10 +73,11 @@ export function ValidatedInput({
   const [isFocused, setIsFocused] = useState(false);
   const isValid = validatorRule.validate(value);
   const valueIsEmpty =
-    !value || (resolvedValidator === 'td-number' && value === 'TD-');
+    !value || (resolvedValidator === "td-number" && value === "TD-");
   const shouldShowState = validateOnBlur ? touched && !isFocused : touched;
 
-  const showError = shouldShowState && !isValid && !valueIsEmpty && value.length > 0;
+  const showError =
+    shouldShowState && !isValid && !valueIsEmpty && value.length > 0;
   const showSuccess = shouldShowState && isValid;
   const inputRef = useRef<HTMLInputElement>(null);
   const pendingCursor = useRef<number | null>(null);
@@ -93,29 +93,41 @@ export function ValidatedInput({
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       const { selectionStart: ss, selectionEnd: se } = e.currentTarget;
 
-      if (resolvedValidator === 'td-number') {
-        const PREFIX = 3;
-        if (e.key === 'Backspace') {
-          const caretAtPrefix = ss !== null && se !== null && ss === se && ss <= PREFIX;
-          const selectionInPrefix = ss !== null && ss < PREFIX;
+      if (
+        resolvedValidator === "td-number" ||
+        resolvedValidator === "ORnumber"
+      ) {
+        const PREFIX_LEN = 3; // Both "TD-" and "OR-"
+        if (e.key === "Backspace") {
+          const caretAtPrefix =
+            ss !== null && se !== null && ss === se && ss <= PREFIX_LEN;
+          const selectionInPrefix = ss !== null && ss < PREFIX_LEN;
           if (caretAtPrefix || selectionInPrefix) {
             e.preventDefault();
             return;
           }
         }
-        if (e.key === 'Delete' && ss !== null && ss < PREFIX) {
+        if (e.key === "Delete" && ss !== null && ss < PREFIX_LEN) {
           e.preventDefault();
           return;
-        }
+        };
       }
-      
+
       // Allow all keys for 'name' validator (letters, spaces, special name characters)
-      if (resolvedValidator === 'name') return;
-      
+      if (resolvedValidator === "name") return;
+
       const PASSTHROUGH = [
-        'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
-        'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
-        'Home', 'End',
+        "Backspace",
+        "Delete",
+        "Tab",
+        "Escape",
+        "Enter",
+        "ArrowLeft",
+        "ArrowRight",
+        "ArrowUp",
+        "ArrowDown",
+        "Home",
+        "End",
       ];
       if (PASSTHROUGH.includes(e.key)) return;
       if (e.ctrlKey || e.metaKey) return;
@@ -128,22 +140,22 @@ export function ValidatedInput({
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value;
-      
+
       // For email fields, don't apply cursor manipulation
-      if (resolvedValidator === 'email') {
+      if (resolvedValidator === "email") {
         if (!validateOnBlur) setTouched(true);
         onChange(raw, validatorRule.validate(raw));
         return;
       }
-      
+
       // For 'name' validator, just apply mask without cursor manipulation
-      if (resolvedValidator === 'name') {
+      if (resolvedValidator === "name") {
         const masked = maskFn(raw);
         if (!validateOnBlur) setTouched(true);
         onChange(masked, validatorRule.validate(masked));
         return;
       }
-      
+
       const cursorPos = e.target.selectionStart ?? raw.length;
       const nDigitsBefore = digitsBeforeCursor(raw, cursorPos);
       const masked = maskFn(raw);
@@ -159,12 +171,19 @@ export function ValidatedInput({
     (_e: React.FocusEvent<HTMLInputElement>) => {
       setIsFocused(true);
 
-      if (resolvedValidator === 'td-number') {
+      if (
+        resolvedValidator === "td-number" ||
+        resolvedValidator === "ORnumber"
+      ) {
+        const prefix = resolvedValidator === "td-number" ? "TD-" : "OR-";
+
         if (!value) {
-          onChange('TD-', false);
+          onChange(prefix, false);
         }
+
         requestAnimationFrame(() => {
           if (!inputRef.current) return;
+          // Both "TD-" and "OR-" are 3 characters long
           const pos = Math.max(3, inputRef.current.selectionStart ?? 3);
           inputRef.current.setSelectionRange(pos, pos);
         });
@@ -175,7 +194,7 @@ export function ValidatedInput({
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLInputElement>) => {
-      if (resolvedValidator === 'td-number') {
+      if (resolvedValidator === "td-number") {
         const target = e.currentTarget;
         requestAnimationFrame(() => {
           if (target.selectionStart !== null && target.selectionStart < 3) {
@@ -192,8 +211,8 @@ export function ValidatedInput({
     setTouched(true);
   }, []);
 
-  const displayValue =
-    resolvedValidator === 'td-number' && !value ? 'TD-' : value;
+  const displayValue = value;
+  resolvedValidator === "td-number" && !value ? "TD-" : value;
 
   return (
     <div className={cn(className)}>
@@ -207,7 +226,7 @@ export function ValidatedInput({
         </label>
       )}
 
-      <div className={cn('relative flex items-center', label && 'mt-1')}>
+      <div className={cn("relative flex items-center", label && "mt-1")}>
         {leftIcon && (
           <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
             {leftIcon}
@@ -218,28 +237,28 @@ export function ValidatedInput({
           id={id}
           value={displayValue}
           onChange={handleChange}
-          onKeyDown={resolvedValidator === 'email' ? undefined : handleKeyDown}
+          onKeyDown={resolvedValidator === "email" ? undefined : handleKeyDown}
           onFocus={handleFocus}
           onClick={handleClick}
           onBlur={handleBlur}
           disabled={disabled}
           required={required}
           placeholder={placeholder}
-          inputMode={resolvedValidator === 'email' ? 'email' : 'numeric'}
+          inputMode={resolvedValidator === "email" ? "email" : "numeric"}
           autoComplete="off"
           className={cn(
-            'flex h-9 w-full rounded-md border bg-white px-3 py-1 font-inter text-sm text-slate-900',
-            'placeholder:text-slate-400',
-            'transition-colors duration-150',
-            'focus:outline-none focus:ring-2',
-            'disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60',
-            leftIcon && 'pl-9',
-            showValidationIcon && touched && 'pr-8',
+            "flex h-9 w-full rounded-md border bg-white px-3 py-1 font-inter text-sm text-slate-900",
+            "placeholder:text-slate-400",
+            "transition-colors duration-150",
+            "focus:outline-none focus:ring-2",
+            "disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60",
+            leftIcon && "pl-9",
+            showValidationIcon && touched && "pr-8",
             showError
-              ? 'border-rose-400 focus:ring-rose-200'
+              ? "border-rose-400 focus:ring-rose-200"
               : showSuccess
-                ? 'border-emerald-400 focus:ring-emerald-200'
-                : 'border-gray-200 focus:ring-slate-200',
+                ? "border-emerald-400 focus:ring-emerald-200"
+                : "border-gray-200 focus:ring-slate-200",
             inputClassName,
           )}
           {...rest}

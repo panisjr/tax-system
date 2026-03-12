@@ -43,10 +43,10 @@ export default function CollectionReportsPage() {
     setTimeout(() => {
       // Generate some dummy data for the preview
       const dummyData: ReportRecord[] = [
-        { id: "1", date: "03/05/2026", orNumber: "OR-982371", taxpayer: "Juan Dela Cruz", tdn: "12-3456-789", amount: 1500.00, method: "Cash" },
-        { id: "2", date: "03/05/2026", orNumber: "OR-982372", taxpayer: "Maria Santos", tdn: "12-9876-543", amount: 3200.50, method: "Online Transfer" },
-        { id: "3", date: "03/05/2026", orNumber: "OR-982373", taxpayer: "Pedro Penduko", tdn: "12-1122-334", amount: 850.00, method: "GCash" },
-        { id: "4", date: "03/05/2026", orNumber: "OR-982374", taxpayer: "Ana Reyes", tdn: "12-5566-778", amount: 5400.00, method: "Manager's Check" },
+        { id: "1", date: "03/05/2026", orNumber: "OR-9822-123456", taxpayer: "Juan Dela Cruz", tdn: "12-3456-789", amount: 1500.00, method: "Cash" },
+        { id: "2", date: "03/05/2026", orNumber: "OR-9832-123457", taxpayer: "Maria Santos", tdn: "12-9876-543", amount: 3200.50, method: "Online Transfer" },
+        { id: "3", date: "03/05/2026", orNumber: "OR-9842-123458", taxpayer: "Pedro Penduko", tdn: "12-1122-334", amount: 850.00, method: "GCash" },
+        { id: "4", date: "03/05/2026", orNumber: "OR-9852-123459", taxpayer: "Ana Reyes", tdn: "12-5566-778", amount: 5400.00, method: "Manager's Check" },
       ];
       setReportData(dummyData);
       setIsGenerating(false);

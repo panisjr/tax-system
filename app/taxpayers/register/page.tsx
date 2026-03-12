@@ -193,6 +193,7 @@ export default function RegisterTaxpayerPage() {
                 onChange={(v) => updateField("suffix", v)}
               />
               <ValidatedInput
+                label="Tin No."
                 type="tin"
                 placeholder="000-000-000 or 000-000-000-000"
                 value={form.tin}
