@@ -944,7 +944,7 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between gap-4">
       <span className="font-inter text-slate-500">{label}</span>
       <span
-        className="font-inter font-medium text-slate-900 truncate max-w-[150px]"
+        className="font-inter font-medium text-slate-900 truncate max-w-150px"
         title={value}
       >
         {value}
