@@ -1,7 +1,6 @@
 'use client';
 
 import Swal from 'sweetalert2';
-// --- CHANGED 1: Imported useMemo to hold our table columns efficiently
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -11,7 +10,6 @@ import {
     Pencil,
     Plus,
     Trash2,
-    // --- CHANGED 2: Imported the icons needed for Search and Pagination UI
     Search,
     ChevronLeft,
     ChevronRight
@@ -24,6 +22,16 @@ import {
   getFilteredRowModel, 
   flexRender,
 } from "@tanstack/react-table";
+
+import {
+  Table,
+  TableContainer,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/table";
 
 type Permission = {
     id: number;
@@ -40,7 +48,6 @@ export default function PermissionSettingsPage() {
     const [editingPermissionId, setEditingPermissionId] = useState<number | null>(null);
     const [deletingPermissionId, setDeletingPermissionId] = useState<number | null>(null);
 
-    // --- CHANGED 3: Added state to track our Search bar text
     const [globalFilter, setGlobalFilter] = useState('');
 
     const fetchPermissions = async () => {
@@ -80,6 +87,7 @@ export default function PermissionSettingsPage() {
                         id="permission-name-input"
                         class="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
                         placeholder="Enter permission name"
+                        maxLength={250}
                     />
                 </div>
             `,
@@ -102,6 +110,11 @@ export default function PermissionSettingsPage() {
 
                 if (!permissionName) {
                     Swal.showValidationMessage('Permission name is required.');
+                    return null;
+                }
+
+                if (permissionName.length > 100) {
+                    Swal.showValidationMessage('Permission name must not exceed 100 characters.');
                     return null;
                 }
 
@@ -155,7 +168,8 @@ export default function PermissionSettingsPage() {
                         id="edit-permission-name-input"
                         class="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
                         placeholder="Enter permission name"
-                        value="${permission.name.replace(/"/g, '&quot;')}"
+                        value="${permission.name.replace(/"/g, '"')}"
+                        maxLength={250}
                     />
                 </div>
             `,
@@ -178,6 +192,11 @@ export default function PermissionSettingsPage() {
 
                 if (!permissionName) {
                     Swal.showValidationMessage('Permission name is required.');
+                    return null;
+                }
+
+                if (permissionName.length > 250) {
+                    Swal.showValidationMessage('Permission name must not exceed 250 characters.');
                     return null;
                 }
 
@@ -283,10 +302,6 @@ export default function PermissionSettingsPage() {
         fetchPermissions();
     }, []);
 
-    // --- CHANGED 4: Built the TanStack Columns definition. 
-    // We put it in useMemo so it doesn't get recreated on every keystroke in the search bar.
-    // Notice we included editingPermissionId and deletingPermissionId in the dependency array at the end, 
-    // so the buttons know to disable when loading!
     const columns = useMemo(() => [
         {
             accessorKey: 'id',
@@ -343,8 +358,6 @@ export default function PermissionSettingsPage() {
         }
     ], [editingPermissionId, deletingPermissionId]);
 
-    // --- CHANGED 5: Initialize the TanStack table hook.
-    // This connects our data, columns, pagination math, and search text together.
     const table = useReactTable({
         data: permissions,
         columns,
@@ -363,8 +376,8 @@ export default function PermissionSettingsPage() {
     });
 
     return (
-        <div className='flex'>
-            <main className='flex-1'>
+        <div className="flex w-full overflow-x-hidden">
+            <main className="flex-1 w-full">
                 <header className='mb-8'>
                     <button
                         type='button'
@@ -389,34 +402,33 @@ export default function PermissionSettingsPage() {
                             type='button'
                             onClick={handleAddPermission}
                             disabled={isAdding}
-                            className='font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60'
+                            className='font-lexend h-10 rounded bg-[#0F172A] px-5 text-xs font-medium text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer'
                         >
-                            <Plus className='h-4 w-4' />
+                            <Plus className='mr-2 h-4 w-4 inline' />
                             {isAdding ? 'Adding...' : 'Add Permission'}
                         </button>
                     </div>
                 </header>
 
-                <section className='rounded-lg border border-gray-200 bg-white p-6 shadow-sm'>
+                <section className='w-full rounded-lg border border-gray-200 bg-white p-6 shadow-sm'>
                     
-                    {/* --- CHANGED 6: Added the Search Bar beside the table title */}
                     <div className='mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                         <div className='flex items-center gap-3'>
                             <div className='rounded-md bg-slate-100 p-2'>
                                 <KeyRound className='h-5 w-5 text-[#00154A]' />
                             </div>
-                            <h2 className='font-inter text-sm font-semibold text-[#848794]'>
+                            <h2 className='font-lexend text-sm font-semibold text-[#848794]'>
                                 Role Permission Matrix
                             </h2>
                         </div>
                         
-                        <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 w-full sm:max-w-xs focus-within:ring-2 focus-within:ring-slate-200 transition-shadow">
-                            <Search className="h-4 w-4 text-slate-400" />
+                        <div className="relative w-full sm:max-w-xs">
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                             <input
                                 value={globalFilter ?? ''}
                                 onChange={e => setGlobalFilter(e.target.value)}
                                 placeholder="Search permissions..."
-                                className="w-full bg-transparent text-sm font-inter outline-none placeholder:text-slate-400 text-slate-700"
+                                className="w-full rounded-md border border-gray-200 py-2 pl-10 pr-4 text-sm font-inter outline-none focus:ring-2 focus:ring-slate-100"
                             />
                         </div>
                     </div>
@@ -427,70 +439,75 @@ export default function PermissionSettingsPage() {
                         </div>
                     )}
 
-                    <div className='overflow-x-auto mb-4'>
-                        <table className='w-full min-w-155 border-collapse'>
-                            {/* --- CHANGED 7: Dynamically mapped headers using TanStack --- */}
-                            <thead>
+                    <TableContainer>
+                        <Table className="min-w-155">
+                            <TableHeader>
                                 {table.getHeaderGroups().map((headerGroup) => (
-                                    <tr key={headerGroup.id} className='border-b border-gray-200'>
+                                    <TableRow key={headerGroup.id}>
                                         {headerGroup.headers.map((header) => (
-                                            <th key={header.id} className='font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500'>
+                                            <TableHead key={header.id}>
                                                 {header.isPlaceholder
                                                     ? null
                                                     : flexRender(
                                                           header.column.columnDef.header,
                                                           header.getContext()
                                                       )}
-                                            </th>
+                                            </TableHead>
                                         ))}
-                                    </tr>
+                                    </TableRow>
                                 ))}
-                            </thead>
-                            <tbody>
+                            </TableHeader>
+                            <TableBody>
                                 {isLoading && (
-                                    <tr>
-                                        <td className='font-inter px-3 py-8 text-center text-sm text-slate-500' colSpan={4}>
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="py-10 text-center text-slate-400">
                                             Loading permissions...
-                                        </td>
-                                    </tr>
+                                        </TableCell>
+                                    </TableRow>
                                 )}
 
                                 {!isLoading && permissions.length === 0 && (
-                                    <tr>
-                                        <td className='font-inter px-3 py-8 text-center text-sm text-slate-500' colSpan={4}>
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="py-10 text-center text-slate-400">
                                             No permissions found.
-                                        </td>
-                                    </tr>
+                                        </TableCell>
+                                    </TableRow>
                                 )}
 
-                                {/* Message if search filter returns 0 results */}
                                 {!isLoading && table.getRowModel().rows.length === 0 && permissions.length > 0 && (
-                                    <tr>
-                                        <td className='font-inter px-3 py-8 text-center text-sm text-slate-500' colSpan={4}>
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="py-10 text-center text-slate-400">
                                             No permissions match your search.
-                                        </td>
-                                    </tr>
+                                        </TableCell>
+                                    </TableRow>
                                 )}
 
-                                {/* --- CHANGED 8: Render the rows using table.getRowModel() instead of mapping `permissions` directly --- */}
                                 {!isLoading && table.getRowModel().rows.map((row) => (
-                                    <tr key={row.id} className='border-b border-gray-100 transition-colors hover:bg-slate-50'>
+                                    <TableRow key={row.id} className="hover:bg-slate-50 transition-colors">
                                         {row.getVisibleCells().map((cell) => (
-                                            <td key={cell.id} className={`font-inter px-3 py-3 text-sm ${cell.column.id === 'id' ? 'font-medium' : ''} ${cell.column.id === 'name' ? 'text-slate-700' : 'text-slate-600'}`}>
+                                            <TableCell
+                                                key={cell.id}
+                                                className={
+                                                    cell.column.id === 'id' 
+                                                        ? 'font-medium' 
+                                                        : cell.column.id === 'name' 
+                                                            ? 'text-slate-700' 
+                                                            : ''
+                                                }
+                                            >
                                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                            </td>
+                                            </TableCell>
                                         ))}
-                                    </tr>
+                                    </TableRow>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
 
-                    {/* --- CHANGED 9: Placed the generic Pagination UI below the table --- */}
                     {!isLoading && permissions.length > 0 && (
                         <div className="flex items-center justify-between px-2 mt-4">
                             <div className="font-inter text-xs text-slate-500">
-                                Showing Page <span className="font-medium text-slate-900">{table.getPageCount() === 0 ? 0 : table.getState().pagination.pageIndex + 1}</span> of{" "}
+                                Page <span className="font-medium text-slate-900">{table.getPageCount() === 0 ? 0 : table.getState().pagination.pageIndex + 1}</span> of{" "}
                                 <span className="font-medium text-slate-900">{table.getPageCount()}</span>
                             </div>
                             
@@ -498,7 +515,7 @@ export default function PermissionSettingsPage() {
                                 <button
                                     onClick={() => table.previousPage()}
                                     disabled={!table.getCanPreviousPage()}
-                                    className="inline-flex h-8 items-center justify-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-8 items-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                                 >
                                     <ChevronLeft className="mr-1 h-3 w-3" />
                                     Previous
@@ -506,7 +523,7 @@ export default function PermissionSettingsPage() {
                                 <button
                                     onClick={() => table.nextPage()}
                                     disabled={!table.getCanNextPage()}
-                                    className="inline-flex h-8 items-center justify-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-8 items-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                                 >
                                     Next
                                     <ChevronRight className="ml-1 h-3 w-3" />
@@ -520,3 +537,4 @@ export default function PermissionSettingsPage() {
         </div>
     );
 }
+
