@@ -22,18 +22,21 @@ export default function PropertyRegistryPage() {
             title="Collection Performance" 
             description="RPT collections per barangay with trend comparison" 
             buttonText="View Performance" 
+            onButtonClick={() => router.push('/barangay/collection-performance')}
           />
           <RegistryCard 
             icon={TrendingUp} 
             title="Barangay Ranking" 
             description="Rank Barangays by collection efficiency and compliance" 
             buttonText="View Rankings" 
+            onButtonClick={() => router.push('/barangay/barangay-ranking')}
           />
           <RegistryCard 
             icon={Type} 
             title="Deliquency Hotspots" 
             description="Identify barangays with high deliquency rates" 
             buttonText="Analyze" 
+            onButtonClick={() => router.push('/barangay/deliquency-hotspots')}
           />
           <RegistryCard
             icon={MapPinned}
