@@ -24,6 +24,16 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 
+import {
+  Table,
+  TableContainer,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/table";
+
 type ApiUser = {
   firstname?: string;
   middlename?: string;
@@ -586,8 +596,8 @@ export default function ManageRolePage() {
   });
 
   return (
-    <div className="flex">
-      <main className="flex-1">
+    <div className="flex w-full overflow-x-hidden">
+      <main className="flex-1 w-full">
         <header className="mb-8">
           <button
             type="button"
@@ -611,14 +621,14 @@ export default function ManageRolePage() {
             <button
               type="button"
               onClick={handleAddRole}
-              className={`font-inter h-10 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 cursor-pointer`}
+              className={`font-lexend h-10 rounded bg-[#0F172A] px-5 text-xs font-medium text-white transition-colors hover:bg-slate-800 cursor-pointer`}
             >
               Add New Role
             </button>
           </div>
         </header>
 
-        <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <section className="w-full rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           
           {/* --- ADDED 4: Built a flex container holding the title and Search bar side-by-side --- */}
           <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -626,104 +636,100 @@ export default function ManageRolePage() {
               <div className="rounded-md bg-slate-100 p-2">
                 <ShieldCheck className="h-5 w-5 text-[#00154A]" />
               </div>
-              <h2 className={`font-inter text-sm font-semibold text-[#848794]`}>
+              <h2 className={`font-lexend text-sm font-semibold text-[#848794]`}>
                 Role Directory
               </h2>
             </div>
 
             {/* Global Search Input */}
-            <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 w-full sm:max-w-xs focus-within:ring-2 focus-within:ring-slate-200 transition-shadow">
-              <Search className="h-4 w-4 text-slate-400" />
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 value={globalFilter ?? ""}
                 onChange={(e) => setGlobalFilter(e.target.value)}
                 placeholder="Search roles or permissions..."
-                className="w-full bg-transparent text-sm font-inter outline-none placeholder:text-slate-400 text-slate-700"
+                className="w-full rounded-md border border-gray-200 py-2 pl-10 pr-4 text-sm font-inter outline-none focus:ring-2 focus:ring-slate-100"
               />
             </div>
           </div>
 
-          <div className="overflow-x-auto mb-4">
-            <table className="w-full min-w-155 border-collapse">
-              {/* --- ADDED 5: Dynamic Table Headers via TanStack --- */}
-              <thead>
+          <TableContainer>
+            <Table className="min-w-155">
+              <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id} className="border-b border-gray-200">
+                  <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        className={`font-inter px-3 py-3 text-left text-xs font-semibold text-slate-500`}
-                      >
+                      <TableHead key={header.id}>
                         {header.isPlaceholder
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
                               header.getContext()
                             )}
-                      </th>
+                      </TableHead>
                     ))}
-                  </tr>
+                  </TableRow>
                 ))}
-              </thead>
+              </TableHeader>
 
-              <tbody>
+              <TableBody>
                 {isLoadingRoles && (
-                  <tr>
-                    <td
-                      className="font-inter px-3 py-8 text-center text-sm text-slate-500"
+                  <TableRow>
+                    <TableCell
                       colSpan={5}
+                      className="py-10 text-center text-slate-400"
                     >
                       Loading roles...
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
 
                 {!isLoadingRoles && roles.length === 0 && (
-                  <tr>
-                    <td
-                      className="font-inter px-3 py-8 text-center text-sm text-slate-500"
+                  <TableRow>
+                    <TableCell
                       colSpan={5}
+                      className="py-10 text-center text-slate-400"
                     >
                       No roles found.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
 
                 {/* Empty Search Results Message */}
                 {!isLoadingRoles && table.getRowModel().rows.length === 0 && roles.length > 0 && (
-                    <tr>
-                        <td className='font-inter px-3 py-8 text-center text-sm text-slate-500' colSpan={5}>
+                    <TableRow>
+                        <TableCell colSpan={5} className="py-10 text-center text-slate-400">
                             No roles match your search.
-                        </td>
-                    </tr>
+                        </TableCell>
+                    </TableRow>
                 )}
 
                 {/* --- ADDED 6: Mapping dynamic Table Rows using table.getRowModel().rows --- */}
                 {!isLoadingRoles &&
                   table.getRowModel().rows.map((row) => (
-                    <tr key={row.id} className="border-b border-gray-100 transition-colors hover:bg-slate-50">
+                    <TableRow key={row.id} className="hover:bg-slate-50 transition-colors">
                       {row.getVisibleCells().map((cell) => (
-                        <td
+                        <TableCell
                           key={cell.id}
-                          className={`font-inter px-3 py-3 text-sm text-slate-700`}
+                          className="text-slate-700"
                         >
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()
                           )}
-                        </td>
+                        </TableCell>
                       ))}
-                    </tr>
+                    </TableRow>
                   ))}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </TableContainer>
 
           {/* --- ADDED 7: Pagination Controls below the table --- */}
           {!isLoadingRoles && roles.length > 0 && (
               <div className="flex items-center justify-between px-2 mt-4">
                   <div className="font-inter text-xs text-slate-500">
-                      Showing Page <span className="font-medium text-slate-900">{table.getPageCount() === 0 ? 0 : table.getState().pagination.pageIndex + 1}</span> of{" "}
+                      Page <span className="font-medium text-slate-900">{table.getPageCount() === 0 ? 0 : table.getState().pagination.pageIndex + 1}</span> of{" "}
                       <span className="font-medium text-slate-900">{table.getPageCount()}</span>
                   </div>
                   
@@ -731,7 +737,7 @@ export default function ManageRolePage() {
                       <button
                           onClick={() => table.previousPage()}
                           disabled={!table.getCanPreviousPage()}
-                          className="inline-flex h-8 items-center justify-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex h-8 items-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                       >
                           <ChevronLeft className="mr-1 h-3 w-3" />
                           Previous
@@ -739,7 +745,7 @@ export default function ManageRolePage() {
                       <button
                           onClick={() => table.nextPage()}
                           disabled={!table.getCanNextPage()}
-                          className="inline-flex h-8 items-center justify-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex h-8 items-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                       >
                           Next
                           <ChevronRight className="ml-1 h-3 w-3" />

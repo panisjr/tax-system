@@ -17,7 +17,10 @@ export type ValidatorKey =
   | 'phone'
   | 'rpt-id'
   | 'barangay-code'
-  | 'text';
+  | 'text'
+  | 'email'
+  | 'employee-Id'
+  | 'name';
 
 export interface Validator {
   /** Returns true when the fully-formatted value is complete and valid. */
@@ -60,5 +63,20 @@ export const VALIDATORS: Record<ValidatorKey, Validator> = {
   'text': {
     validate: () => true,
     errorMessage: '',
+  },
+
+  'email': {
+    validate: (v) => /^.+@.+\..+$/.test(v),
+    errorMessage: 'Email must follow the format: name@example.com',
+  },
+
+  'employee-Id': {
+    validate: (v) => /^\d{4}-\d{4}$/.test(v),
+    errorMessage: 'ID must be in XXXX-XXXX format (8 digits)',
+  },
+
+  'name': {
+    validate: (v) => /^[a-zA-Z\s\-\.\']{3,50}$/.test(v),
+    errorMessage: 'Name must be between 3 and 50 characters and contain only letters and basic punctuation',
   },
 };
