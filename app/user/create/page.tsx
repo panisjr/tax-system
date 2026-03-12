@@ -11,9 +11,9 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 
-import { useMemo, useState, useEffect, Suspense, useSearchParams } from "react";
+import { useMemo, useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   UserRound,
@@ -25,6 +25,7 @@ import {
   Eye,
   EyeOff,
   Save,
+  FilePenLine,
 } from "lucide-react";
 
 import { Combobox } from "@/components/ui/combobox";
@@ -51,7 +52,34 @@ type FormState = {
   status: boolean;
 };
 
-  const initialFormState: FormState = {
+type RoleOption = {
+  id: number;
+  name: string;
+  created_at?: string;
+};
+
+type ApiUserDetails = {
+  empID?: string;
+  firstname?: string;
+  middlename?: string;
+  lastname?: string;
+  suffix?: string;
+  birthdate?: string;
+  age?: string;
+  sex?: boolean;
+  email?: string;
+  phone?: string;
+  role_id?: number;
+  roles?: {
+    name?: string;
+  } | null;
+  role?: string;
+  department?: string;
+  position?: string;
+  status?: boolean;
+};
+
+const initialFormState: FormState = {
   empID: "",
   firstname: "",
   middlename: "",
@@ -80,7 +108,6 @@ function CreateUserForm() {
   const [showTempPassword, setShowTempPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingUser, setIsLoadingUser] = useState(false);
-  type RoleOption = { id: number; name: string };
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [isLoadingRoles, setIsLoadingRoles] = useState(true);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -534,11 +561,13 @@ function CreateUserForm() {
                     label="Male"
                     checked={form.sex}
                     onClick={() => updateField("sex", true)}
+                    className="cursor-pointer"
                   />
                   <BooleanChip
                     label="Female"
                     checked={!form.sex}
                     onClick={() => updateField("sex", false)}
+                    className="cursor-pointer"
                   />
                 </div>
               </div>
@@ -622,11 +651,13 @@ function CreateUserForm() {
                     label="Active"
                     checked={form.status}
                     onClick={() => updateField("status", true)}
+                    className="cursor-pointer"
                   />
                   <BooleanChip
                     label="Inactive"
                     checked={!form.status}
                     onClick={() => updateField("status", false)}
+                    className="cursor-pointer"
                   />
                 </div>
               </div>
@@ -706,7 +737,9 @@ function CreateUserForm() {
               Summary
             </h2>
             <p className="font-inter mt-1 text-xs text-slate-400">
-              All listed fields are required. Birthdate format: yyyy-mm-dd.
+              {isEditMode
+                ? "Required fields must be complete. Birthdate format: yyyy-mm-dd."
+                : "All listed fields are required. Birthdate format: yyyy-mm-dd."}
             </p>
 
             <div className="mt-4 space-y-3 text-sm">
@@ -736,7 +769,9 @@ function CreateUserForm() {
 
             {(missingRequiredFields || !isBirthdateValid) && (
               <p className="font-inter mt-4 text-xs text-rose-600">
-                Complete all required fields and use valid birthdate format.
+                {isEditMode && !hasFormChanges
+                  ? "No changes detected yet. Update at least one field before saving."
+                  : "Complete all required fields and use valid birthdate format."}
               </p>
             )}
           </section>
@@ -755,6 +790,7 @@ function Field({
   type = "text",
   placeholder,
   leftIcon,
+  inputType = "text",
   value,
   onChange,
   required = false,
@@ -764,6 +800,7 @@ function Field({
   type?: "text" | "email" | "tel";
   placeholder?: string;
   leftIcon?: React.ReactNode;
+  inputType?: "text" | "date" | "email" | "tel";
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
@@ -857,10 +894,12 @@ function BooleanChip({
   label,
   checked,
   onClick,
+  className,
 }: {
   label: string;
   checked: boolean;
   onClick: () => void;
+  className?: string;
 }) {
   return (
     <button
@@ -870,7 +909,7 @@ function BooleanChip({
         checked
           ? "border-blue-200 bg-blue-50 text-blue-700"
           : "border-gray-200 bg-white text-slate-600 hover:bg-gray-50"
-      }`}
+      } ${className || ""}`}
     >
       {label}
     </button>
