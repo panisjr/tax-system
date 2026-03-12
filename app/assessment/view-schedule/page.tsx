@@ -17,30 +17,30 @@ const scheduleRows = [
 		releaseDate: 'January 05, 2026',
 		dueDate: 'March 31, 2026',
 		gracePeriod: 'April 10, 2026',
-		status: 'Active',
+		status: 'Active' as const,
 	},
 	{
 		period: 'Q2 2026',
 		releaseDate: 'April 01, 2026',
 		dueDate: 'June 30, 2026',
 		gracePeriod: 'July 10, 2026',
-		status: 'Upcoming',
+		status: 'Upcoming' as const,
 	},
 	{
 		period: 'Q3 2026',
 		releaseDate: 'July 01, 2026',
 		dueDate: 'September 30, 2026',
 		gracePeriod: 'October 10, 2026',
-		status: 'Upcoming',
+		status: 'Upcoming' as const,
 	},
 	{
 		period: 'Q4 2026',
 		releaseDate: 'October 01, 2026',
 		dueDate: 'December 31, 2026',
 		gracePeriod: 'January 10, 2027',
-		status: 'Upcoming',
+		status: 'Upcoming' as const,
 	},
-];
+] as const;
 
 export default function ViewSchedulePage() {
 	return (
