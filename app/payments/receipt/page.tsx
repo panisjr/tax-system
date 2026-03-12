@@ -21,40 +21,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@/components/ui/combobox";
+import { Combobox } from "@/components/ui/combobox";
+import type { ComboboxOption } from "@/components/ui/combobox";
 
-export function ButtonDemo() {
-  return (
-    <div className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 placeholder:text-slate-400 text-slate-900">
-      <Button variant="outline">Button</Button>
-      <Button variant="outline" size="icon" aria-label="Submit"></Button>
-    </div>
-  );
-}
-export function FundType({ className }: { className?: string }) {
-  return (
-    <Combobox items={fundType}>
-      <ComboboxInput placeholder="Payment" className={className} />
-      <ComboboxContent>
-        <ComboboxEmpty>No items found.</ComboboxEmpty>
-        <ComboboxList>
-          {(item) => (
-            <ComboboxItem key={item} value={item}>
-              {item}
-            </ComboboxItem>
-          )}
-        </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
-  );
-}
+// ButtonDemo and FundType replaced with new searchable Combobox
 
 export function CalendarInput({ className }: { className?: string }) {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
@@ -91,14 +61,15 @@ export function CalendarInput({ className }: { className?: string }) {
   );
 }
 
-const fundType = [
-  "General Fund",
-  "Special Education Fund (SEF)",
-  "Trust Fund",
+const fundOptions: ComboboxOption[] = [
+  { value: 'general', label: 'General Fund' },
+  { value: 'sef', label: 'Special Education Fund (SEF)' },
+  { value: 'trust', label: 'Trust Fund' }
 ];
 
 export default function IssueReceiptPage() {
   const router = useRouter();
+  const [fundType, setFundType] = React.useState('');
 
   return (
     <main>
@@ -220,7 +191,14 @@ export default function IssueReceiptPage() {
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Fund Type <span className="text-rose-500">*</span>
                 </label>
-                <FundType className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 placeholder:text-slate-400 text-slate-900" />
+                <Combobox
+                  label=""
+                  options={fundOptions}
+                  value={fundType}
+                  onChange={setFundType}
+                  required
+                  className="mt-1"
+                />
               </div>
             </div>
           </section>
