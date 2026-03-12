@@ -28,6 +28,7 @@ export default function PropertyRegistryPage() {
             title="Barangay Ranking" 
             description="Rank Barangays by collection efficiency and compliance" 
             buttonText="View Rankings" 
+            onButtonClick={() => router.push('/barangay/barangay-ranking')}
           />
           <RegistryCard 
             icon={Type} 
