@@ -28,6 +28,7 @@ export default function AssessmentBillingPage() {
 						title='RPT Assessment'
 						description='Compute real property tax based on assessed values'
 						buttonText='Compute Tax'
+						href='/assessment/rpt-assessment'
 					/>
 					<RegistryCard
 						icon={FileText}
