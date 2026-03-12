@@ -75,9 +75,8 @@ export const VALIDATORS: Record<ValidatorKey, Validator> = {
     errorMessage: 'ID must be in XXXX-XXXX format (8 digits)',
   },
 
-  // ── Name: Letters, spaces, hyphens, periods, and apostrophes only
   'name': {
-    validate: (v) => /^[a-zA-Z\s\-\.\']+$/.test(v),
-    errorMessage: 'Name can only contain letters, spaces, hyphens, periods, and apostrophes',
+    validate: (v) => /^[a-zA-Z\s\-\.\']{3,50}$/.test(v),
+    errorMessage: 'Name must be between 3 and 50 characters and contain only letters and basic punctuation',
   },
 };
