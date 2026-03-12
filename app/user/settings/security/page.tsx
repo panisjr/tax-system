@@ -188,7 +188,7 @@ export default function SecuritySettingsPage() {
                 helper="Lock after X failed attempts"
               />
               <Field
-                label="Lock Duration"
+              label="Lock Duration"
                 type="number"
                 placeholder="30"
                 helper="Unlock after X minutes"

@@ -19,40 +19,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@/components/ui/combobox";
+import { Combobox } from "@/components/ui/combobox";
+import type { ComboboxOption } from "@/components/ui/combobox";
 
-export function ButtonDemo() {
-  return (
-    <div className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 placeholder:text-slate-400 text-slate-900">
-      <Button variant="outline">Button</Button>
-      <Button variant="outline" size="icon" aria-label="Submit"></Button>
-    </div>
-  );
-}
-export function PaymentCombobox({ className }: { className?: string }) {
-  return (
-    <Combobox items={paymentChannel}>
-      <ComboboxInput placeholder="Payment" className={className} />
-      <ComboboxContent>
-        <ComboboxEmpty>No items found.</ComboboxEmpty>
-        <ComboboxList>
-          {(item) => (
-            <ComboboxItem key={item} value={item}>
-              {item}
-            </ComboboxItem>
-          )}
-        </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
-  );
-}
+
+// PaymentCombobox replaced with new searchable Combobox
 
 export function CalendarInput({ className }: { className?: string }) {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
@@ -89,14 +60,15 @@ export function CalendarInput({ className }: { className?: string }) {
   );
 }
 
-const paymentChannel = [
-  "GCash",
-  "Manager's Check",
-  "Online Transfer (Landbank)",
+const paymentOptions: ComboboxOption[] = [
+  { value: 'gcash', label: 'GCash' },
+  { value: 'managers-check', label: "Manager's Check" },
+  { value: 'landbank', label: 'Online Transfer (Landbank)' }
 ];
 
 export default function RecordPaymentPage() {
   const router = useRouter();
+  const [paymentMethod, setPaymentMethod] = React.useState('');
 
   return (
     <div className="flex">
@@ -205,7 +177,14 @@ export default function RecordPaymentPage() {
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Select Payment Method <span className="text-rose-500">*</span>
                 </label>
-                <PaymentCombobox className="font-inter mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 placeholder:text-slate-400 text-slate-900" />
+                <Combobox
+                  label=""
+                  options={paymentOptions}
+                  value={paymentMethod}
+                  onChange={setPaymentMethod}
+                  required
+                  className="mt-1"
+                />
               </div>
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
