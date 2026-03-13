@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
+const ALLOWED_OWNER_TYPES = ['Individual', 'Corporation', 'Government'] as const;
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -34,6 +36,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Keep compatibility with older payloads that still send "Corporate".
+    const normalizedOwnerType = owner_type.trim() === 'Corporate'
+      ? 'Corporation'
+      : owner_type.trim();
+
+    if (!ALLOWED_OWNER_TYPES.includes(normalizedOwnerType as (typeof ALLOWED_OWNER_TYPES)[number])) {
+      return NextResponse.json(
+        { error: 'Invalid owner type.' },
+        { status: 400 },
+      );
+    }
+
     const owner_name = [first_name, middle_name, last_name, suffix]
       .map((v) => v?.trim() ?? '')
       .filter(Boolean)
@@ -48,7 +62,7 @@ export async function POST(req: NextRequest) {
         last_name: last_name.trim(),
         suffix: suffix?.trim() || null,
         tin: tin?.trim() || null,
-        owner_type: owner_type.trim(),
+        owner_type: normalizedOwnerType,
         address: address.trim(),
         phone: phone?.trim() || null,
         email: email?.trim() || null,
