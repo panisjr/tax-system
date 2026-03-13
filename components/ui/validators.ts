@@ -22,7 +22,8 @@ export type ValidatorKey =
   | 'employee-Id'
   | 'name'
   | 'account-number'
-  | 'ORnumber';
+  | 'ORnumber'
+  | 'permission-&-role-name';
 
 export interface Validator {
   /** Returns true when the fully-formatted value is complete and valid. */
@@ -71,8 +72,6 @@ export const VALIDATORS: Record<ValidatorKey, Validator> = {
     errorMessage: 'ID must be in XXXX-XXXX format (8 digits)',
   },
 
-  // validators.ts
-
 'name': {
   validate: (v) => {
     // 1. Check length (2-20 characters)
@@ -110,4 +109,13 @@ export const VALIDATORS: Record<ValidatorKey, Validator> = {
     errorMessage: 'Account number must be XXXX-XXXX-XX format (10 digits)',
   },
 
+ 'permission-&-role-name': {
+  validate: (v) => {
+    const isRightLength = v.length >= 2 && v.length <= 50;
+    // Fix: Explicitly escape the dot, space, underscore, and hyphen
+    const isNormal = /^[a-zA-Z0-9\.\s\_\-']+$/.test(v); 
+    return isRightLength && isNormal;
+  },
+  errorMessage: 'Must start with a capital, be 2-50 chars, and use no emojis or special symbols.',
+},
 };

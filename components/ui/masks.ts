@@ -22,7 +22,9 @@ export type MaskKey =
   | 'employee-Id'
   | 'ORnumber' 
   | 'name'
-  | 'account-number';
+  | 'account-number'
+  | 'permission-&-role-name';
+
 
 export type MaskFn = (raw: string) => string;
 
@@ -172,6 +174,21 @@ export function maskORNumber(raw: string): string {
   return `OR-${d.slice(0, 4)}-${d.slice(4)}`;
 }
 
+// ── Permission/Role Name ────────────────────────────────────────────────────────
+// Format: alphanumeric, dots, underscores, hyphens | Up to 50 characters
+
+export function maskPermissionRole(raw: string): string {
+  // Fix: Explicitly escape the dot, space, underscore, and hyphen
+  let filtered = raw.replace(/[^a-zA-Z0-9\.\s\_\-']/g, '');
+
+  filtered = filtered.slice(0, 50);
+
+  // Fix: Explicitly escape them here as well
+  return filtered.replace(/(^|[\.\s\_\-])([a-z0-9])/g, (match, separator, char) => {
+    return separator + char.toUpperCase();
+  });
+}
+
 // ── Registry ──────────────────────────────────────────────────────────────────
 
 export const MASKS: Record<MaskKey, MaskFn> = {
@@ -186,5 +203,6 @@ export const MASKS: Record<MaskKey, MaskFn> = {
   'name': maskName,
   'ORnumber': maskORNumber,
   'account-number': maskAccountNumber,
+  'permission-&-role-name': maskPermissionRole,
 };
 

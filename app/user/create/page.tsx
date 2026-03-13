@@ -117,6 +117,8 @@ function CreateUserForm() {
   const [initialLoadedForm, setInitialLoadedForm] = useState<FormState | null>(
     null,
   );
+  const [empIDError, setEmpIDError] = useState<string | null>(null);
+  const [checkingEmpID, setCheckingEmpID] = useState(false);
 
   useEffect(() => {
     if (!form.birthdate) {
@@ -142,7 +144,39 @@ function CreateUserForm() {
     value: FormState[K],
   ) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+    if (key === 'empID') {
+      setEmpIDError(null);
+      setCheckingEmpID(false);
+    }
   };
+
+  // Live duplicate check for empID
+  useEffect(() => {
+    const checkEmpID = async () => {
+      if (form.empID.length !== 9 || isEditMode || checkingEmpID) return;
+
+      setCheckingEmpID(true);
+      setEmpIDError(null);
+
+      try {
+        const response = await fetch(
+          `/api/user/check?field=empID&value=${encodeURIComponent(form.empID)}`
+        );
+        const data = await response.json();
+
+        if (data.exists) {
+          setEmpIDError('Employee ID already exists');
+        }
+      } catch {
+        // Silent fail on network error
+      } finally {
+        setCheckingEmpID(false);
+      }
+    };
+
+    const timeout = setTimeout(checkEmpID, 500);
+    return () => clearTimeout(timeout);
+  }, [form.empID, isEditMode]);
 
   useEffect(() => {
     const fetchRoles = async () => {
@@ -175,6 +209,7 @@ function CreateUserForm() {
     if (!isEditMode) {
       setInitialLoadedForm(null);
       setForm(initialFormState);
+      setEmpIDError(null);
       return;
     }
 
@@ -470,7 +505,9 @@ function CreateUserForm() {
                 validator="employee-Id"
                 type="employee-Id"
                 onChange={(v) => updateField("empID", v)}
+                errorMessage={empIDError}
               />
+
               <ValidatedInput
                 label="First Name"
                 required

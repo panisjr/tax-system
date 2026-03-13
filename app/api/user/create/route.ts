@@ -85,6 +85,36 @@ export async function POST(request: Request) {
 			);
 		}
 
+		// Backend duplicate check for empID and email
+		const empID = body.empID!.trim();
+		const email = body.email!.trim();
+
+		const { data: existingEmpID } = await supabaseAdmin
+			.from('users')
+			.select('empID')
+			.eq('empID', empID)
+			.maybeSingle();
+
+		if (existingEmpID) {
+			return NextResponse.json(
+				{ error: 'Employee ID already exists.' },
+				{ status: 409 }
+			);
+		}
+
+		const { data: existingEmailUser, error: emailError } = await supabaseAdmin
+			.from('users')
+			.select('email')
+			.eq('email', email)
+			.maybeSingle();
+
+		if (existingEmailUser) {
+			return NextResponse.json(
+				{ error: 'Email already registered.' },
+				{ status: 409 }
+			);
+		}
+
 		if (body.temp_pass !== body.password) {
 			return NextResponse.json(
 				{ error: 'temp_pass and password must match.' },
