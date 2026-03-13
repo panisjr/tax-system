@@ -31,6 +31,8 @@ interface UserMenuProps {
   userName?: string;
   userRole?: string;
   avatar?: string;
+  onProfile?: () => void;
+  onSettings?: () => void;
   onSignOut?: () => void;
 }
 
@@ -242,6 +244,8 @@ const UserMenu = memo(
     userName = "Admin",
     userRole = "Administrator",
     avatar,
+    onProfile,
+    onSettings,
     onSignOut,
   }: UserMenuProps) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -299,15 +303,33 @@ const UserMenu = memo(
 
         {isOpen && (
           <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-white py-1 shadow-lg">
-            <button className="cursor-pointer w-full px-4 py-2 text-left text-sm hover:bg-gray-50">
+            <button
+              type="button"
+              onClick={() => {
+                onProfile && onProfile();
+                setIsOpen(false);
+              }}
+              className="cursor-pointer w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
+            >
               Profile
             </button>
-            <button className="cursor-pointer w-full px-4 py-2 text-left text-sm hover:bg-gray-50">
+            <button
+              type="button"
+              onClick={() => {
+                onSettings && onSettings();
+                setIsOpen(false);
+              }}
+              className="cursor-pointer w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
+            >
               Settings
             </button>
             <hr className="my-1" />
             <button
-              onClick={() => onSignOut && onSignOut()}
+              type="button"
+              onClick={() => {
+                onSignOut && onSignOut();
+                setIsOpen(false);
+              }}
               className="cursor-pointer w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50"
             >
               Sign out
@@ -330,6 +352,15 @@ export default function HeaderComponent(_props: HeaderComponentProps) {
     // e.g. call logout API, clear local storage/cookies, etc.
     router.push("/");
   }, [router]);
+
+  const handleOpenProfile = useCallback(() => {
+    router.push("/user/profile");
+  }, [router]);
+
+  const handleOpenSettings = useCallback(() => {
+    router.push("/user/settings/security");
+  }, [router]);
+
   // const { currentMs, error, retry } = useServerTime(); - COMMENTED OUT
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
@@ -437,7 +468,11 @@ export default function HeaderComponent(_props: HeaderComponentProps) {
           </button>
 
           {/* User menu */}
-          <UserMenu onSignOut={handleSignOut} />
+          <UserMenu
+            onProfile={handleOpenProfile}
+            onSettings={handleOpenSettings}
+            onSignOut={handleSignOut}
+          />
         </div>
       </div>
 
