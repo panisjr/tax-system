@@ -65,7 +65,7 @@ type ApiUserDetails = {
   lastname?: string;
   suffix?: string;
   birthdate?: string;
-  age?: string;
+  age?: string | number;
   sex?: boolean;
   email?: string;
   phone?: string;
@@ -216,7 +216,7 @@ function CreateUserForm() {
           suffix: user?.suffix?.trim() ?? "",
           // FIX 2: Safely parse birthdate string back into a Date object
           birthdate: user?.birthdate ? new Date(user.birthdate) : undefined,
-          age: user?.age?.trim() ?? "",
+          age: user?.age != null ? String(user.age) : "",
           sex: typeof user?.sex === "boolean" ? user.sex : true,
           temp_pass: "",
           password: "",
@@ -254,21 +254,22 @@ function CreateUserForm() {
   }, [editingEmpID, isEditMode]);
 
   const missingRequiredFields = useMemo(() => {
-    return (
+    const baseRequired =
       !form.empID.trim() ||
       !form.firstname.trim() ||
       !form.lastname.trim() ||
       !form.birthdate ||
       !form.age.trim() ||
-      !form.temp_pass.trim() ||
-      !form.password.trim() ||
       !form.email.trim() ||
       !form.phone.trim() ||
-      !form.role_id.trim() || // FIX 3: Changed form.role to form.role_id
+      !form.role_id.trim() ||
       !form.department.trim() ||
-      !form.position.trim()
-    );
-  }, [form]);
+      !form.position.trim();
+
+    if (isEditMode) return baseRequired;
+
+    return baseRequired || !form.temp_pass.trim() || !form.password.trim();
+  }, [form, isEditMode]);
 
   const isBirthdateValid = useMemo(() => {
     if (!form.birthdate) return true;
@@ -328,7 +329,7 @@ function CreateUserForm() {
 
     // REMOVED: Length, Uppercase, and Number restrictions.
     // KEPT: Match check to ensure the user didn't make a typo.
-    if (form.temp_pass !== form.password) {
+    if (!isEditMode && form.temp_pass !== form.password) {
       toast.error("Password Error", {
         description: "Temporary password and password must match.",
       });
