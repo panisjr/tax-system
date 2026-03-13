@@ -217,7 +217,7 @@ export default function CollectionReportsPage() {
               </div>
               
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[800px] border-collapse">
+                <table className="w-full min-w-800px border-collapse">
                   <thead>
                     <tr className="border-b border-gray-200 bg-white">
                       <th className="font-inter px-4 py-3 text-left text-xs font-semibold text-slate-500">Date</th>
