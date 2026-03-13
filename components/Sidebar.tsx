@@ -109,27 +109,24 @@ export default function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-gray-200 p-3">
-        <Link href="/user/profile">
-          <div
-            className={cn(
-              "flex cursor-pointer items-center rounded-xl p-2 transition hover:bg-slate-100",
-              isCollapsed ? "justify-center" : "gap-3"
-            )}
-          >
-            <div className="shrink-0">
-              <UserCircle2 className="size-9 text-slate-400" />
-            </div>
-            {!isCollapsed && (
-              <div className="min-w-0">
-                <p className="font-lexend truncate text-sm font-semibold text-slate-700">
-                  System Administrator
-                </p>
-                <p className="truncate text-xs text-slate-400">admin@starita.gov.ph</p>
-              </div>
-            )}
-          </div>
-        </Link>
+      <SidebarFooter className="border-t border-gray-200 p-2">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              tooltip="My Profile"
+              className="h-auto text-[#A0A5B2] hover:font-semibold"
+            >
+              <Link href="/user/profile">
+                <UserCircle2 className="size-8 shrink-0 text-[#00154A]" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-medium text-slate-700">System Administrator</span>
+                  <span className="text-xs text-slate-400">admin@starita.gov.ph</span>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );
