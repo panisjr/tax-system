@@ -1,4 +1,7 @@
+"use client"
+
 import RegistryCard from '@/components/RegistryCard';
+import { useRouter } from 'next/navigation';
 
 import {
 	CircleAlert,
@@ -10,6 +13,7 @@ import {
 } from 'lucide-react';
 
 export default function DeliquenciesNoticesPage() {
+	const router = useRouter();
 	return (
 		<div className='flex'>
 			<main className='flex-1'>
@@ -28,18 +32,21 @@ export default function DeliquenciesNoticesPage() {
 						title='Delinquent Accounts'
 						description='List of taxpayers with unpaid RPT obligations'
 						buttonText='View Accounts'
+						onButtonClick={() => router.push('/deliquencies/deliquent_accounts')}
 					/>
 					<RegistryCard
 						icon={Clock3}
 						title='Aging of Delinquencies'
 						description='1,2,5+ year delinquency classification'
 						buttonText='View Aging'
+						onButtonClick={() => router.push('/deliquencies/aging_of_deliquencies')}
 					/>
 					<RegistryCard
 						icon={FileWarning}
 						title='Notice Generation'
 						description='Auto-generate demand and delinquency notices'
 						buttonText='Generate Notices'
+						onButtonClick={() => router.push('/deliquencies/notice_generation')}
 					/>
 					<RegistryCard
 						icon={Send}
@@ -47,6 +54,7 @@ export default function DeliquenciesNoticesPage() {
 						description='Track released, served, and acknowledged notices'
 						buttonText='Track Distribution'
 						variant='secondary'
+						onButtonClick={() => router.push('/deliquencies/notice_distribution')}
 					/>
 					<RegistryCard
 						icon={BellRing}
@@ -54,6 +62,7 @@ export default function DeliquenciesNoticesPage() {
 						description='Automated reminders for taxpayers and staff'
 						buttonText='Configure Alerts'
 						variant='secondary'
+						onButtonClick={() => router.push('/deliquencies/reminder_alerts')}
 					/>
 					<RegistryCard
 						icon={FileText}
@@ -61,6 +70,7 @@ export default function DeliquenciesNoticesPage() {
 						description='Generate enforcement and compliance reports'
 						buttonText='Generate Reports'
 						variant='secondary'
+						onButtonClick={() => router.push('/deliquencies/deliquency_reports')}
 					/>
 				</div>
 			</main>
