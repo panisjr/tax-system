@@ -1,4 +1,7 @@
+"use client"
+
 import RegistryCard from '@/components/RegistryCard';
+import { useRouter } from 'next/navigation';
 
 import {
 	Folder,
@@ -10,6 +13,7 @@ import {
 } from 'lucide-react';
 
 export default function DocumentTrackingPage() {
+	const router = useRouter();
 	return (
 		<div className='flex'>
 			<main className='flex-1'>
@@ -28,18 +32,21 @@ export default function DocumentTrackingPage() {
 						title='Incoming Documents'
 						description='View and log incoming requests and submitted records'
 						buttonText='Open Inbox'
+						onButtonClick={() => router.push('/document/incoming_documents')}
 					/>
 					<RegistryCard
 						icon={FileText}
 						title='Document Register'
 						description='Create and manage official document registry entries'
 						buttonText='Register Document'
+						onButtonClick={() => router.push('/document/document_register')}
 					/>
 					<RegistryCard
 						icon={Send}
 						title='Routing & Endorsement'
 						description='Forward documents to offices and assign responsible staff'
 						buttonText='Route Document'
+						onButtonClick={() => router.push('/document/routing_and_endorsement')}
 					/>
 					<RegistryCard
 						icon={ListChecks}
@@ -47,6 +54,7 @@ export default function DocumentTrackingPage() {
 						description='Track document progress from submission to completion'
 						buttonText='View Status'
 						variant='secondary'
+						onButtonClick={() => router.push('/document/status_tracking')}
 					/>
 					<RegistryCard
 						icon={Clock3}
@@ -54,6 +62,7 @@ export default function DocumentTrackingPage() {
 						description='Monitor overdue and unresolved documents requiring action'
 						buttonText='Review Pending'
 						variant='secondary'
+						onButtonClick={() => router.push('/document/pending_documents')}
 					/>
 					<RegistryCard
 						icon={CircleAlert}
@@ -61,6 +70,7 @@ export default function DocumentTrackingPage() {
 						description='Generate reminders for deadlines and pending endorsements'
 						buttonText='View Alerts'
 						variant='secondary'
+						onButtonClick={() => router.push('/document/document_alerts')}
 					/>
 				</div>
 			</main>
