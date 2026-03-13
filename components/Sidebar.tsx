@@ -34,9 +34,9 @@ type MenuItem = {
 
 const menuItems: MenuItem[] = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-  { name: "Property Registry", path: "/property", icon: Building2, subtitle: "(Assessor)" },
+  { name: "Property Registry", path: "/property", icon: Building2, },
   { name: "Taxpayer Records", path: "/taxpayers", icon: Users },
-  { name: "Assessment & Billing", path: "/assessment", icon: Wallet, subtitle: "(Treasurer)" },
+  { name: "Assessment & Billing", path: "/assessment", icon: Wallet, },
   { name: "Payments & OR Monitoring", path: "/payments", icon: FileText },
   { name: "Barangay Performance", path: "/barangay", icon: MapPin },
   { name: "Delinquencies & Notices", path: "/deliquencies", icon: Bell },
@@ -52,9 +52,9 @@ export default function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="font-inter border-r border-gray-200 bg-white">
       {/* Logo header */}
-      <SidebarHeader className="border-b border-gray-200 px-4 py-3">
-        <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-3")}>
-          <div className="relative w-12 h-12 shrink-0">
+      <SidebarHeader className="border-b border-gray-200 px-2 py-3">
+        <div className="flex w-full items-center overflow-hidden">
+          <div className="relative h-12 w-12 shrink-0">
             <Image
               src="/img/sta.rita_logo.png"
               alt="Sta. Rita Logo"
@@ -64,8 +64,8 @@ export default function AppSidebar() {
           </div>
           <div
             className={cn(
-              "whitespace-nowrap transition-all duration-150 ease-in-out overflow-hidden",
-              isCollapsed ? "opacity-0 w-0" : "opacity-100"
+              "overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-300 ease-in-out",
+              isCollapsed ? "ml-0 max-w-0 opacity-0" : "ml-3 max-w-56 opacity-100"
             )}
           >
             <h1 className="font-lexend text-lg font-bold text-[#666D7D]">
@@ -79,7 +79,7 @@ export default function AppSidebar() {
       </SidebarHeader>
 
       {/* Navigation */}
-      <SidebarContent className="p-2">
+      <SidebarContent className="px-3 py-2">
         <SidebarMenu>
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -89,11 +89,16 @@ export default function AppSidebar() {
                   asChild
                   isActive={pathname === item.path}
                   tooltip={item.name}
-                  className="h-auto text-[#A0A5B2] hover:font-semibold data-[active=true]:bg-blue-50! data-[active=true]:text-blue-600!"
+                  className="h-auto px-3 text-[#A0A5B2] hover:font-semibold data-[active=true]:bg-blue-50! data-[active=true]:text-blue-600!"
                 >
                   <Link href={item.path}>
-                    <Icon className="size-8 shrink-0 text-[#00154A]" />
-                    <div className="flex flex-col min-w-0">
+                    <Icon className="shrink-0 text-[#00154A]" />
+                    <div
+                      className={cn(
+                        "overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-300 ease-in-out",
+                        isCollapsed ? "ml-0 max-w-0 opacity-0" : "ml-1 max-w-56 opacity-100"
+                      )}
+                    >
                       <span className="text-sm font-medium">{item.name}</span>
                       {item.subtitle && (
                         <span className="text-xs text-gray-500">{item.subtitle}</span>
