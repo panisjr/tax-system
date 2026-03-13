@@ -72,8 +72,8 @@ export const VALIDATORS: Record<ValidatorKey, Validator> = {
   },
 
   'name': {
-    validate: (v) => /^[a-zA-Z\s\-\.\']{3,50}$/.test(v),
-    errorMessage: 'Name must be between 3 and 50 characters and contain only letters and basic punctuation',
+    validate: (v) => /^[a-zA-Z\s\-\.\']{2,50}$/.test(v),
+    errorMessage: 'Name must be between 2 and 50 characters and contain only letters and basic punctuation',
   },
 
   'ORnumber': {
