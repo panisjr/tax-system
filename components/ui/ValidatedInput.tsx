@@ -113,8 +113,8 @@ export function ValidatedInput({
         };
       }
 
-      // Allow all keys for 'name' validator (letters, spaces, special name characters)
-      if (resolvedValidator === "name") return;
+      // Allow all keys for 'name', 'email', and 'password' validators (no digit restriction)
+      if (["name", "email", "password"].includes(resolvedValidator)) return;
 
       const PASSTHROUGH = [
         "Backspace",
@@ -148,11 +148,11 @@ export function ValidatedInput({
         return;
       }
 
-      // For 'name' validator, just apply mask without cursor manipulation
-      if (resolvedValidator === "name") {
-        const masked = maskFn(raw);
+      // For 'name', 'email', and 'password' validators, just validate without cursor/mask manipulation
+      if (["name", "email", "password"].includes(resolvedValidator)) {
+        const processed = maskFn ? maskFn(raw) : raw;
         if (!validateOnBlur) setTouched(true);
-        onChange(masked, validatorRule.validate(masked));
+        onChange(processed, validatorRule.validate(processed));
         return;
       }
 
@@ -237,7 +237,7 @@ export function ValidatedInput({
           id={id}
           value={displayValue}
           onChange={handleChange}
-          onKeyDown={resolvedValidator === "email" ? undefined : handleKeyDown}
+          onKeyDown={["email", "password"].includes(resolvedValidator!) ? undefined : handleKeyDown}
           onFocus={handleFocus}
           onClick={handleClick}
           onBlur={handleBlur}

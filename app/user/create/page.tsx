@@ -675,24 +675,29 @@ function CreateUserForm() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <PasswordField
+              <ValidatedInput
                 label="Temp Pass"
                 required
+                validator="password"
                 value={form.temp_pass}
-                show={showTempPassword}
-                onToggle={() => setShowTempPassword((v) => !v)}
-                onChange={(v) => updateField("temp_pass", v)}
+                type="password"
+                onChange={(v, isValid) => updateField("temp_pass", v)}
+                showValidationIcon
               />
-              <PasswordField
+              <ValidatedInput
                 label="Password"
                 required
+                validator="password"
                 value={form.password}
-                show={showPassword}
-                onToggle={() => setShowPassword((v) => !v)}
-                onChange={(v) => updateField("password", v)}
-                error={passwordTouched && !passwordsMatch}
-                errorMessage="Passwords do not match"
+                type="password"
+                onChange={(v, isValid) => updateField("password", v)}
+                showValidationIcon
               />
+              {passwordTouched && !passwordsMatch && (
+                <p className="col-span-2 mt-1 font-inter text-xs text-rose-500" role="alert">
+                  Passwords do not match
+                </p>
+              )}
             </div>
           </section>
         </div>
@@ -830,65 +835,7 @@ function Field({
   );
 }
 
-function PasswordField({
-  label,
-  show,
-  onToggle,
-  value,
-  onChange,
-  required = false,
-  error = false,
-  errorMessage = "",
-}: {
-  label: string;
-  show: boolean;
-  onToggle: () => void;
-  value: string;
-  onChange: (value: string) => void;
-  required?: boolean;
-  error?: boolean;
-  errorMessage?: string;
-}) {
-  return (
-    <div>
-      <label className="font-inter text-xs font-medium text-slate-600">
-        {label}
-        {required && <span className="ml-1 text-rose-500">*</span>}
-      </label>
-      <div
-        className={`mt-1 flex items-center gap-2 rounded-md border bg-white px-3 py-2 focus-within:ring-2 ${
-          error
-            ? "border-rose-400 focus-within:ring-rose-200"
-            : "border-gray-200 focus-within:ring-slate-200"
-        }`}
-      >
-        <input
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          type={show ? "text" : "password"}
-          className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-        />
-        <button
-          type="button"
-          onClick={onToggle}
-          className="rounded p-1 text-slate-500 hover:bg-gray-50 hover:text-slate-900"
-          aria-label="Toggle password visibility"
-        >
-          {show ? (
-            <EyeOff className="h-4 w-4 cursor-pointer" />
-          ) : (
-            <Eye className="h-4 w-4 cursor-pointer" />
-          )}
-        </button>
-      </div>
-      {error && errorMessage && (
-        <p className="mt-1 font-inter text-xs text-rose-500" role="alert">
-          {errorMessage}
-        </p>
-      )}
-    </div>
-  );
-}
+
 
 function BooleanChip({
   label,

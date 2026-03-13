@@ -22,7 +22,84 @@ export type ValidatorKey =
   | 'employee-Id'
   | 'name'
   | 'account-number'
-  | 'ORnumber';
+  | 'ORnumber'
+  | 'password';
+
+export interface PasswordPolicy {
+  minLength: number;
+  requireUpperLower: boolean;
+  requireNumbers: boolean;
+  requireSpecial: boolean;
+}
+
+import { useSecurity } from '@/contexts/SecurityContext';
+
+export function usePasswordValidator() {
+  const { policy } = useSecurity();
+
+  // We return a function that returns the result directly
+  // This avoids stale state issues
+  const validate = (value: string) => {
+    const errorList: string[] = [];
+
+    if (value.length < policy.minLength) {
+      errorList.push(`${policy.minLength} characters`);
+    }
+    
+    if (policy.requireUpperLower) {
+      if (!/[a-z]/.test(value)) errorList.push('lowercase letter');
+      if (!/[A-Z]/.test(value)) errorList.push('uppercase letter');
+    }
+    
+    if (policy.requireNumbers && !/[0-9]/.test(value)) {
+      errorList.push('number');
+    }
+    
+    if (policy.requireSpecial && !/[^a-zA-Z0-9]/.test(value)) {
+      errorList.push('special character');
+    }
+
+    return {
+      isValid: errorList.length === 0,
+      errors: errorList,
+      message: errorList.length === 0 
+        ? 'Password is valid' 
+        : `Password must include: ${errorList.join(', ')}`
+    };
+  };
+
+  return { validate };
+}
+
+export function createPasswordValidator(policy: PasswordPolicy): Validator {
+  const errors: string[] = [];
+  
+  return {
+    validate: (value: string) => {
+      if (value.length < policy.minLength) {
+        errors.push(`at least ${policy.minLength} characters`);
+        return false;
+      }
+      
+      if (policy.requireUpperLower) {
+        if (!/[a-z]/.test(value)) errors.push('lowercase letter');
+        if (!/[A-Z]/.test(value)) errors.push('uppercase letter');
+      }
+      
+      if (policy.requireNumbers && !/[0-9]/.test(value)) {
+        errors.push('number');
+      }
+      
+      if (policy.requireSpecial && !/[^a-zA-Z0-9]/.test(value)) {
+        errors.push('special character (e.g. !@#$%^&*)');
+      }
+      
+      errors.length = 0; // Reset for next call
+      return errors.length === 0;
+    },
+    errorMessage: 'Password must meet policy requirements',
+  };
+}
 
 export interface Validator {
   /** Returns true when the fully-formatted value is complete and valid. */
@@ -31,7 +108,15 @@ export interface Validator {
   errorMessage: string;
 }
 
+const DEFAULT_PASSWORD_POLICY: PasswordPolicy = {
+  minLength: 12,
+  requireUpperLower: true,
+  requireNumbers: true,
+  requireSpecial: true,
+};
+
 export const VALIDATORS: Record<ValidatorKey, Validator> = {
+  'password': createPasswordValidator(DEFAULT_PASSWORD_POLICY),
   // ── TIN: ###-###-###  or  ###-###-###-###
   'tin': {
     validate: (v) => /^\d{3}-\d{3}-\d{3}(-\d{3})?$/.test(v),

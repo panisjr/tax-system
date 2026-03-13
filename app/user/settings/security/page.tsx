@@ -1,4 +1,3 @@
-// app/user/security/page.tsx
 "use client";
 
 import Link from "next/link";
@@ -16,15 +15,30 @@ import {
   EyeOff,
 } from "lucide-react";
 import { useState } from "react";
+import { useSecurity } from "@/contexts/SecurityContext";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function SecuritySettingsPage() {
   const router = useRouter();
+  const { policy, updatePolicy } = useSecurity();
+
+  // Password Visibility States
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const handleMinLengthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updatePolicy({ minLength: parseInt(e.target.value) || 12 });
+  };
+
+  const handleSave = () => {
+    toast.success("Security settings saved!");
+  };
+
   return (
-    <div className="w-full">
+    <div className="w-full p-6">
       {/* Header */}
       <header className="mb-8">
         <button
@@ -42,8 +56,7 @@ export default function SecuritySettingsPage() {
               Security Settings
             </h1>
             <p className="font-inter mt-1 text-xs text-slate-400">
-              Configure password policies, session controls, and multi-factor
-              authentication.
+              Configure password policies, session controls, and multi-factor authentication.
             </p>
           </div>
 
@@ -54,24 +67,21 @@ export default function SecuritySettingsPage() {
             >
               Cancel
             </Link>
-            <button
-              type="button"
-              className="font-inter inline-flex items-center gap-2 rounded-md bg-[#0F172A] px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-              onClick={() => {
-                // design-only
-              }}
+            <Button
+              onClick={handleSave}
+              className="font-inter inline-flex items-center gap-2 bg-[#0F172A] hover:bg-slate-800"
             >
               <CheckCircle2 className="h-4 w-4" />
               Save Changes
-            </button>
+            </Button>
           </div>
         </div>
       </header>
 
       {/* Content */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left: Main Settings */}
         <div className="lg:col-span-2 space-y-6">
+          
           {/* Password Policy */}
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-5 flex items-center gap-3">
@@ -89,54 +99,49 @@ export default function SecuritySettingsPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field
-                label="Minimum Length"
-                type="number"
-                placeholder="12"
-                helper="Recommended: 12+ characters"
-                rightAddon="chars"
-              />
-              <Field
-                label="Password Expiry"
-                type="number"
-                placeholder="90"
-                helper="Force password change after X days"
-                rightAddon="days"
-              />
-              <ToggleRow
-                title="Require Uppercase & Lowercase"
-                description="Passwords must contain both uppercase and lowercase letters."
-                defaultChecked
-              />
-              <ToggleRow
-                title="Require Numbers"
-                description="Passwords must include at least one number."
-                defaultChecked
-              />
-              <ToggleRow
-                title="Require Special Characters"
-                description="Passwords must include at least one symbol (e.g., ! @ #)."
-                defaultChecked
-              />
-              <ToggleRow
-                title="Prevent Reuse of Last Passwords"
-                description="Disallow reuse of recently used passwords."
-                defaultChecked
-              />
+              <div>
+                <label className="font-inter text-xs font-medium text-slate-600">
+                  Minimum Length
+                </label>
+                <div className="mt-1 flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2">
+                  <input
+                    type="number"
+                    className="font-inter w-full bg-transparent text-sm text-slate-900 outline-none"
+                    min="8"
+                    max="128"
+                    value={policy.minLength}
+                    onChange={handleMinLengthChange}
+                  />
+                  <span className="font-inter text-xs text-slate-400 whitespace-nowrap">chars</span>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <ToggleRow 
+                  id="upper-lower"
+                  title="Require Uppercase & Lowercase"
+                  checked={policy.requireUpperLower}
+                  onCheckedChange={(checked) => updatePolicy({ requireUpperLower: !!checked })}
+                />
+                <ToggleRow 
+                  id="numbers"
+                  title="Require Numbers"
+                  checked={policy.requireNumbers}
+                  onCheckedChange={(checked) => updatePolicy({ requireNumbers: !!checked })}
+                />
+                <ToggleRow 
+                  id="special"
+                  title="Require Special Characters"
+                  checked={policy.requireSpecial}
+                  onCheckedChange={(checked) => updatePolicy({ requireSpecial: !!checked })}
+                />
+              </div>
             </div>
 
-            <div className="mt-4 rounded-md border border-amber-100 bg-amber-50 p-3">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
-                <div>
-                  <div className="font-inter text-xs font-medium text-amber-800">
-                    Reminder
-                  </div>
-                  <div className="font-inter text-xs text-amber-700">
-                    Strong password rules reduce unauthorized access and improve
-                    audit compliance.
-                  </div>
-                </div>
+            <div className="mt-4 rounded-md border border-amber-100 bg-amber-50 p-3 flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
+              <div className="font-inter text-xs text-amber-700">
+                <span className="font-bold">Reminder:</span> Strong password rules reduce unauthorized access and improve audit compliance.
               </div>
             </div>
           </section>
@@ -158,42 +163,16 @@ export default function SecuritySettingsPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field
-                label="Idle Timeout"
-                type="number"
-                placeholder="15"
-                helper="Auto-logout after inactivity"
-                rightAddon="mins"
-              />
-              <Field
-                label="Max Session Duration"
-                type="number"
-                placeholder="8"
-                helper="Maximum login duration"
-                rightAddon="hrs"
-              />
-              <ToggleRow
-                title="Single Active Session"
-                description="Prevent the same account from being logged in multiple devices."
-              />
-              <ToggleRow
-                title="Lock Account After Failed Attempts"
-                description="Temporarily lock user after repeated failed logins."
-                defaultChecked
-              />
-              <Field
-                label="Failed Attempts Limit"
-                type="number"
-                placeholder="5"
-                helper="Lock after X failed attempts"
-              />
-              <Field
-              label="Lock Duration"
-                type="number"
-                placeholder="30"
-                helper="Unlock after X minutes"
-                rightAddon="mins"
-              />
+              <Field label="Idle Timeout" placeholder="15" rightAddon="mins" helper="Auto-logout after inactivity" />
+              <Field label="Max Session Duration" placeholder="8" rightAddon="hrs" helper="Maximum login duration" />
+              
+              <div className="sm:col-span-2 space-y-3 mt-2">
+                <ToggleRow id="single-session" title="Single Active Session" description="Prevent multi-device logins." />
+                <ToggleRow id="lock-account" title="Lock Account After Failed Attempts" description="Temporary lock after repeated fails." defaultChecked />
+              </div>
+
+              <Field label="Failed Attempts Limit" placeholder="5" helper="Lock after X attempts" />
+              <Field label="Lock Duration" placeholder="30" rightAddon="mins" helper="Unlock after X minutes" />
             </div>
           </section>
 
@@ -208,108 +187,49 @@ export default function SecuritySettingsPage() {
                   Multi-Factor Authentication (MFA)
                 </h2>
                 <p className="font-inter text-xs text-slate-400">
-                  Add an extra layer of protection for sensitive modules.
+                  Add an extra layer of protection.
                 </p>
               </div>
             </div>
 
             <div className="space-y-3">
-              <ToggleRow
-                title="Enable MFA"
-                description="Require a second step verification on login."
-              />
-              <ToggleRow
-                title="Require MFA for Admin Role"
-                description="Always enforce MFA for Admin users."
-                defaultChecked
-              />
-              <ToggleRow
-                title="Require MFA for Treasurer Module"
-                description="Enforce MFA when accessing collections and payment approvals."
-              />
-            </div>
-
-            <div className="mt-4 rounded-md border border-blue-100 bg-blue-50 p-3">
-              <div className="font-inter text-xs font-medium text-blue-700">
-                Tip: Start with Admin-only MFA
-              </div>
-              <div className="font-inter mt-1 text-xs text-blue-600">
-                You can expand MFA enforcement later per module as policies
-                mature.
-              </div>
+              <ToggleRow id="mfa-enable" title="Enable MFA" description="Require a second verification step." />
+              <ToggleRow id="mfa-admin" title="Require MFA for Admin Role" description="Always enforce for Admins." defaultChecked />
+              <ToggleRow id="mfa-treasurer" title="Require MFA for Treasurer Module" description="Enforce when accessing collections." />
             </div>
           </section>
 
-          {/* Change Password (Design) */}
+          {/* Change Password */}
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-5 flex items-center gap-3">
               <div className="rounded-md bg-slate-100 p-2">
                 <KeyRound className="h-5 w-5 text-[#00154A]" />
               </div>
-              <div>
-                <h2 className="font-lexend text-sm font-semibold text-[#848794]">
-                  Change Password (Admin Override)
-                </h2>
-                <p className="font-inter text-xs text-slate-400">
-                  Design-only form — wire it to backend later.
-                </p>
-              </div>
+              <h2 className="font-lexend text-sm font-semibold text-[#848794]">Change Password</h2>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <PasswordField
-                label="Current Password"
-                placeholder="••••••••"
-                show={showCurrent}
-                onToggle={() => setShowCurrent((v) => !v)}
-              />
+              <PasswordField label="Current Password" show={showCurrent} onToggle={() => setShowCurrent(!showCurrent)} />
               <div className="hidden sm:block" />
-              <PasswordField
-                label="New Password"
-                placeholder="••••••••"
-                show={showNew}
-                onToggle={() => setShowNew((v) => !v)}
-              />
-              <PasswordField
-                label="Confirm New Password"
-                placeholder="••••••••"
-                show={showConfirm}
-                onToggle={() => setShowConfirm((v) => !v)}
-              />
+              <PasswordField label="New Password" show={showNew} onToggle={() => setShowNew(!showNew)} />
+              <PasswordField label="Confirm Password" show={showConfirm} onToggle={() => setShowConfirm(!showConfirm)} />
             </div>
 
-            <div className="mt-4 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                className="font-inter rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50"
-              >
-                Clear
-              </button>
-              <button
-                type="button"
-                className="font-inter rounded-md bg-[#0F172A] px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-              >
-                Update Password
-              </button>
+            <div className="mt-6 flex justify-end gap-2">
+              <Button variant="outline" size="sm">Clear</Button>
+              <Button size="sm" className="bg-[#0F172A]">Update Password</Button>
             </div>
           </section>
         </div>
 
-        {/* Right: Summary / Status */}
+        {/* Right Sidebar */}
         <div className="space-y-6">
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-3">
               <div className="rounded-md bg-slate-100 p-2">
                 <Shield className="h-5 w-5 text-[#00154A]" />
               </div>
-              <div>
-                <h2 className="font-lexend text-sm font-semibold text-[#848794]">
-                  Security Overview
-                </h2>
-                <p className="font-inter text-xs text-slate-400">
-                  Quick summary of policy configuration.
-                </p>
-              </div>
+              <h2 className="font-lexend text-sm font-semibold text-[#848794]">Overview</h2>
             </div>
 
             <div className="space-y-3">
@@ -318,49 +238,13 @@ export default function SecuritySettingsPage() {
               <SummaryRow label="MFA" value="Optional" />
               <SummaryRow label="Account Lockout" value="Enabled" ok />
             </div>
-
-            <div className="mt-5 rounded-md border border-gray-200 bg-gray-50 p-3">
-              <div className="font-inter text-xs font-medium text-slate-900">
-                Recommended Baseline
-              </div>
-              <ul className="font-inter mt-2 space-y-2 text-xs text-slate-600">
-                <li className="flex items-start gap-2">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400" />
-                  Minimum length 12, special characters required
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400" />
-                  Idle timeout 15 mins, session max 8 hrs
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400" />
-                  MFA enforced for Admin role
-                </li>
-              </ul>
-            </div>
           </section>
 
-          <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="font-lexend text-sm font-semibold text-[#848794]">
-              Notes
-            </h2>
+          <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm bg-slate-50/50">
+            <h2 className="font-lexend text-sm font-semibold text-[#848794]">Notes</h2>
             <p className="font-inter mt-2 text-xs text-slate-400">
-              This page is design-only. When you add auth, apply policies on the
-              server (middleware + session validation) for real security.
+              Client-side UI does not prevent access. Enforce access rules on the server via middleware.
             </p>
-
-            <div className="mt-4 flex items-start gap-2 rounded-md border border-amber-100 bg-amber-50 p-3">
-              <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
-              <div>
-                <div className="font-inter text-xs font-medium text-amber-800">
-                  Important
-                </div>
-                <div className="font-inter text-xs text-amber-700">
-                  Client-side UI does not prevent access. Enforce access rules
-                  on the server.
-                </div>
-              </div>
-            </div>
           </section>
         </div>
       </div>
@@ -368,122 +252,55 @@ export default function SecuritySettingsPage() {
   );
 }
 
-function Field({
-  label,
-  placeholder,
-  helper,
-  type = "text",
-  rightAddon,
-}: {
-  label: string;
-  placeholder?: string;
-  helper?: string;
-  type?: string;
-  rightAddon?: string;
-}) {
+// --- Subcomponents ---
+
+function Field({ label, placeholder, helper, type = "text", rightAddon }: any) {
   return (
-    <div>
-      <label className="font-inter text-xs font-medium text-slate-600">
-        {label}
-      </label>
-      <div className="mt-1 flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-slate-200">
-        <input
-          type={type}
-          className="font-inter w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-          placeholder={placeholder}
-        />
-        {rightAddon && (
-          <span className="font-inter text-xs text-slate-400">{rightAddon}</span>
-        )}
+    <div className="flex flex-col gap-1.5">
+      <label className="font-inter text-xs font-medium text-slate-600">{label}</label>
+      <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-slate-100 transition-all">
+        <input type={type} className="w-full bg-transparent text-sm outline-none" placeholder={placeholder} />
+        {rightAddon && <span className="text-xs text-slate-400 font-medium">{rightAddon}</span>}
       </div>
-      {helper && <p className="font-inter mt-1 text-xs text-slate-500">{helper}</p>}
+      {helper && <p className="text-[10px] text-slate-500">{helper}</p>}
     </div>
   );
 }
 
-function PasswordField({
-  label,
-  placeholder,
-  show,
-  onToggle,
-}: {
-  label: string;
-  placeholder?: string;
-  show: boolean;
-  onToggle: () => void;
-}) {
+function PasswordField({ label, show, onToggle }: any) {
   return (
-    <div>
-      <label className="font-inter text-xs font-medium text-slate-600">
-        {label}
-      </label>
-      <div className="mt-1 flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-slate-200">
-        <input
-          type={show ? "text" : "password"}
-          className="font-inter w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-          placeholder={placeholder}
-        />
-        <button
-          type="button"
-          onClick={onToggle}
-          className="rounded p-1 text-slate-500 hover:bg-gray-50 hover:text-slate-900"
-          aria-label="Toggle password visibility"
-        >
-          {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+    <div className="flex flex-col gap-1.5">
+      <label className="font-inter text-xs font-medium text-slate-600">{label}</label>
+      <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-slate-100 transition-all">
+        <input type={show ? "text" : "password"} className="w-full bg-transparent text-sm outline-none" placeholder="••••••••" />
+        <button type="button" onClick={onToggle} className="text-slate-400 hover:text-slate-600">
+          {show ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       </div>
     </div>
   );
 }
 
-function ToggleRow({
-  title,
-  description,
-  defaultChecked = false,
-}: {
-  title: string;
-  description: string;
-  defaultChecked?: boolean;
-}) {
+function ToggleRow({ id, title, description, checked, onCheckedChange, defaultChecked }: any) {
   return (
-    <div className="flex items-start gap-3 rounded-md border border-gray-200 bg-white p-3">
-      <input
-        type="checkbox"
-        className="mt-1 h-4 w-4 rounded border-gray-300"
-        defaultChecked={defaultChecked}
-      />
-      <div>
-        <div className="font-inter text-sm font-medium text-slate-900">
-          {title}
-        </div>
-        <div className="font-inter text-xs text-slate-500">{description}</div>
+    <div className="flex items-start gap-3 rounded-md border border-gray-200 bg-white p-3 hover:bg-slate-50 transition-colors">
+      <Checkbox id={id} checked={checked} onCheckedChange={onCheckedChange} defaultChecked={defaultChecked} className="mt-0.5" />
+      <div className="grid gap-0.5">
+        <label htmlFor={id} className="text-sm font-medium text-slate-900 leading-none cursor-pointer">{title}</label>
+        {description && <p className="text-xs text-slate-500">{description}</p>}
       </div>
     </div>
   );
 }
 
-function SummaryRow({
-  label,
-  value,
-  ok,
-}: {
-  label: string;
-  value: string;
-  ok?: boolean;
-}) {
+function SummaryRow({ label, value, ok }: any) {
   return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="font-inter text-slate-500 text-sm">{label}</span>
-      <span className="inline-flex items-center gap-2">
-        {ok ? (
-          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-        ) : (
-          <span className="h-2 w-2 rounded-full bg-slate-300" />
-        )}
-        <span className="font-inter text-sm font-medium text-slate-900">
-          {value}
-        </span>
-      </span>
+    <div className="flex items-center justify-between py-1">
+      <span className="text-xs text-slate-500">{label}</span>
+      <div className="flex items-center gap-2">
+        {ok ? <CheckCircle2 size={14} className="text-emerald-500" /> : <div className="h-1.5 w-1.5 rounded-full bg-slate-300" />}
+        <span className="text-xs font-bold text-slate-700">{value}</span>
+      </div>
     </div>
   );
 }
