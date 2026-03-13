@@ -13,10 +13,12 @@ import {
   Bell,
   Folder,
   UserCog,
+  UserCircle2,
 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
@@ -111,6 +113,33 @@ export default function AppSidebar() {
           })}
         </SidebarMenu>
       </SidebarContent>
+
+      <SidebarFooter className="border-t border-gray-200 p-2">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              tooltip="My Profile"
+              className="h-auto text-[#A0A5B2] hover:font-semibold"
+            >
+              <Link href="/user/profile" className="flex w-full items-center overflow-hidden">
+                <UserCircle2 className="size-8 shrink-0 text-[#00154A]" />
+                <div
+                  className={cn(
+                    "overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-300 ease-in-out",
+                    isCollapsed ? "ml-0 max-w-0 opacity-0" : "ml-3 max-w-56 opacity-100"
+                  )}
+                >
+                  <div className="flex min-w-0 flex-col">
+                    <span className="text-sm font-medium text-slate-700">System Administrator</span>
+                    <span className="text-xs text-slate-400">admin@starita.gov.ph</span>
+                  </div>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
