@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSidebar } from "@/components/ui/sidebar";
 
 // We'll get a router instance inside the component using the hook and
 // forward a callback down to the user menu. The previous approach
@@ -33,10 +34,7 @@ interface UserMenuProps {
   onSignOut?: () => void;
 }
 
-interface HeaderComponentProps {
-  isSidebarCollapsed: boolean;
-  onToggleSidebar: () => void;
-}
+interface HeaderComponentProps {}
 
 // Constants
 // const SYNC_INTERVAL = 30000; // 30 seconds - COMMENTED OUT
@@ -323,11 +321,9 @@ const UserMenu = memo(
 
 UserMenu.displayName = "UserMenu";
 
-export default function HeaderComponent({
-  isSidebarCollapsed,
-  onToggleSidebar,
-}: HeaderComponentProps) {
+export default function HeaderComponent(_props: HeaderComponentProps) {
   const router = useRouter();
+  const { toggleSidebar, open } = useSidebar();
 
   // simple sign-out helper; clear auth state here as needed before redirecting
   const handleSignOut = useCallback(() => {
@@ -373,16 +369,14 @@ export default function HeaderComponent({
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
-            onClick={onToggleSidebar}
+            onClick={toggleSidebar}
             className="cursor-pointer inline-flex h-11 w-11 items-center justify-center rounded-xl border text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label={
-              isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-            }
+            aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
           >
-            {isSidebarCollapsed ? (
-              <PanelRightOpen className="h-5 w-5" />
-            ) : (
+            {open ? (
               <PanelRightClose className="h-5 w-5" />
+            ) : (
+              <PanelRightOpen className="h-5 w-5" />
             )}
           </button>
 
