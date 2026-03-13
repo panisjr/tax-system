@@ -37,6 +37,84 @@ const STRUCTURAL_TYPES: ComboboxOption[] = [
   { value: 'Type V RC',              label: 'Type V RC' },
 ];
 
+const STA_RITA_BARANGAY_COORDINATES: Array<{ name: string; coordinates: [number, number] }> = [
+  { name: 'Alegria', coordinates: [11.3753963, 124.9942696] },
+  { name: 'Anibongan', coordinates: [11.4691187, 124.9963205] },
+  { name: 'Aslum', coordinates: [11.4337161, 124.9962983] },
+  { name: 'Bagolibas', coordinates: [11.3942155, 125.0012056] },
+  { name: 'Binanalan', coordinates: [11.4939885, 125.0273470] },
+  { name: 'Cabacungan', coordinates: [11.3842767, 125.0076798] },
+  { name: 'Cabunga-an', coordinates: [11.4691011, 124.8831102] },
+  { name: 'Camayse', coordinates: [11.4692933, 125.0074848] },
+  { name: 'Cansadong', coordinates: [11.4935259, 124.9049655] },
+  { name: 'Caticugan', coordinates: [11.3324706, 125.0136457] },
+  { name: 'Dampigan', coordinates: [11.3321189, 124.9903609] },
+  { name: 'Guinbalot-an', coordinates: [11.4333593, 124.9778961] },
+  { name: 'Hinangudtan', coordinates: [11.4674838, 124.9162914] },
+  { name: 'Igang-igang', coordinates: [11.4651019, 124.8622936] },
+  { name: 'La Paz', coordinates: [11.3988559, 124.9877928] },
+  { name: 'Lupig', coordinates: [11.4283624, 125.0123349] },
+  { name: 'Magsaysay', coordinates: [11.3622912, 125.0263337] },
+  { name: 'Maligaya', coordinates: [11.4587867, 125.0528940] },
+  { name: 'New Manunca', coordinates: [11.4444289, 125.0125344] },
+  { name: 'Old Manunca', coordinates: [11.4380195, 125.0153845] },
+  { name: 'Pagsulhogon', coordinates: [11.3728397, 125.0213201] },
+  { name: 'Salvacion', coordinates: [11.4364937, 124.9644831] },
+  { name: 'San Eduardo', coordinates: [11.4740910, 125.0410392] },
+  { name: 'San Isidro', coordinates: [11.5062627, 125.0263517] },
+  { name: 'San Juan', coordinates: [11.3186042, 124.9775722] },
+  { name: 'San Pascual (Crossing)', coordinates: [11.4036400, 124.9964841] },
+  { name: 'San Pedro', coordinates: [11.3079778, 124.9832423] },
+  { name: 'San Roque', coordinates: [11.4525000, 124.9450000] },
+  { name: 'Santa Elena', coordinates: [11.3553584, 125.0105753] },
+  { name: 'Tagacay', coordinates: [11.4938223, 124.8843140] },
+  { name: 'Tominamos', coordinates: [11.4523264, 125.0204000] },
+  { name: 'Tulay', coordinates: [11.4691438, 125.0195549] },
+  { name: 'Union', coordinates: [11.4457647, 125.0825161] },
+  { name: 'Bokinggan Poblacion (Zone I)', coordinates: [11.4525024, 124.9449563] },
+  { name: 'Bougainvilla Poblacion (Zone II)', coordinates: [11.4513904, 124.9425396] },
+  { name: 'Gumamela Poblacion (Zone III)', coordinates: [11.4621237, 124.9451521] },
+  { name: 'Rosal Poblacion (Zone IV)', coordinates: [11.4693052, 124.9532551] },
+  { name: 'Santan Poblacion (Zone V)', coordinates: [11.4515928, 124.9407345] },
+];
+
+function normalizeBarangayName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\(.*?\)/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+type NumericInputOptions = {
+  allowDecimal?: boolean;
+  maxIntegerDigits: number;
+  maxDecimalDigits?: number;
+};
+
+function sanitizeNumericInput(raw: string, options: NumericInputOptions): string {
+  const { allowDecimal = false, maxIntegerDigits, maxDecimalDigits = 0 } = options;
+  const cleaned = raw.replace(/,/g, '').replace(allowDecimal ? /[^\d.]/g : /\D/g, '');
+
+  if (!allowDecimal) {
+    return cleaned.slice(0, maxIntegerDigits);
+  }
+
+  const firstDot = cleaned.indexOf('.');
+  const normalized = firstDot >= 0
+    ? `${cleaned.slice(0, firstDot)}.${cleaned.slice(firstDot + 1).replace(/\./g, '')}`
+    : cleaned;
+
+  const [intPartRaw = '', decPartRaw = ''] = normalized.split('.');
+  const intPart = intPartRaw.slice(0, maxIntegerDigits);
+  const hasDot = normalized.includes('.');
+  const decPart = decPartRaw.slice(0, maxDecimalDigits);
+
+  if (!hasDot) return intPart;
+  return `${intPart}.${decPart}`;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function NewTaxDeclarationPage() {
@@ -46,6 +124,9 @@ export default function NewTaxDeclarationPage() {
   const [barangayOptions, setBarangayOptions] = useState<ComboboxOption[]>([]);
   const [taxpayerOptions, setTaxpayerOptions] = useState<ComboboxOption[]>([]);
   const [loading, setLoading]                 = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState('');
   
   type TaxpayerRecord = {
     tin: string | null;
@@ -56,36 +137,49 @@ export default function NewTaxDeclarationPage() {
   
   useEffect(() => {
     async function loadReferenceData() {
-      const [barangayRes, taxpayerRes] = await Promise.all([
-        fetch('/api/barangays/list'),
-        fetch('/api/taxpayers/list'),
-      ]);
+      try {
+        const [barangayRes, taxpayerRes] = await Promise.all([
+          fetch('/api/barangays/list'),
+          fetch('/api/taxpayers/list'),
+        ]);
 
-      const { barangays = [] } = barangayRes.ok ? await barangayRes.json() : {};
-      const { taxpayers = [] } = taxpayerRes.ok ? await taxpayerRes.json() : {};
+        const { barangays = [] } = barangayRes.ok ? await barangayRes.json() : {};
+        const { taxpayers = [] } = taxpayerRes.ok ? await taxpayerRes.json() : {};
 
-      setBarangayOptions(
-        barangays.map((b: { id: number; name: string }) => ({
+        const fallbackBarangays: ComboboxOption[] = STA_RITA_BARANGAY_COORDINATES
+          .map((b) => ({ value: b.name, label: b.name }))
+          .sort((a, b) => a.label.localeCompare(b.label));
+
+        const remoteBarangays: ComboboxOption[] = barangays.map((b: { id: number; name: string }) => ({
           value: String(b.id),
           label: b.name,
-        }))
-      );
+        }));
 
-      type RawTaxpayer = { id: number; owner_name: string; tin: string | null; address: string | null; owner_type: string | null };
-      setTaxpayerOptions(
-        taxpayers.map((t: RawTaxpayer) => ({
-          value: String(t.id),
-          label: t.owner_name,
-          sublabel: t.tin ? `TIN: ${t.tin}` : undefined,
-        }))
-      );
-      const map = new Map<string, TaxpayerRecord>();
+        setBarangayOptions(remoteBarangays.length > 0 ? remoteBarangays : fallbackBarangays);
+
+        type RawTaxpayer = { id: number; owner_name: string; tin: string | null; address: string | null; owner_type: string | null };
+        setTaxpayerOptions(
+          taxpayers.map((t: RawTaxpayer) => ({
+            value: String(t.id),
+            label: t.owner_name,
+            sublabel: t.tin ? `TIN: ${t.tin}` : undefined,
+          }))
+        );
+
+        const map = new Map<string, TaxpayerRecord>();
         taxpayers.forEach((t: RawTaxpayer) => {
-        map.set(String(t.id), { tin: t.tin, address: t.address, owner_type: t.owner_type });
-      });
-      setTaxpayerMap(map);
+          map.set(String(t.id), { tin: t.tin, address: t.address, owner_type: t.owner_type });
+        });
+        setTaxpayerMap(map);
+      } catch {
+        const fallbackBarangays: ComboboxOption[] = STA_RITA_BARANGAY_COORDINATES
+          .map((b) => ({ value: b.name, label: b.name }))
+          .sort((a, b) => a.label.localeCompare(b.label));
 
-      setLoading(false);
+        setBarangayOptions(fallbackBarangays);
+      } finally {
+        setLoading(false);
+      }
     }
     loadReferenceData();
   }, []);
@@ -137,17 +231,19 @@ export default function NewTaxDeclarationPage() {
   // ── Derived: auto-fill owner details when a taxpayer is selected ─────────
   useEffect(() => {
     if (!taxpayerId) return;
-    const found = taxpayerOptions.find((t) => t.value === taxpayerId);
-    if (found?.sublabel) {
-      // Extract TIN from sublabel ("TIN: 123-456-789")
-      const extracted = found.sublabel.replace('TIN: ', '');
-      setTin(extracted);
-    }
-  }, [taxpayerId, taxpayerOptions]);
+    const found = taxpayerMap.get(taxpayerId);
+    if (!found) return;
+
+    setTin(found.tin ?? '');
+    setOwnerAddress(found.address ?? '');
+    setOwnerType((found.owner_type as 'Individual' | 'Corporation' | 'Government' | null) ?? 'Individual');
+  }, [taxpayerId, taxpayerMap]);
 
   // ── Derived: display labels for summary sidebar ──────────────────────────
   const selectedBarangayLabel  = barangayOptions.find((b) => b.value === barangayId)?.label ?? '';
   const selectedTaxpayerLabel  = taxpayerOptions.find((t) => t.value === taxpayerId)?.label ?? '';
+  const totalMarketValue = (parseFloat(landMarketValue) || 0) + (parseFloat(bldgMarketValue) || 0);
+  const totalAssessedValue = (parseFloat(landAssessedValue) || 0) + (parseFloat(bldgAssessedValue) || 0);
 
   // ── Print state — null until the button is clicked ───────────────────────
   // TaxDeclarationPrint is NOT mounted until handlePrint() fires.
@@ -231,11 +327,95 @@ export default function NewTaxDeclarationPage() {
   }
 
   // ── Save handler (wire to server action / API route) ─────────────────────
-  function handleSave() {
-    // TODO: call POST /api/tax-declarations or a Server Action
-    console.log('Save:', {
-      tdNumber, taxpayerId, barangayId, classification, taxYear, declarationType,
-    });
+  const parseNumeric = (v: string): number | null => {
+    const cleaned = v.replace(/,/g, '').trim();
+    if (!cleaned) return null;
+    const parsed = Number(cleaned);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  async function handleSave() {
+    setSaveError('');
+    setSaveSuccess('');
+
+    const selectedBarangayId = Number(barangayId);
+    const isBarangayIdNumeric = Number.isFinite(selectedBarangayId) && selectedBarangayId > 0;
+
+    if (!tdNumber.trim() || !pin.trim() || !taxpayerId || !barangayId) {
+      setSaveError('Please fill in TD Number, PIN, Owner/Taxpayer, and Barangay.');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const matchedBarangay = STA_RITA_BARANGAY_COORDINATES.find(
+        (b) => normalizeBarangayName(b.name) === normalizeBarangayName(selectedBarangayLabel),
+      );
+
+      const payload = {
+        td_number: tdNumber.trim(),
+        arp_number: arpNumber.trim() || null,
+        declaration_type: declarationType,
+        tax_year: Number(taxYear) || new Date().getFullYear(),
+        effectivity_year: Number(effectivityYear) || new Date().getFullYear(),
+        effectivity_quarter: effectivityQuarter,
+        previous_td_id: parseNumeric(prevTd),
+        classification,
+        actual_use: actualUse.trim() || null,
+        land_area: parseNumeric(landArea),
+        land_unit_value: parseNumeric(landUnitValue),
+        land_market_value: parseNumeric(landMarketValue),
+        land_assessment_level: parseNumeric(landAssessLevel),
+        land_assessed_value: parseNumeric(landAssessedValue),
+        total_market_value: totalMarketValue || null,
+        total_assessed_value: totalAssessedValue || null,
+        taxpayer_id: taxpayerId,
+        property: {
+          pin: pin.trim(),
+          barangay_id: isBarangayIdNumeric ? selectedBarangayId : null,
+          barangay_name: selectedBarangayLabel || barangayId,
+          municipality: 'Sta. Rita',
+          province: 'Samar',
+          street: street.trim() || null,
+          lot_number: lotNumber.trim() || null,
+          block_number: blockNumber.trim() || null,
+          survey_number: surveyNumber.trim() || null,
+          latitude: matchedBarangay?.coordinates[0] ?? null,
+          longitude: matchedBarangay?.coordinates[1] ?? null,
+        },
+        building: {
+          kind_of_building: buildingKind.trim() || null,
+          structural_type: structuralType || null,
+          floor_area: parseNumeric(floorArea),
+          year_built: parseNumeric(yearBuilt),
+          market_value: parseNumeric(bldgMarketValue),
+          assessment_level: parseNumeric(bldgAssessLevel),
+          assessed_value: parseNumeric(bldgAssessedValue),
+          condition: null,
+        },
+      };
+
+      const res = await fetch('/api/tax-declarations/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setSaveError(data?.error || 'Unable to save tax declaration.');
+        return;
+      }
+
+      setSaveSuccess('Tax Declaration saved successfully.');
+      router.push(`/property?td=${encodeURIComponent(tdNumber.trim())}`);
+    } catch {
+      setSaveError('Unable to save tax declaration. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -257,6 +437,12 @@ export default function NewTaxDeclarationPage() {
           </p>
         </div>
       </header>
+
+      {(saveError || saveSuccess) && (
+        <div className={`mb-4 rounded-md border px-3 py-2 text-sm ${saveError ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
+          {saveError || saveSuccess}
+        </div>
+      )}
 
       {/* Sticky Action Buttons */}
       <div className="lg:sticky lg:top-0 lg:z-40 lg:bg-white lg:border-b lg:border-gray-200 lg:py-3 lg:-mt-2">
@@ -285,10 +471,11 @@ export default function NewTaxDeclarationPage() {
             <button
               type="button"
               onClick={handleSave}
-              className="font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800"
+              disabled={saving}
+              className="font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <Save className="h-4 w-4" />
-              Save Tax Declaration
+              {saving ? 'Saving...' : 'Save Tax Declaration'}
             </button>
           </div>
         </div>
@@ -323,7 +510,15 @@ export default function NewTaxDeclarationPage() {
               />
 
               <Field label="ARP Number" placeholder="Assessment Roll of Property #" value={arpNumber} onChange={setArpNumber} />
-              <Field label="Tax Year" placeholder="e.g. 2024" value={taxYear} onChange={setTaxYear} required />
+              <Field
+                label="Tax Year"
+                placeholder="e.g. 2024"
+                value={taxYear}
+                onChange={(v) => setTaxYear(sanitizeNumericInput(v, { maxIntegerDigits: 4 }))}
+                inputMode="numeric"
+                maxLength={4}
+                required
+              />
             </div>
           </Section>
 
@@ -430,11 +625,49 @@ export default function NewTaxDeclarationPage() {
               />
 
               <Field label="Actual Use" placeholder="e.g. Single-Family Dwelling" value={actualUse} onChange={setActualUse} required />
-              <Field label="Land Area (sqm)" placeholder="e.g. 250.00" value={landArea} onChange={setLandArea} required />
-              <Field label="Unit Value (₱ per sqm)" placeholder="e.g. 5,000.00" value={landUnitValue} onChange={setLandUnitValue} required />
-              <Field label="Land Market Value (₱)" placeholder="Auto-computed" value={landMarketValue} onChange={setLandMarketValue} />
-              <Field label="Assessment Level (%)" placeholder="e.g. 20" value={landAssessLevel} onChange={setLandAssessLevel} required />
-              <Field label="Land Assessed Value (₱)" placeholder="Auto-computed" value={landAssessedValue} onChange={setLandAssessedValue} />
+              <Field
+                label="Land Area (sqm)"
+                placeholder="e.g. 250.00"
+                value={landArea}
+                onChange={(v) => setLandArea(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 10, maxDecimalDigits: 4 }))}
+                inputMode="decimal"
+                maxLength={15}
+                required
+              />
+              <Field
+                label="Unit Value (₱ per sqm)"
+                placeholder="e.g. 5,000.00"
+                value={landUnitValue}
+                onChange={(v) => setLandUnitValue(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 12, maxDecimalDigits: 2 }))}
+                inputMode="decimal"
+                maxLength={15}
+                required
+              />
+              <Field
+                label="Land Market Value (₱)"
+                placeholder="Auto-computed"
+                value={landMarketValue}
+                onChange={(v) => setLandMarketValue(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 12, maxDecimalDigits: 2 }))}
+                inputMode="decimal"
+                maxLength={15}
+              />
+              <Field
+                label="Assessment Level (%)"
+                placeholder="e.g. 20"
+                value={landAssessLevel}
+                onChange={(v) => setLandAssessLevel(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 3, maxDecimalDigits: 2 }))}
+                inputMode="decimal"
+                maxLength={6}
+                required
+              />
+              <Field
+                label="Land Assessed Value (₱)"
+                placeholder="Auto-computed"
+                value={landAssessedValue}
+                onChange={(v) => setLandAssessedValue(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 12, maxDecimalDigits: 2 }))}
+                inputMode="decimal"
+                maxLength={15}
+              />
             </div>
           </Section>
 
@@ -454,18 +687,61 @@ export default function NewTaxDeclarationPage() {
                 onChange={setStructuralType}
               />
 
-              <Field label="Floor Area (sqm)" placeholder="e.g. 120.00" value={floorArea} onChange={setFloorArea} />
-              <Field label="Year Built" placeholder="e.g. 2010" value={yearBuilt} onChange={setYearBuilt} />
-              <Field label="Building Market Value (₱)" placeholder="e.g. 1,200,000.00" value={bldgMarketValue} onChange={setBldgMarketValue} />
-              <Field label="Assessment Level (%)" placeholder="e.g. 20" value={bldgAssessLevel} onChange={setBldgAssessLevel} />
-              <Field label="Building Assessed Value (₱)" placeholder="Auto-computed" value={bldgAssessedValue} onChange={setBldgAssessedValue} />
+              <Field
+                label="Floor Area (sqm)"
+                placeholder="e.g. 120.00"
+                value={floorArea}
+                onChange={(v) => setFloorArea(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 10, maxDecimalDigits: 4 }))}
+                inputMode="decimal"
+                maxLength={15}
+              />
+              <Field
+                label="Year Built"
+                placeholder="e.g. 2010"
+                value={yearBuilt}
+                onChange={(v) => setYearBuilt(sanitizeNumericInput(v, { maxIntegerDigits: 4 }))}
+                inputMode="numeric"
+                maxLength={4}
+              />
+              <Field
+                label="Building Market Value (₱)"
+                placeholder="e.g. 1,200,000.00"
+                value={bldgMarketValue}
+                onChange={(v) => setBldgMarketValue(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 12, maxDecimalDigits: 2 }))}
+                inputMode="decimal"
+                maxLength={15}
+              />
+              <Field
+                label="Assessment Level (%)"
+                placeholder="e.g. 20"
+                value={bldgAssessLevel}
+                onChange={(v) => setBldgAssessLevel(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 3, maxDecimalDigits: 2 }))}
+                inputMode="decimal"
+                maxLength={6}
+              />
+              <Field
+                label="Building Assessed Value (₱)"
+                placeholder="Auto-computed"
+                value={bldgAssessedValue}
+                onChange={(v) => setBldgAssessedValue(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 12, maxDecimalDigits: 2 }))}
+                inputMode="decimal"
+                maxLength={15}
+              />
             </div>
           </Section>
 
           {/* Effectivity & Total Valuation */}
           <Section icon={<BarChart3 className="h-5 w-5 text-[#00154A]" />} title="Effectivity & Total Valuation">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Year of Effectivity" placeholder="e.g. 2024" value={effectivityYear} onChange={setEffectivityYear} required />
+              <Field
+                label="Year of Effectivity"
+                placeholder="e.g. 2024"
+                value={effectivityYear}
+                onChange={(v) => setEffectivityYear(sanitizeNumericInput(v, { maxIntegerDigits: 4 }))}
+                inputMode="numeric"
+                maxLength={4}
+                required
+              />
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Quarter <span className="text-rose-500">*</span>
@@ -489,8 +765,8 @@ export default function NewTaxDeclarationPage() {
                 <ValuationRow label="Land Assessed Value"   value={landAssessedValue ? `₱${landAssessedValue}` : '—'} />
                 <ValuationRow label="Building Assessed Value" value={bldgAssessedValue ? `₱${bldgAssessedValue}` : '—'} />
                 <div className="border-t border-gray-200 pt-2">
-                  <ValuationRow label="Total Market Value"   value="—" bold />
-                  <ValuationRow label="Total Assessed Value" value="—" bold />
+                  <ValuationRow label="Total Market Value"   value={totalMarketValue ? `₱${totalMarketValue.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'} bold />
+                  <ValuationRow label="Total Assessed Value" value={totalAssessedValue ? `₱${totalAssessedValue.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'} bold />
                 </div>
               </div>
             </div>
@@ -576,12 +852,16 @@ function Field({
   value,
   onChange,
   required = false,
+  inputMode,
+  maxLength,
 }: {
   label: string;
   placeholder?: string;
   value: string;
   onChange: (v: string) => void;
   required?: boolean;
+  inputMode?: 'text' | 'numeric' | 'decimal' | 'tel' | 'search' | 'email' | 'url';
+  maxLength?: number;
 }) {
   return (
     <div>
@@ -593,6 +873,8 @@ function Field({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
+          inputMode={inputMode}
+          maxLength={maxLength}
           className="w-full bg-transparent font-inter text-sm text-slate-900 outline-none placeholder:text-slate-400"
         />
       </div>
