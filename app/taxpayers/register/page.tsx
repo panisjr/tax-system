@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { ValidatedInput } from "@/components/ui/ValidatedInput";
 import { ArrowLeft, Save, UserRound, MapPin, Phone, Mail } from "lucide-react";
 
-const OWNER_TYPE_OPTIONS = ["Individual", "Corporate", "Government"] as const;
+const OWNER_TYPE_OPTIONS = ["Individual", "Corporation", "Government"] as const;
 type OwnerType = (typeof OWNER_TYPE_OPTIONS)[number];
 
 type FormState = {
