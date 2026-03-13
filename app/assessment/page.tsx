@@ -1,4 +1,7 @@
+"use client";
+
 import RegistryCard from '@/components/RegistryCard';
+import { useRouter } from 'next/navigation';
 
 import {
 	Calculator,
@@ -10,6 +13,8 @@ import {
 } from 'lucide-react';
 
 export default function AssessmentBillingPage() {
+	const router = useRouter();
+
 	return (
 		<div className='flex'>
 			<main className='flex-1'>
@@ -28,18 +33,21 @@ export default function AssessmentBillingPage() {
 						title='RPT Assessment'
 						description='Compute real property tax based on assessed values'
 						buttonText='Compute Tax'
+						onButtonClick={() => router.push('/assessment/rpt-assessment')}
 					/>
 					<RegistryCard
 						icon={FileText}
 						title='Billing Generation'
 						description='Generate billing statements and assessment notices'
 						buttonText='Generate Bill'
+						onButtonClick={() => router.push('/assessment/billing-generation')}
 					/>
 					<RegistryCard
 						icon={Receipt}
 						title='Official Receipt Monitoring'
 						description='Manage issued ORs and billing references'
 						buttonText='View OR'
+						onButtonClick={() => router.push('#')}
 					/>
 					<RegistryCard
 						icon={Percent}
@@ -47,13 +55,16 @@ export default function AssessmentBillingPage() {
 						description='Apply early payment discounts and late penalties'
 						buttonText='Configure'
 						variant='secondary'
+						onButtonClick={() => router.push('/assessment/discounts-penalties')}
 					/>
 					<RegistryCard
 						icon={CalendarDays}
 						title='Billing Schedules'
 						description='Manage annual and quarterly billing cycles'
 						buttonText='View Schedules'
+						href='/assessment/view-schedule'
 						variant='secondary'
+						onButtonClick={() => router.push('#')}
 					/>
 					<RegistryCard
 						icon={ClipboardList}
@@ -61,6 +72,7 @@ export default function AssessmentBillingPage() {
 						description='Generate billing summaries and collection reports'
 						buttonText='Generate Reports'
 						variant='secondary'
+						onButtonClick={() => router.push('#')}
 					/>
 				</div>
 			</main>

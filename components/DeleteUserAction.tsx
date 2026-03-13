@@ -52,10 +52,13 @@ export async function showError(message: string, title = "Error") {
 }
 
 /**
- * Show a confirmation dialog for deleting a user and return whether the
+ * Show a confirmation dialog for deleting an entity and return whether the
  * user confirmed the action.
+ * 
+ * @param name - The name/identifier of the entity to delete
+ * @param entityType - The type of entity being deleted (default: "User")
  */
-export async function confirmDelete(name: string): Promise<boolean> {
+export async function confirmDelete(name: string, entityType = "User"): Promise<boolean> {
   const cautionIcon = renderToStaticMarkup(
     <AlertTriangle size={14} className="text-rose-500 mr-2" />,
   );
@@ -64,7 +67,7 @@ export async function confirmDelete(name: string): Promise<boolean> {
     html: `
       <div class="text-left">
         <h2 class="font-lexend text-lg font-semibold text-[#0F172A] mb-2">
-          Delete User?
+          Delete ${entityType}?
         </h2>
         <p class="font-inter text-sm text-slate-500 mb-4">
           You are about to remove 
@@ -77,7 +80,7 @@ export async function confirmDelete(name: string): Promise<boolean> {
       </div>
     `,
     showCancelButton: true,
-    confirmButtonText: "Delete User",
+    confirmButtonText: `Delete ${entityType}`,
     cancelButtonText: "Cancel",
     reverseButtons: true,
     focusCancel: true,
