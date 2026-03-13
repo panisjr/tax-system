@@ -14,35 +14,29 @@ import {
   Folder,
   UserCog,
 } from "lucide-react";
-
-type SubmenuItem = {
-  name: string;
-  path: string;
-};
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 type MenuItem = {
   name: string;
   path: string;
   icon: React.ComponentType<{ className?: string }>;
   subtitle?: string;
-  submenu?: SubmenuItem[];
 };
 
 const menuItems: MenuItem[] = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-  {
-    name: "Property Registry",
-    path: "/property",
-    icon: Building2,
-    subtitle: "(Assessor)",
-  },
+  { name: "Property Registry", path: "/property", icon: Building2, subtitle: "(Assessor)" },
   { name: "Taxpayer Records", path: "/taxpayers", icon: Users },
-  {
-    name: "Assessment & Billing",
-    path: "/assessment",
-    icon: Wallet,
-    subtitle: "(Treasurer)",
-  },
+  { name: "Assessment & Billing", path: "/assessment", icon: Wallet, subtitle: "(Treasurer)" },
   { name: "Payments & OR Monitoring", path: "/payments", icon: FileText },
   { name: "Barangay Performance", path: "/barangay", icon: MapPin },
   { name: "Delinquencies & Notices", path: "/deliquencies", icon: Bell },
@@ -50,20 +44,16 @@ const menuItems: MenuItem[] = [
   { name: "User & Role Management", path: "/user", icon: UserCog },
 ];
 
-interface SidebarProps {
-  isCollapsed: boolean;
-}
-
-export default function Sidebar({ isCollapsed }: SidebarProps) {
+export default function AppSidebar() {
   const pathname = usePathname();
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
 
   return (
-    <aside
-      className={`font-inter ${isCollapsed ? "w-20" : "w-64"} shrink-0 h-full bg-white border-r border-gray-200 flex flex-col transition-all duration-200`}
-    >
-      {/* Header with Logo */}
-      <div className="border-b border-gray-200 px-2 py-3">
-        <div className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"}`}>
+    <Sidebar collapsible="icon" className="font-inter border-r border-gray-200 bg-white">
+      {/* Logo header */}
+      <SidebarHeader className="border-b border-gray-200 px-4 py-3">
+        <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-3")}>
           <div className="relative w-12 h-12 shrink-0">
             <Image
               src="/img/sta.rita_logo.png"
@@ -72,10 +62,13 @@ export default function Sidebar({ isCollapsed }: SidebarProps) {
               className="object-contain"
             />
           </div>
-          <div className={isCollapsed ? "hidden" : "block"}>
-            <h1
-              className={`font-lexend text-lg font-bold text-[#666D7D]`}
-            >
+          <div
+            className={cn(
+              "whitespace-nowrap transition-all duration-150 ease-in-out overflow-hidden",
+              isCollapsed ? "opacity-0 w-0" : "opacity-100"
+            )}
+          >
+            <h1 className="font-lexend text-lg font-bold text-[#666D7D]">
               Sta. Rita, Samar
             </h1>
             <p className="font-lexend text-xs text-gray-600">
@@ -83,43 +76,36 @@ export default function Sidebar({ isCollapsed }: SidebarProps) {
             </p>
           </div>
         </div>
-      </div>
+      </SidebarHeader>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 max-h-[calc(100vh-140px)] overflow-y-auto">
-        <div>
+      <SidebarContent className="p-2">
+        <SidebarMenu>
           {menuItems.map((item) => {
             const Icon = item.icon;
-
             return (
-              <Link
-                key={item.name}
-                href={item.path}
-                className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"} px-2 py-3 rounded-lg transition cursor-pointer [text-decoration:none] overflow-hidden ${
-                  pathname === item.path
-                    ? "bg-blue-50 text-blue-600 font-medium"
-                    : "text-[#A0A5B2] hover:bg-gray-50 hover:text-gray-900 hover:font-semibold"
-                }`}
-                title={item.name}
-              >
-                <Icon className="w-5 h-5 shrink-0 text-[#00154A]" />
-
-                <div className={`flex-1 min-w-0 text-left overflow-hidden ${isCollapsed ? "hidden" : "block"}`}>
-                  <div className="text-sm font-medium truncate">
-                    {item.name}
-                  </div>
-
-                  {item.subtitle && (
-                    <div className="text-xs text-gray-500 truncate">
-                      {item.subtitle}
+              <SidebarMenuItem key={item.name}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === item.path}
+                  tooltip={item.name}
+                  className="h-auto text-[#A0A5B2] hover:font-semibold data-[active=true]:bg-blue-50! data-[active=true]:text-blue-600!"
+                >
+                  <Link href={item.path}>
+                    <Icon className="size-8 shrink-0 text-[#00154A]" />
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-medium">{item.name}</span>
+                      {item.subtitle && (
+                        <span className="text-xs text-gray-500">{item.subtitle}</span>
+                      )}
                     </div>
-                  )}
-                </div>
-              </Link>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             );
           })}
-        </div>
-      </nav>
-    </aside>
+        </SidebarMenu>
+      </SidebarContent>
+    </Sidebar>
   );
 }
