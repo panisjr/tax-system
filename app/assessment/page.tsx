@@ -33,20 +33,21 @@ export default function AssessmentBillingPage() {
 						title='RPT Assessment'
 						description='Compute real property tax based on assessed values'
 						buttonText='Compute Tax'
-						href='/assessment/rpt-assessment'
+						onButtonClick={() => router.push('/assessment/rpt-assessment')}
 					/>
 					<RegistryCard
 						icon={FileText}
 						title='Billing Generation'
 						description='Generate billing statements and assessment notices'
 						buttonText='Generate Bill'
-						href='/assessment/billing-generation'
+						onButtonClick={() => router.push('/assessment/billing-generation')}
 					/>
 					<RegistryCard
 						icon={Receipt}
 						title='Official Receipt Monitoring'
 						description='Manage issued ORs and billing references'
 						buttonText='View OR'
+						onButtonClick={() => router.push('#')}
 					/>
 					<RegistryCard
 						icon={Percent}
@@ -63,6 +64,7 @@ export default function AssessmentBillingPage() {
 						buttonText='View Schedules'
 						href='/assessment/view-schedule'
 						variant='secondary'
+						onButtonClick={() => router.push('#')}
 					/>
 					<RegistryCard
 						icon={ClipboardList}
@@ -70,6 +72,7 @@ export default function AssessmentBillingPage() {
 						description='Generate billing summaries and collection reports'
 						buttonText='Generate Reports'
 						variant='secondary'
+						onButtonClick={() => router.push('#')}
 					/>
 				</div>
 			</main>

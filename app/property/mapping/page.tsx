@@ -3,7 +3,7 @@
 /**
  * Tax Mapping — app/property/mapping/page.tsx
  *
- * Barangay list is hardcoded (23 barangays).
+ * Barangay list is hardcoded.
  * A search bar (shadcn Input style) is placed above the barangay sidebar list
  * to filter entries dynamically — no layout or structure has been changed.
  *
@@ -13,15 +13,60 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { ArrowLeft, MapPinned, Eye, Search, X } from 'lucide-react';
 
-// ── Hardcoded barangay list ────────────────────────────────────────────────────
-const barangays = [
-  'Bacubac', 'Bagacay', 'Balonga-as', 'Barayong', 'Binalayan', 'Buenavista',
-  'Cagbigti', 'Calunangan', 'Caluwayan', 'Camumucmuc', 'Capacuhan', 'Corocawayan',
-  'Cotmon', 'Dao', 'Flores', 'Gabas', 'Ilag', 'Pinamorotan', 'Poblacion',
-  'San Jose', 'Tagalag', 'Urdaneta', 'Zaragoza',
+const STA_RITA_BARANGAY_COORDINATES: Array<{ name: string; coordinates: [number, number] }> = [
+  { name: 'Alegria', coordinates: [11.3753963, 124.9942696] },
+  { name: 'Anibongan', coordinates: [11.4691187, 124.9963205] },
+  { name: 'Aslum', coordinates: [11.4337161, 124.9962983] },
+  { name: 'Bagolibas', coordinates: [11.3942155, 125.0012056] },
+  { name: 'Binanalan', coordinates: [11.4939885, 125.0273470] },
+  { name: 'Cabacungan', coordinates: [11.3842767, 125.0076798] },
+  { name: 'Cabunga-an', coordinates: [11.4691011, 124.8831102] },
+  { name: 'Camayse', coordinates: [11.4692933, 125.0074848] },
+  { name: 'Cansadong', coordinates: [11.4935259, 124.9049655] },
+  { name: 'Caticugan', coordinates: [11.3324706, 125.0136457] },
+  { name: 'Dampigan', coordinates: [11.3321189, 124.9903609] },
+  { name: 'Guinbalot-an', coordinates: [11.4333593, 124.9778961] },
+  { name: 'Hinangudtan', coordinates: [11.4674838, 124.9162914] },
+  { name: 'Igang-igang', coordinates: [11.4651019, 124.8622936] },
+  { name: 'La Paz', coordinates: [11.3988559, 124.9877928] },
+  { name: 'Lupig', coordinates: [11.4283624, 125.0123349] },
+  { name: 'Magsaysay', coordinates: [11.3622912, 125.0263337] },
+  { name: 'Maligaya', coordinates: [11.4587867, 125.0528940] },
+  { name: 'New Manunca', coordinates: [11.4444289, 125.0125344] },
+  { name: 'Old Manunca', coordinates: [11.4380195, 125.0153845] },
+  { name: 'Pagsulhogon', coordinates: [11.3728397, 125.0213201] },
+  { name: 'Salvacion', coordinates: [11.4364937, 124.9644831] },
+  { name: 'San Eduardo', coordinates: [11.4740910, 125.0410392] },
+  { name: 'San Isidro', coordinates: [11.5062627, 125.0263517] },
+  { name: 'San Juan', coordinates: [11.3186042, 124.9775722] },
+  { name: 'San Pascual (Crossing)', coordinates: [11.4036400, 124.9964841] },
+  { name: 'San Pedro', coordinates: [11.3079778, 124.9832423] },
+  { name: 'San Roque', coordinates: [11.4525000, 124.9450000] },
+  { name: 'Santa Elena', coordinates: [11.3553584, 125.0105753] },
+  { name: 'Tagacay', coordinates: [11.4938223, 124.8843140] },
+  { name: 'Tominamos', coordinates: [11.4523264, 125.0204000] },
+  { name: 'Tulay', coordinates: [11.4691438, 125.0195549] },
+  { name: 'Union', coordinates: [11.4457647, 125.0825161] },
+  { name: 'Bokinggan Poblacion (Zone I)', coordinates: [11.4525024, 124.9449563] },
+  { name: 'Bougainvilla Poblacion (Zone II)', coordinates: [11.4513904, 124.9425396] },
+  { name: 'Gumamela Poblacion (Zone III)', coordinates: [11.4621237, 124.9451521] },
+  { name: 'Rosal Poblacion (Zone IV)', coordinates: [11.4693052, 124.9532551] },
+  { name: 'Santan Poblacion (Zone V)', coordinates: [11.4515928, 124.9407345] },
 ];
+
+const BarangayLeafletMap = dynamic(() => import('@/components/BarangayLeafletMap'), {
+  ssr: false,
+});
+
+type LatLngTuple = [number, number];
+
+const barangays = STA_RITA_BARANGAY_COORDINATES.map((item) => item.name);
+const barangayCenters: Record<string, LatLngTuple> = Object.fromEntries(
+  STA_RITA_BARANGAY_COORDINATES.map((item) => [item.name, item.coordinates]),
+);
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type PropertyEntry = {
@@ -60,7 +105,7 @@ const propertiesByBarangay: Record<string, PropertyEntry[]> = {};
 export default function TaxMappingPage() {
   const router = useRouter();
 
-  const [selectedBarangay, setSelectedBarangay] = useState('Poblacion');
+  const [selectedBarangay, setSelectedBarangay] = useState('Bokinggan Poblacion (Zone I)');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Filter the barangay list dynamically based on search input
@@ -72,6 +117,8 @@ export default function TaxMappingPage() {
 
   const stats      = barangayStats[selectedBarangay];
   const properties = propertiesByBarangay[selectedBarangay] ?? [];
+  const selectedBarangayCenter =
+    barangayCenters[selectedBarangay] ?? barangayCenters['Bokinggan Poblacion (Zone I)'];
 
   function handleBarangaySelect(name: string) {
     setSelectedBarangay(name);
@@ -219,23 +266,19 @@ export default function TaxMappingPage() {
             </div>
           )}
 
-          {/* Map Placeholder */}
+          {/* Map */}
           <div className="overflow-hidden rounded-sm border border-gray-200 bg-white shadow-sm">
             <div className="border-b border-gray-200 px-4 py-3">
               <h3 className="font-inter text-xs font-semibold uppercase tracking-wide text-[#848794]">
                 Property Map – Barangay {selectedBarangay}
               </h3>
             </div>
-            <div className="flex h-48 items-center justify-center bg-gray-50">
-              <div className="text-center">
-                <MapPinned className="mx-auto h-10 w-10 text-slate-300" />
-                <p className="font-inter mt-2 text-xs text-slate-400">
-                  Interactive GIS map integration coming soon
-                </p>
-                <p className="font-inter text-xs text-slate-300">
-                  Cadastral data for Barangay {selectedBarangay}
-                </p>
-              </div>
+            <div className="bg-gray-50">
+              <BarangayLeafletMap
+                barangayName={selectedBarangay}
+                center={selectedBarangayCenter}
+                zoom={15}
+              />
             </div>
           </div>
 
