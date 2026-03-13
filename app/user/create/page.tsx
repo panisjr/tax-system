@@ -479,9 +479,11 @@ function CreateUserForm() {
                 type="name"
                 onChange={(v) => updateField("firstname", v)}
               />
-              <Field
+              <ValidatedInput
                 label="Middle Name"
                 value={form.middlename}
+                validator="name"
+                type="name"
                 onChange={(v) => updateField("middlename", v)}
               />
               <ValidatedInput
@@ -502,6 +504,7 @@ function CreateUserForm() {
                   onChange={(val) => updateField("suffix", val)}
                   placeholder="Select suffix"
                   searchPlaceholder="Search suffix..."
+                  className="mt-1"
                 />
               </div>
               <div>

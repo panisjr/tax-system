@@ -71,10 +71,28 @@ export const VALIDATORS: Record<ValidatorKey, Validator> = {
     errorMessage: 'ID must be in XXXX-XXXX format (8 digits)',
   },
 
-  'name': {
-    validate: (v) => /^[a-zA-Z\s\-\.\']{2,50}$/.test(v),
-    errorMessage: 'Name must be between 2 and 50 characters and contain only letters and basic punctuation',
+  // validators.ts
+
+'name': {
+  validate: (v) => {
+    // 1. Check length (2-20 characters)
+    if (v.length < 2 || v.length > 20) return false;
+
+    // 2. Count occurrences of punctuation to ensure they don't exceed 3 each
+    const counts = {
+      "'": (v.match(/\'/g) || []).length,
+      ".": (v.match(/\./g) || []).length,
+      "-": (v.match(/\-/g) || []).length,
+    };
+    if (counts["'"] > 3 || counts["."] > 3 || counts["-"] > 3) return false;
+
+    // 3. Final Regex: 
+    // Must start with a Capital (including accents)
+    // Followed by letters, accents, or allowed punctuation
+    return /^[A-Z\u00C0-\u017F][a-zA-Z\s\-\.\'\u00C0-\u017F]*$/.test(v);
   },
+  errorMessage: 'Name must start with a capital, be 2-20 chars, and use symbols sparingly (max 3 each).',
+},
 
   'ORnumber': {
     validate: (v) => /^OR-\d{4}-\d{6}$/.test(v),
