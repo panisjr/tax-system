@@ -36,7 +36,16 @@ interface UserMenuProps {
   onSignOut?: () => void;
 }
 
-interface HeaderComponentProps {}
+interface HeaderComponentProps {
+  sessionUser: {
+    empID: string;
+    username: string;
+    name: string;
+    email: string;
+    role: string;
+    role_id: string | number;
+  } | null;
+}
 
 // Constants
 // const SYNC_INTERVAL = 30000; // 30 seconds - COMMENTED OUT
@@ -343,14 +352,20 @@ const UserMenu = memo(
 
 UserMenu.displayName = "UserMenu";
 
-export default function HeaderComponent(_props: HeaderComponentProps) {
+export default function HeaderComponent({ sessionUser }: HeaderComponentProps) {
   const router = useRouter();
   const { toggleSidebar, open } = useSidebar();
 
-  // simple sign-out helper; clear auth state here as needed before redirecting
-  const handleSignOut = useCallback(() => {
-    // e.g. call logout API, clear local storage/cookies, etc.
-    router.push("/");
+  const handleSignOut = useCallback(async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } finally {
+      router.push("/");
+      router.refresh();
+    }
   }, [router]);
 
   const handleOpenProfile = useCallback(() => {
@@ -469,6 +484,8 @@ export default function HeaderComponent(_props: HeaderComponentProps) {
 
           {/* User menu */}
           <UserMenu
+            userName={sessionUser?.name || sessionUser?.username || "Guest User"}
+            userRole={sessionUser?.role || "No active session"}
             onProfile={handleOpenProfile}
             onSettings={handleOpenSettings}
             onSignOut={handleSignOut}
