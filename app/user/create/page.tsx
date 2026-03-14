@@ -344,6 +344,23 @@ function CreateUserForm() {
       return;
     }
 
+    if (isEditMode && passwordTouched) {
+      if (!form.temp_pass.trim() || !form.password.trim()) {
+        toast.error("Password Error", {
+          description:
+            "Enter both Temp Pass and Password to update credentials.",
+        });
+        return;
+      }
+
+      if (!passwordsMatch) {
+        toast.error("Password Error", {
+          description: "Temporary password and password must match.",
+        });
+        return;
+      }
+    }
+
     if (isEditMode && !hasFormChanges) {
       toast.error("No Changes Detected", {
         description: "Update at least one field before saving.",
@@ -374,8 +391,13 @@ function CreateUserForm() {
             department: form.department,
             position: form.position,
             status: form.status,
-            // Only send password if user typed something (useful for edits)
-            ...(form.password ? { password: form.password } : {}),
+            // Only send credentials if user typed both fields (useful for edits)
+            ...(passwordTouched
+              ? {
+                  temp_pass: form.temp_pass,
+                  password: form.password,
+                }
+              : {}),
           }
         : {
             ...form,
