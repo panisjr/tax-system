@@ -140,6 +140,8 @@ export async function POST(request: Request) {
 			birthdate: body.birthdate!.trim(),
 			age: body.age!.trim(),
 			sex: body.sex,
+			temp_pass: body.temp_pass!,
+			password: body.password!,
 			email: body.email!.trim(),
 			phone: body.phone!.trim(),
 			role_id: roleId,
