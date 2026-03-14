@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 type CreateUserPayload = {
 	empID: string;
+	username: string;
 	firstname: string;
 	middlename: string;
 	lastname: string;
@@ -35,6 +36,7 @@ export async function POST(request: Request) {
 
 		const requiredTextFields: Array<keyof CreateUserPayload> = [
 			'empID',
+			'username',
 			'firstname',
 			'lastname',
 			'birthdate',
@@ -98,6 +100,7 @@ export async function POST(request: Request) {
 			email_confirm: true,
 			user_metadata: {
 				empID: body.empID!.trim(),
+				username: body.username!.trim(),
 				firstname: body.firstname!.trim(),
 				middlename: body.middlename?.trim() || '',
 				lastname: body.lastname!.trim(),
@@ -129,6 +132,7 @@ export async function POST(request: Request) {
 
 		const { error: insertError } = await supabaseAdmin.from('users').insert({
 			empID: body.empID!.trim(),
+			username: body.username!.trim(),
 			firstname: body.firstname!.trim(),
 			middlename: body.middlename?.trim() || '',
 			lastname: body.lastname!.trim(),
