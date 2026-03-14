@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Search,
@@ -32,8 +33,17 @@ const OWNER_TYPE_OPTIONS: ComboboxOption[] = [
   { value: "Government", label: "Government" },
 ];
 
+const SUFFIX_OPTIONS: ComboboxOption[] = [
+  { value: "Jr.", label: "Jr." },
+  { value: "Sr.", label: "Sr." },
+  { value: "II", label: "II" },
+  { value: "III", label: "III" },
+  { value: "IV", label: "IV" },
+  { value: "V", label: "V" },
+];
+
 type Taxpayer = {
-  id: number;
+  id: number | string;
   owner_name: string;
   first_name: string;
   middle_name: string | null;
@@ -57,9 +67,13 @@ export default function TaxpayerListPage() {
   const [typeFilter, setTypeFilter] = useState("");
   const [page, setPage] = useState(1);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editingTaxpayer, setEditingTaxpayer] = useState<Taxpayer | null>(null);
   const [editForm, setEditForm] = useState({
-    owner_name: "",
+    first_name: "",
+    middle_name: "",
+    last_name: "",
+    suffix: "",
     tin: "",
     owner_type: "",
     address: "",
@@ -87,12 +101,14 @@ export default function TaxpayerListPage() {
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return taxpayers.filter((t) => {
+      const normalizedOwnerType =
+        t.owner_type === "Corporation" ? "Corporate" : t.owner_type;
       const matchSearch =
         !q ||
         t.owner_name.toLowerCase().includes(q) ||
         (t.tin ?? "").toLowerCase().includes(q) ||
         (t.address ?? "").toLowerCase().includes(q);
-      const matchType = !typeFilter || t.owner_type === typeFilter;
+      const matchType = !typeFilter || normalizedOwnerType === typeFilter;
       return matchSearch && matchType;
     });
   }, [taxpayers, search, typeFilter]);
@@ -110,8 +126,27 @@ export default function TaxpayerListPage() {
     setPage(1);
   };
 
+  const normalizedOwnerTypeCount = useMemo(() => {
+    return taxpayers.reduce(
+      (acc, taxpayer) => {
+        const normalizedType =
+          taxpayer.owner_type === "Corporation"
+            ? "Corporate"
+            : taxpayer.owner_type;
+
+        if (normalizedType === "Individual") acc.Individual += 1;
+        if (normalizedType === "Corporate") acc.Corporate += 1;
+        if (normalizedType === "Government") acc.Government += 1;
+
+        return acc;
+      },
+      { Individual: 0, Corporate: 0, Government: 0 },
+    );
+  }, [taxpayers]);
+
   const hasRequiredEditFields =
-    editForm.owner_name.trim().length > 0 &&
+    editForm.first_name.trim().length > 0 &&
+    editForm.last_name.trim().length > 0 &&
     editForm.owner_type.length > 0 &&
     editForm.address.trim().length > 0;
 
@@ -127,9 +162,15 @@ export default function TaxpayerListPage() {
   const handleOpenEditModal = (taxpayer: Taxpayer) => {
     setEditingTaxpayer(taxpayer);
     setEditForm({
-      owner_name: taxpayer.owner_name,
+      first_name: taxpayer.first_name ?? "",
+      middle_name: taxpayer.middle_name ?? "",
+      last_name: taxpayer.last_name ?? "",
+      suffix: taxpayer.suffix ?? "",
       tin: taxpayer.tin ?? "",
-      owner_type: taxpayer.owner_type ?? "",
+      owner_type:
+        taxpayer.owner_type === "Corporation"
+          ? "Corporate"
+          : (taxpayer.owner_type ?? ""),
       address: taxpayer.address ?? "",
       phone: taxpayer.phone ?? "",
       email: taxpayer.email ?? "",
@@ -138,38 +179,79 @@ export default function TaxpayerListPage() {
   };
 
   const handleCloseEditModal = () => {
+    if (isSavingEdit) return;
     setIsEditModalOpen(false);
     setEditingTaxpayer(null);
   };
 
-  const handleSaveTaxpayer = () => {
+  const handleSaveTaxpayer = async () => {
     if (!editingTaxpayer) return;
 
-    const updatedOwnerName = editForm.owner_name.trim();
-    if (!canSaveEdit || !updatedOwnerName) return;
+    const updatedFirstName = editForm.first_name.trim();
+    const updatedLastName = editForm.last_name.trim();
+    if (!canSaveEdit || !updatedFirstName || !updatedLastName) return;
 
-    setTaxpayers((prev) =>
-      prev.map((taxpayer) =>
-        taxpayer.id === editingTaxpayer.id
-          ? {
-              ...taxpayer,
-              owner_name: updatedOwnerName,
-              tin: editForm.tin.trim() || null,
-              owner_type: editForm.owner_type || null,
-              address: editForm.address.trim() || null,
-              phone: editForm.phone.trim() || null,
-              email: editForm.email.trim() || null,
-            }
-          : taxpayer,
-      ),
-    );
+    const updatedOwnerName = [
+      updatedFirstName,
+      editForm.middle_name.trim(),
+      updatedLastName,
+      editForm.suffix.trim(),
+    ]
+      .filter(Boolean)
+      .join(" ");
 
-    handleCloseEditModal();
+    setIsSavingEdit(true);
+
+    try {
+      const res = await fetch("/api/taxpayers/update", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: editingTaxpayer.id,
+          first_name: updatedFirstName,
+          middle_name: editForm.middle_name.trim() || null,
+          last_name: updatedLastName,
+          suffix: editForm.suffix.trim() || null,
+          owner_name: updatedOwnerName,
+          tin: editForm.tin.trim() || null,
+          owner_type: editForm.owner_type,
+          address: editForm.address.trim(),
+          phone: editForm.phone.trim() || null,
+          email: editForm.email.trim() || null,
+        }),
+      });
+
+      const data = (await res.json()) as { error?: string; taxpayer?: Taxpayer };
+
+      if (!res.ok || !data.taxpayer) {
+        toast.error(data.error ?? "Failed to update taxpayer.");
+        return;
+      }
+
+      setTaxpayers((prev) =>
+        prev.map((taxpayer) =>
+          String(taxpayer.id) === String(editingTaxpayer.id)
+            ? data.taxpayer!
+            : taxpayer,
+        ),
+      );
+
+      toast.success("Taxpayer updated successfully.");
+      setIsEditModalOpen(false);
+      setEditingTaxpayer(null);
+    } catch {
+      toast.error("Unable to connect to server.");
+    } finally {
+      setIsSavingEdit(false);
+    }
   };
 
   const ownerTypeColor: Record<string, string> = {
     Individual: "bg-blue-50 text-blue-700",
     Corporate: "bg-amber-50 text-amber-700",
+    Corporation: "bg-amber-50 text-amber-700",
     Government: "bg-emerald-50 text-emerald-700",
   };
 
@@ -215,27 +297,21 @@ export default function TaxpayerListPage() {
             label: "Individual",
             value: isLoading
               ? "—"
-              : taxpayers
-                  .filter((t) => t.owner_type === "Individual")
-                  .length.toLocaleString(),
+              : normalizedOwnerTypeCount.Individual.toLocaleString(),
             color: "text-blue-600",
           },
           {
             label: "Corporate",
             value: isLoading
               ? "—"
-              : taxpayers
-                  .filter((t) => t.owner_type === "Corporate")
-                  .length.toLocaleString(),
+              : normalizedOwnerTypeCount.Corporate.toLocaleString(),
             color: "text-amber-600",
           },
           {
             label: "Government",
             value: isLoading
               ? "—"
-              : taxpayers
-                  .filter((t) => t.owner_type === "Government")
-                  .length.toLocaleString(),
+              : normalizedOwnerTypeCount.Government.toLocaleString(),
             color: "text-emerald-600",
           },
         ].map((s) => (
@@ -426,24 +502,105 @@ export default function TaxpayerListPage() {
             </p>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="sm:col-span-2">
+              <div>
                 <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
-                  Full Name
+                  First Name
                   <span className="ml-1 text-rose-500">*</span>
                 </label>
                 <input
-                  value={editForm.owner_name}
+                  value={editForm.first_name}
                   onChange={(e) =>
                     setEditForm((prev) => ({
                       ...prev,
-                      owner_name: e.target.value
+                      first_name: e.target.value
                         .replace(/[^a-zA-Z\s\-\.']/g, "")
                         .slice(0, 50),
                     }))
                   }
                   className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
-                  placeholder="Enter full name"
+                  placeholder="Enter first name"
                 />
+              </div>
+
+              <div>
+                <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
+                  Middle Name
+                </label>
+                <input
+                  value={editForm.middle_name}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      middle_name: e.target.value
+                        .replace(/[^a-zA-Z\s\-\.']/g, "")
+                        .slice(0, 50),
+                    }))
+                  }
+                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
+                  placeholder="Enter middle name"
+                />
+              </div>
+
+              <div>
+                <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
+                  Last Name
+                  <span className="ml-1 text-rose-500">*</span>
+                </label>
+                <input
+                  value={editForm.last_name}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      last_name: e.target.value
+                        .replace(/[^a-zA-Z\s\-\.']/g, "")
+                        .slice(0, 50),
+                    }))
+                  }
+                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
+                  placeholder="Enter last name"
+                />
+              </div>
+
+              <div>
+                <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
+                  Suffix
+                </label>
+                <Select
+                  value={editForm.suffix}
+                  onValueChange={(value) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      suffix: value === "__none__" ? "" : value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="cursor-pointer font-inter flex h-9 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-1 text-sm text-slate-900 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-slate-200">
+                    <SelectValue placeholder="Select suffix" />
+                    <SelectIcon>
+                      <ChevronDown className="h-4 w-4 opacity-60" />
+                    </SelectIcon>
+                  </SelectTrigger>
+
+                  <SelectContent className="z-50 min-w-(--radix-select-trigger-width) rounded-md border border-gray-200 bg-white shadow-sm">
+                    <SelectViewport className="p-1">
+                      <SelectItem
+                        value="__none__"
+                        className="font-inter cursor-pointer rounded px-3 py-2 text-sm text-slate-700 outline-none data-highlighted:bg-slate-100"
+                      >
+                        <SelectItemText>None</SelectItemText>
+                      </SelectItem>
+                      {SUFFIX_OPTIONS.map((option) => (
+                        <SelectItem
+                          key={option.value}
+                          value={option.value}
+                          className="font-inter cursor-pointer rounded px-3 py-2 text-sm text-slate-700 outline-none data-highlighted:bg-slate-100"
+                        >
+                          <SelectItemText>{option.label}</SelectItemText>
+                        </SelectItem>
+                      ))}
+                    </SelectViewport>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -543,7 +700,7 @@ export default function TaxpayerListPage() {
 
             {!hasRequiredEditFields && (
               <p className="font-inter mt-3 text-xs text-rose-600">
-                Required fields: Full Name, Owner Type, and Address.
+                Required fields: First Name, Last Name, Owner Type, and Address.
               </p>
             )}
 
@@ -551,17 +708,18 @@ export default function TaxpayerListPage() {
               <button
                 type="button"
                 onClick={handleCloseEditModal}
-                className="border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition cursor-pointer"
+                disabled={isSavingEdit}
+                className="border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSaveTaxpayer}
-                disabled={!canSaveEdit}
+                disabled={!canSaveEdit || isSavingEdit}
                 className="bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Save Changes
+                {isSavingEdit ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>
