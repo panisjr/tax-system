@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 type UpdateUserPayload = {
 	originalEmpID: string;
 	empID: string;
+	username: string;
 	firstname: string;
 	middlename: string;
 	lastname: string;
@@ -31,6 +32,8 @@ export async function PUT(request: Request) {
 	try {
 		const body = (await request.json()) as Partial<UpdateUserPayload>;
 		const roleId = Number(body.role_id);
+		const normalizedUsername =
+			body.username?.trim() || body.empID?.trim() || '';
 
 		const requiredTextFields: Array<keyof UpdateUserPayload> = [
 			'originalEmpID',
@@ -97,6 +100,7 @@ export async function PUT(request: Request) {
 			.from('users')
 			.update({
 				empID: body.empID!.trim(),
+				username: normalizedUsername,
 				firstname: body.firstname!.trim(),
 				middlename: body.middlename?.trim() || '',
 				lastname: body.lastname!.trim(),

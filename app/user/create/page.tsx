@@ -35,6 +35,7 @@ const Suffix = ["Jr.", "Sr.", "II", "III", "IV", "V", "VI"] as const;
 
 type FormState = {
   empID: string;
+  username: string;
   firstname: string;
   middlename: string;
   lastname: string;
@@ -60,6 +61,7 @@ type RoleOption = {
 
 type ApiUserDetails = {
   empID?: string;
+  username?: string;
   firstname?: string;
   middlename?: string;
   lastname?: string;
@@ -81,6 +83,7 @@ type ApiUserDetails = {
 
 const initialFormState: FormState = {
   empID: "",
+  username: "",
   firstname: "",
   middlename: "",
   lastname: "",
@@ -208,8 +211,11 @@ function CreateUserForm() {
         }
 
         const user = data.user;
+        const resolvedEmpID = user?.empID?.trim() ?? "";
+        const resolvedUsername = user?.username?.trim() || resolvedEmpID;
         const mapped: FormState = {
-          empID: user?.empID?.trim() ?? "",
+          empID: resolvedEmpID,
+          username: resolvedUsername,
           firstname: user?.firstname?.trim() ?? "",
           middlename: user?.middlename?.trim() ?? "",
           lastname: user?.lastname?.trim() ?? "",
@@ -256,6 +262,7 @@ function CreateUserForm() {
   const missingRequiredFields = useMemo(() => {
     const baseRequired =
       !form.empID.trim() ||
+      !form.username.trim() ||
       !form.firstname.trim() ||
       !form.lastname.trim() ||
       !form.birthdate ||
@@ -291,6 +298,7 @@ function CreateUserForm() {
     // FIX 4: Prevent calling .trim() on Date object which causes crashes
     const normalize = (value: FormState) => ({
       empID: value.empID.trim(),
+      username: value.username.trim(),
       firstname: value.firstname.trim(),
       middlename: value.middlename.trim(),
       lastname: value.lastname.trim(),
@@ -350,6 +358,7 @@ function CreateUserForm() {
         ? {
             originalEmpID: initialLoadedForm?.empID ?? editingEmpID,
             empID: form.empID,
+            username: form.username,
             firstname: form.firstname,
             middlename: form.middlename,
             lastname: form.lastname,
@@ -471,6 +480,12 @@ function CreateUserForm() {
                 validator="employee-Id"
                 type="employee-Id"
                 onChange={(v) => updateField("empID", v)}
+              />
+              <Field
+                label="Username"
+                required
+                value={form.username}
+                onChange={(v) => updateField("username", v)}
               />
               <ValidatedInput
                 label="First Name"
@@ -752,6 +767,10 @@ function CreateUserForm() {
                 }
               />
               <SummaryRow label="Emp ID" value={form.empID || "(Required)"} />
+              <SummaryRow
+                label="Username"
+                value={form.username || "(Required)"}
+              />
 
               {/* FIX 8: Display the dynamic role name instead of the ID */}
               <SummaryRow
