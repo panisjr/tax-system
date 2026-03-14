@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { cookies } from 'next/headers';
 
+type RoleRecord = { name: string };
+
 export async function POST(request: Request) {
   const body = await request.json();
   const { username, password } = body;
@@ -15,7 +17,7 @@ export async function POST(request: Request) {
 
   const { data: user, error } = await supabaseAdmin
     .from('users')
-    .select('empID, username, firstname, lastname, role_id, status, password, temp_pass, roles(name)')
+    .select('empID, username, firstname, lastname, email, role_id, status, password, temp_pass, roles(name)')
     .eq('username', username.trim())
     .single();
 
@@ -43,11 +45,16 @@ export async function POST(request: Request) {
     );
   }
 
+  const roleRecord = Array.isArray(user.roles)
+    ? (user.roles[0] as RoleRecord | undefined)
+    : (user.roles as RoleRecord | null);
+
   const sessionData = {
     empID: user.empID,
     username: user.username,
     name: `${user.firstname} ${user.lastname}`,
-    role: (user.roles as unknown as { name: string } | null)?.name || '',
+    email: user.email || '',
+    role: roleRecord?.name || '',
     role_id: user.role_id,
   };
 
