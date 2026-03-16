@@ -14,7 +14,8 @@ export async function POST(req: NextRequest) {
       suffix,
       tin,
       owner_type,
-      address,
+      barangay_id,
+      address_details,
       phone,
       email,
     } = body as {
@@ -24,14 +25,27 @@ export async function POST(req: NextRequest) {
       suffix?: string;
       tin?: string;
       owner_type: string;
-      address: string;
+      barangay_id: number | string;
+      address_details: string;
       phone?: string;
       email?: string;
     };
 
-    if (!first_name?.trim() || !last_name?.trim() || !owner_type?.trim() || !address?.trim()) {
+    const normalizedBarangayId = Number(barangay_id);
+
+    if (
+      !first_name?.trim() ||
+      !last_name?.trim() ||
+      !owner_type?.trim() ||
+      !address_details?.trim() ||
+      !Number.isInteger(normalizedBarangayId) ||
+      normalizedBarangayId <= 0
+    ) {
       return NextResponse.json(
-        { error: 'First name, last name, owner type, and address are required.' },
+        {
+          error:
+            'First name, last name, owner type, barangay, and address details are required.',
+        },
         { status: 400 },
       );
     }
@@ -63,7 +77,8 @@ export async function POST(req: NextRequest) {
         suffix: suffix?.trim() || null,
         tin: tin?.trim() || null,
         owner_type: normalizedOwnerType,
-        address: address.trim(),
+        barangay_id: normalizedBarangayId,
+        address_details: address_details.trim(),
         phone: phone?.trim() || null,
         email: email?.trim() || null,
       })

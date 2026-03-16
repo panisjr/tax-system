@@ -22,7 +22,7 @@ type FormState = {
   suffix: string;
   tin: string;
   owner_type: OwnerType | "";
-  barangay: string;
+  barangay_id: string;
   address_details: string;
   phone: string;
   email: string;
@@ -35,7 +35,7 @@ const initialForm: FormState = {
   suffix: "",
   tin: "",
   owner_type: "",
-  barangay: "",
+  barangay_id: "",
   address_details: "",
   phone: "",
   email: "",
@@ -105,18 +105,29 @@ export default function RegisterTaxpayerPage() {
       !form.first_name.trim() ||
       !form.last_name.trim() ||
       !form.owner_type ||
-      !form.barangay.trim() ||
+      !form.barangay_id.trim() ||
       !form.address_details.trim(),
     [form],
   );
 
+  const selectedBarangayName = useMemo(
+    () =>
+      barangays.find((barangay) => String(barangay.id) === form.barangay_id)
+        ?.name || "",
+    [barangays, form.barangay_id],
+  );
+
   const composedAddress = useMemo(
-    () => [form.address_details.trim(), form.barangay.trim()].filter(Boolean).join(", "),
-    [form.address_details, form.barangay],
+    () => [form.address_details.trim(), selectedBarangayName].filter(Boolean).join(", "),
+    [form.address_details, selectedBarangayName],
   );
 
   const barangayOptions = useMemo<ComboboxOption[]>(
-    () => barangays.map((barangay) => ({ value: barangay.name, label: barangay.name })),
+    () =>
+      barangays.map((barangay) => ({
+        value: String(barangay.id),
+        label: barangay.name,
+      })),
     [barangays],
   );
 
@@ -148,7 +159,8 @@ export default function RegisterTaxpayerPage() {
         suffix: form.suffix,
         tin: form.tin,
         owner_type: form.owner_type,
-        address: composedAddress,
+        barangay_id: Number(form.barangay_id),
+        address_details: form.address_details,
         phone: form.phone,
         email: form.email,
       };
@@ -297,8 +309,8 @@ export default function RegisterTaxpayerPage() {
                 <Combobox
                   label="Barangay"
                   required
-                  value={form.barangay}
-                  onChange={(value) => updateField("barangay", value)}
+                  value={form.barangay_id}
+                  onChange={(value) => updateField("barangay_id", value)}
                   options={barangayOptions}
                   disabled={isLoadingBarangays}
                   placeholder={isLoadingBarangays ? "Loading barangays..." : "Select barangay"}
@@ -377,7 +389,7 @@ export default function RegisterTaxpayerPage() {
               />
               <SummaryRow
                 label="Barangay"
-                value={form.barangay.trim() ? form.barangay.trim() : "(Required)"}
+                value={selectedBarangayName || "(Required)"}
               />
               <SummaryRow
                 label="Address"
