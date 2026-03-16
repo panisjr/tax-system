@@ -10,10 +10,14 @@ type UpdateTaxpayerPayload = {
   owner_name?: string;
   tin?: string;
   owner_type: string;
-  address: string;
+  barangay_id?: number | string;
+  address_details?: string;
+  address?: string;
   phone?: string;
   email?: string;
 };
+
+type BarangayRecord = { name: string };
 
 const ALLOWED_OWNER_TYPES = ['Individual', 'Corporate', 'Corporation', 'Government'] as const;
 
@@ -32,10 +36,15 @@ export async function PUT(req: NextRequest) {
     const lastName = body.last_name?.trim() ?? '';
     const suffix = body.suffix?.trim() ?? '';
     const ownerType = body.owner_type?.trim() ?? '';
-    const address = body.address?.trim() ?? '';
+    const addressDetails = body.address_details?.trim() ?? body.address?.trim() ?? '';
     const tin = body.tin?.trim() ?? '';
     const phone = body.phone?.trim() ?? '';
     const email = body.email?.trim() ?? '';
+    const rawBarangayId = body.barangay_id;
+    const normalizedBarangayId =
+      rawBarangayId == null || rawBarangayId === ''
+        ? null
+        : Number(rawBarangayId);
 
     const hasInvalidId =
       (typeof id !== 'string' && typeof id !== 'number') ||
@@ -46,11 +55,21 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Taxpayer ID is required.' }, { status: 400 });
     }
 
-    if (!firstName || !lastName || !ownerType || !address) {
+    if (!firstName || !lastName || !ownerType || !addressDetails) {
       return NextResponse.json(
-        { error: 'First name, last name, owner type, and address are required.' },
+        {
+          error:
+            'First name, last name, owner type, and address details are required.',
+        },
         { status: 400 },
       );
+    }
+
+    if (
+      normalizedBarangayId !== null &&
+      (!Number.isInteger(normalizedBarangayId) || normalizedBarangayId <= 0)
+    ) {
+      return NextResponse.json({ error: 'Invalid barangay.' }, { status: 400 });
     }
 
     if (!ALLOWED_OWNER_TYPES.includes(ownerType as (typeof ALLOWED_OWNER_TYPES)[number])) {
@@ -75,29 +94,48 @@ export async function PUT(req: NextRequest) {
       .filter(Boolean)
       .join(' ');
 
+    const updatePayload: Record<string, unknown> = {
+      owner_name: ownerName,
+      first_name: firstName,
+      middle_name: middleName || null,
+      last_name: lastName,
+      suffix: suffix || null,
+      tin: tin || null,
+      owner_type: normalizedOwnerType,
+      address_details: addressDetails,
+      phone: phone || null,
+      email: email || null,
+    };
+
+    if (normalizedBarangayId !== null) {
+      updatePayload.barangay_id = normalizedBarangayId;
+    }
+
     const { data, error } = await supabaseAdmin
       .from('taxpayers')
-      .update({
-        owner_name: ownerName,
-        first_name: firstName,
-        middle_name: middleName || null,
-        last_name: lastName,
-        suffix: suffix || null,
-        tin: tin || null,
-        owner_type: normalizedOwnerType,
-        address,
-        phone: phone || null,
-        email: email || null,
-      })
+      .update(updatePayload)
       .eq('id', id)
-      .select('id, owner_name, first_name, middle_name, last_name, suffix, tin, address, owner_type, phone, email')
+      .select(
+        'id, owner_name, first_name, middle_name, last_name, suffix, tin, owner_type, phone, email, address_details, barangay_id, barangays(name)',
+      )
       .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ message: 'Taxpayer updated successfully.', taxpayer: data });
+    const barangayRecord = Array.isArray(data?.barangays)
+      ? (data?.barangays[0] as BarangayRecord | undefined)
+      : (data?.barangays as BarangayRecord | null | undefined);
+    const formattedTaxpayer = {
+      ...data,
+      address:
+        [data?.address_details?.trim() || '', barangayRecord?.name?.trim() || '']
+          .filter(Boolean)
+          .join(', ') || null,
+    };
+
+    return NextResponse.json({ message: 'Taxpayer updated successfully.', taxpayer: formattedTaxpayer });
   } catch {
     return NextResponse.json({ error: 'Unable to update taxpayer.' }, { status: 500 });
   }
