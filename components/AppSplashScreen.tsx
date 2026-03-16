@@ -17,7 +17,7 @@ export default function AppSplashScreen() {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-9999 flex min-h-dvh items-center justify-center overflow-hidden bg-linear-to-b from-slate-950 via-slate-900 to-slate-800 px-6">
+    <div className="fixed inset-0 z-9999 flex min-h-dvh items-center justify-center overflow-hidden bg-linear-to-b from-sky-950 via-cyan-900 to-teal-900 px-6">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-1/2 h-84 w-84 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-300/10 blur-3xl" />
         <div className="absolute left-1/2 top-1/2 h-120 w-120 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-500/10 blur-3xl" />
