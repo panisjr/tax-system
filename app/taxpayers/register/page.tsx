@@ -1,13 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ValidatedInput } from "@/components/ui/ValidatedInput";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { ArrowLeft, Save, UserRound, MapPin, Phone, Mail } from "lucide-react";
 
 const OWNER_TYPE_OPTIONS = ["Individual", "Corporation", "Government"] as const;
 type OwnerType = (typeof OWNER_TYPE_OPTIONS)[number];
+
+type BarangayOption = {
+  id: number;
+  name: string;
+};
 
 type FormState = {
   first_name: string;
@@ -16,7 +22,8 @@ type FormState = {
   suffix: string;
   tin: string;
   owner_type: OwnerType | "";
-  address: string;
+  barangay: string;
+  address_details: string;
   phone: string;
   email: string;
 };
@@ -28,7 +35,8 @@ const initialForm: FormState = {
   suffix: "",
   tin: "",
   owner_type: "",
-  address: "",
+  barangay: "",
+  address_details: "",
   phone: "",
   email: "",
 };
@@ -36,6 +44,8 @@ const initialForm: FormState = {
 export default function RegisterTaxpayerPage() {
   const router = useRouter();
   const [form, setForm] = useState<FormState>(initialForm);
+  const [barangays, setBarangays] = useState<BarangayOption[]>([]);
+  const [isLoadingBarangays, setIsLoadingBarangays] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -47,13 +57,67 @@ export default function RegisterTaxpayerPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchBarangays = async () => {
+      setIsLoadingBarangays(true);
+
+      try {
+        const response = await fetch("/api/barangays/list", {
+          cache: "no-store",
+        });
+        const data = (await response.json()) as {
+          error?: string;
+          barangays?: BarangayOption[];
+        };
+
+        if (!response.ok) {
+          if (isMounted) {
+            setBarangays([]);
+          }
+          return;
+        }
+
+        if (isMounted) {
+          setBarangays(data.barangays ?? []);
+        }
+      } catch {
+        if (isMounted) {
+          setBarangays([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingBarangays(false);
+        }
+      }
+    };
+
+    fetchBarangays();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const missingRequired = useMemo(
     () =>
       !form.first_name.trim() ||
       !form.last_name.trim() ||
       !form.owner_type ||
-      !form.address.trim(),
+      !form.barangay.trim() ||
+      !form.address_details.trim(),
     [form],
+  );
+
+  const composedAddress = useMemo(
+    () => [form.address_details.trim(), form.barangay.trim()].filter(Boolean).join(", "),
+    [form.address_details, form.barangay],
+  );
+
+  const barangayOptions = useMemo<ComboboxOption[]>(
+    () => barangays.map((barangay) => ({ value: barangay.name, label: barangay.name })),
+    [barangays],
   );
 
   let previewName =
@@ -77,10 +141,22 @@ export default function RegisterTaxpayerPage() {
 
     setIsSubmitting(true);
     try {
+      const payload = {
+        first_name: form.first_name,
+        middle_name: form.middle_name,
+        last_name: form.last_name,
+        suffix: form.suffix,
+        tin: form.tin,
+        owner_type: form.owner_type,
+        address: composedAddress,
+        phone: form.phone,
+        email: form.email,
+      };
+
       const res = await fetch("/api/taxpayers/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
       const data = (await res.json()) as { error?: string; message?: string };
@@ -218,12 +294,25 @@ export default function RegisterTaxpayerPage() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <Field
-                  label="Address"
+                <Combobox
+                  label="Barangay"
                   required
-                  placeholder="Street, Barangay, Municipality"
-                  value={form.address}
-                  onChange={(v) => updateField("address", v)}
+                  value={form.barangay}
+                  onChange={(value) => updateField("barangay", value)}
+                  options={barangayOptions}
+                  disabled={isLoadingBarangays}
+                  placeholder={isLoadingBarangays ? "Loading barangays..." : "Select barangay"}
+                  searchPlaceholder="Search barangay..."
+                  emptyLabel="No barangay found."
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Field
+                  label="Other Address Details"
+                  required
+                  placeholder="Street, Purok, Sitio, Landmark"
+                  value={form.address_details}
+                  onChange={(v) => updateField("address_details", v)}
                 />
               </div>
               <ValidatedInput
@@ -276,7 +365,7 @@ export default function RegisterTaxpayerPage() {
               Summary
             </h2>
             <p className="font-inter mt-1 text-xs text-slate-400">
-              Required fields: First Name, Last Name, Owner Type, Address.
+              Required fields: First Name, Last Name, Owner Type, Barangay, Other Address Details.
             </p>
 
             <div className="mt-4 space-y-3">
@@ -287,8 +376,12 @@ export default function RegisterTaxpayerPage() {
                 value={form.owner_type || "(Required)"}
               />
               <SummaryRow
+                label="Barangay"
+                value={form.barangay.trim() ? form.barangay.trim() : "(Required)"}
+              />
+              <SummaryRow
                 label="Address"
-                value={form.address.trim() ? form.address.trim() : "(Required)"}
+                value={composedAddress || "(Required)"}
               />
             </div>
 
