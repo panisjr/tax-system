@@ -51,9 +51,16 @@ type Taxpayer = {
   suffix: string | null;
   tin: string | null;
   address: string | null;
+  barangay_id?: number | null;
+  address_details?: string | null;
   owner_type: string | null;
   phone: string | null;
   email: string | null;
+};
+
+type BarangayOption = {
+  id: number;
+  name: string;
 };
 
 const PAGE_SIZE = 20;
@@ -62,6 +69,8 @@ export default function TaxpayerListPage() {
   const router = useRouter();
 
   const [taxpayers, setTaxpayers] = useState<Taxpayer[]>([]);
+  const [barangays, setBarangays] = useState<BarangayOption[]>([]);
+  const [isLoadingBarangays, setIsLoadingBarangays] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -76,7 +85,8 @@ export default function TaxpayerListPage() {
     suffix: "",
     tin: "",
     owner_type: "",
-    address: "",
+    barangay_id: "",
+    address_details: "",
     phone: "",
     email: "",
   });
@@ -96,6 +106,37 @@ export default function TaxpayerListPage() {
     };
 
     fetchTaxpayers();
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchBarangays = async () => {
+      setIsLoadingBarangays(true);
+      try {
+        const res = await fetch("/api/barangays/list", { cache: "no-store" });
+        const data = (await res.json()) as { barangays?: BarangayOption[] };
+
+        if (!res.ok) {
+          if (isMounted) setBarangays([]);
+          return;
+        }
+
+        if (isMounted) {
+          setBarangays(data.barangays ?? []);
+        }
+      } catch {
+        if (isMounted) setBarangays([]);
+      } finally {
+        if (isMounted) setIsLoadingBarangays(false);
+      }
+    };
+
+    fetchBarangays();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const filtered = useMemo(() => {
@@ -148,7 +189,17 @@ export default function TaxpayerListPage() {
     editForm.first_name.trim().length > 0 &&
     editForm.last_name.trim().length > 0 &&
     editForm.owner_type.length > 0 &&
-    editForm.address.trim().length > 0;
+    editForm.barangay_id.trim().length > 0 &&
+    editForm.address_details.trim().length > 0;
+
+  const barangayOptions = useMemo<ComboboxOption[]>(
+    () =>
+      barangays.map((barangay) => ({
+        value: String(barangay.id),
+        label: barangay.name,
+      })),
+    [barangays],
+  );
 
   const hasInvalidOptionalFields =
     (editForm.tin.trim().length > 0 && !VALIDATORS.tin.validate(editForm.tin)) ||
@@ -161,6 +212,11 @@ export default function TaxpayerListPage() {
 
   const handleOpenEditModal = (taxpayer: Taxpayer) => {
     setEditingTaxpayer(taxpayer);
+
+    const fallbackBarangayId =
+      taxpayer.barangay_id != null ? String(taxpayer.barangay_id) : "";
+    const fallbackAddressDetails = taxpayer.address_details ?? taxpayer.address ?? "";
+
     setEditForm({
       first_name: taxpayer.first_name ?? "",
       middle_name: taxpayer.middle_name ?? "",
@@ -171,7 +227,8 @@ export default function TaxpayerListPage() {
         taxpayer.owner_type === "Corporation"
           ? "Corporate"
           : (taxpayer.owner_type ?? ""),
-      address: taxpayer.address ?? "",
+      barangay_id: fallbackBarangayId,
+      address_details: fallbackAddressDetails,
       phone: taxpayer.phone ?? "",
       email: taxpayer.email ?? "",
     });
@@ -217,7 +274,8 @@ export default function TaxpayerListPage() {
           owner_name: updatedOwnerName,
           tin: editForm.tin.trim() || null,
           owner_type: editForm.owner_type,
-          address: editForm.address.trim(),
+          barangay_id: Number(editForm.barangay_id),
+          address_details: editForm.address_details.trim(),
           phone: editForm.phone.trim() || null,
           email: editForm.email.trim() || null,
         }),
@@ -655,19 +713,37 @@ export default function TaxpayerListPage() {
 
               <div className="sm:col-span-2">
                 <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
-                  Address
+                  Barangay
+                  <span className="ml-1 text-rose-500">*</span>
+                </label>
+                <Combobox
+                  value={editForm.barangay_id}
+                  onChange={(value) =>
+                    setEditForm((prev) => ({ ...prev, barangay_id: value }))
+                  }
+                  options={barangayOptions}
+                  disabled={isLoadingBarangays}
+                  placeholder={isLoadingBarangays ? "Loading barangays..." : "Select barangay"}
+                  searchPlaceholder="Search barangay..."
+                  emptyLabel="No barangay found."
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
+                  Other Address Details
                   <span className="ml-1 text-rose-500">*</span>
                 </label>
                 <input
-                  value={editForm.address}
+                  value={editForm.address_details}
                   onChange={(e) =>
                     setEditForm((prev) => ({
                       ...prev,
-                      address: e.target.value,
+                      address_details: e.target.value,
                     }))
                   }
                   className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
-                  placeholder="Enter address"
+                  placeholder="Street, Purok, Sitio, Landmark"
                 />
               </div>
 
@@ -700,7 +776,7 @@ export default function TaxpayerListPage() {
 
             {!hasRequiredEditFields && (
               <p className="font-inter mt-3 text-xs text-rose-600">
-                Required fields: First Name, Last Name, Owner Type, and Address.
+                Required fields: First Name, Last Name, Owner Type, Barangay, and Other Address Details.
               </p>
             )}
 
