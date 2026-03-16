@@ -5,9 +5,20 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ValidatedInput } from "@/components/ui/ValidatedInput";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { ArrowLeft, Save, UserRound, MapPin, Phone, Mail } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectIcon,
+  SelectItem,
+  SelectItemText,
+  SelectTrigger,
+  SelectValue,
+  SelectViewport,
+} from "@/components/ui/select";
+import { ArrowLeft, Save, UserRound, MapPin, Phone, Mail, ChevronDown } from "lucide-react";
 
 const OWNER_TYPE_OPTIONS = ["Individual", "Corporation", "Government"] as const;
+const SUFFIX_OPTIONS = ["Jr.", "Sr.", "II", "III", "IV", "V"] as const;
 type OwnerType = (typeof OWNER_TYPE_OPTIONS)[number];
 
 type BarangayOption = {
@@ -255,12 +266,44 @@ export default function RegisterTaxpayerPage() {
                 value={form.last_name}
                 onChange={(v) => updateField("last_name", v)}
               />
-              <Field
-                label="Suffix"
-                placeholder="Jr., Sr., III…"
-                value={form.suffix}
-                onChange={(v) => updateField("suffix", v)}
-              />
+              <div>
+                <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
+                  Suffix
+                </label>
+                <Select
+                  value={form.suffix}
+                  onValueChange={(value) =>
+                    updateField("suffix", value === "__none__" ? "" : value)
+                  }
+                >
+                  <SelectTrigger className="cursor-pointer font-inter flex h-9 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-1 text-sm text-slate-900 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-slate-200">
+                    <SelectValue placeholder="Select suffix" />
+                    <SelectIcon>
+                      <ChevronDown className="h-4 w-4 opacity-60" />
+                    </SelectIcon>
+                  </SelectTrigger>
+
+                  <SelectContent className="z-50 min-w-(--radix-select-trigger-width) rounded-md border border-gray-200 bg-white shadow-sm">
+                    <SelectViewport className="p-1">
+                      <SelectItem
+                        value="__none__"
+                        className="font-inter cursor-pointer rounded px-3 py-2 text-sm text-slate-700 outline-none data-highlighted:bg-slate-100"
+                      >
+                        <SelectItemText>None</SelectItemText>
+                      </SelectItem>
+                      {SUFFIX_OPTIONS.map((suffix) => (
+                        <SelectItem
+                          key={suffix}
+                          value={suffix}
+                          className="font-inter cursor-pointer rounded px-3 py-2 text-sm text-slate-700 outline-none data-highlighted:bg-slate-100"
+                        >
+                          <SelectItemText>{suffix}</SelectItemText>
+                        </SelectItem>
+                      ))}
+                    </SelectViewport>
+                  </SelectContent>
+                </Select>
+              </div>
               <ValidatedInput
                 label="Tin No."
                 type="tin"
