@@ -22,7 +22,9 @@ export type MaskKey =
   | 'employee-Id'
   | 'ORnumber' 
   | 'name'
-  | 'account-number';
+  | 'account-number'
+  | 'permission-&-role-name';
+
 
 export type MaskFn = (raw: string) => string;
 
@@ -119,7 +121,45 @@ export function maskEmployeeId(raw: string): string {
 // Allows only letters, spaces, hyphens, periods, and apostrophes
 
 export function maskName(raw: string): string {
-  return raw.replace(/[^a-zA-Z\s\-\.\']/g, '');
+  // 1. Allow A-Z, accents, spaces, and specific punctuation
+  let filtered = raw.replace(/[^a-zA-Z\s\-\.\'\u00C0-\u017F]/g, '');
+  
+  // 2. Block leading punctuation/spaces
+  filtered = filtered.replace(/^[^a-zA-Z\u00C0-\u017F]+/, '');
+
+  // 3. Block punctuation following a space
+  filtered = filtered.replace(/\s[\-\.\']/g, ' ');
+
+  // 4. Collapse consecutive spaces or punctuation
+  filtered = filtered
+    .replace(/\s\s+/g, ' ')
+    .replace(/\-\-+/g, '-')
+    .replace(/\.\.+/g, '.')
+    .replace(/\'\'+/g, "'");
+
+  // 5. Apply your 3-occurrence limit
+  const limitOccurrences = (str: string, char: string, limit: number) => {
+    let count = 0;
+    return str.split('').filter(c => {
+      if (c === char) {
+        count++;
+        return count <= limit;
+      }
+      return true;
+    }).join('');
+  };
+
+  filtered = limitOccurrences(filtered, "'", 3);
+  filtered = limitOccurrences(filtered, ".", 3);
+  filtered = limitOccurrences(filtered, "-", 3);
+
+  if (!filtered) return '';
+
+  // 6. Unicode-Aware Capitalization
+  // 'u' flag + \p{L} ensures accented letters like 'ñ' are recognized as letters
+  return filtered.toLowerCase().replace(/(^|[\s\-\.])\p{L}/gu, (match) => 
+    match.toUpperCase()
+  );
 }
 
 // ── OR Number ────────────────────────────────────────────────────────────────
@@ -134,6 +174,20 @@ export function maskORNumber(raw: string): string {
   return `OR-${d.slice(0, 4)}-${d.slice(4)}`;
 }
 
+// ── Permission/Role Name ────────────────────────────────────────────────────────
+// Format: alphanumeric, dots, underscores, hyphens | Up to 50 characters
+
+export function maskPermissionRole(raw: string): string {
+  // Fix: Explicitly escape the dot, space, underscore, and hyphen
+  let filtered = raw.replace(/[^a-zA-Z0-9\.\s\_\-']/g, '');
+
+  filtered = filtered.slice(0, 50);
+
+  // Fix: Explicitly escape them here as well
+  return filtered.replace(/(^|[\.\s\_\-])([a-z0-9])/g, (match, separator, char) => {
+    return separator + char.toUpperCase();
+  });
+}
 
 // ── Registry ──────────────────────────────────────────────────────────────────
 
@@ -149,5 +203,6 @@ export const MASKS: Record<MaskKey, MaskFn> = {
   'name': maskName,
   'ORnumber': maskORNumber,
   'account-number': maskAccountNumber,
+  'permission-&-role-name': maskPermissionRole,
 };
 
