@@ -74,10 +74,8 @@ export const VALIDATORS: Record<ValidatorKey, Validator> = {
 
 'name': {
   validate: (v) => {
-    // 1. Check length (2-20 characters)
-    if (v.length < 2 || v.length > 20) return false;
+    if (v.length < 2 || v.length > 25) return false;
 
-    // 2. Count occurrences of punctuation to ensure they don't exceed 3 each
     const counts = {
       "'": (v.match(/\'/g) || []).length,
       ".": (v.match(/\./g) || []).length,
@@ -85,12 +83,9 @@ export const VALIDATORS: Record<ValidatorKey, Validator> = {
     };
     if (counts["'"] > 3 || counts["."] > 3 || counts["-"] > 3) return false;
 
-    // 3. Final Regex: 
-    // Must start with a Capital (including accents)
-    // Followed by letters, accents, or allowed punctuation
     return /^[A-Z\u00C0-\u017F][a-zA-Z\s\-\.\'\u00C0-\u017F]*$/.test(v);
   },
-  errorMessage: 'Name must start with a capital, be 2-20 chars, and use symbols sparingly (max 3 each).',
+  errorMessage: 'Name must start with a capital, be 2-25 chars, and use symbols sparingly (max 3 each).',
 },
 
   'ORnumber': {
