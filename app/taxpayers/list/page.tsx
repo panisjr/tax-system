@@ -7,7 +7,9 @@ import {
   ArrowLeft,
   Search,
   Plus,
-  Pencil,
+  SquarePen,
+  Trash2,
+  Archive,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -31,6 +33,7 @@ const OWNER_TYPE_OPTIONS: ComboboxOption[] = [
   { value: "Individual", label: "Individual" },
   { value: "Corporate", label: "Corporate" },
   { value: "Government", label: "Government" },
+  { value: "Archived", label: "Archived" },
 ];
 
 const SUFFIX_OPTIONS: ComboboxOption[] = [
@@ -306,6 +309,14 @@ export default function TaxpayerListPage() {
     }
   };
 
+  const handleArchiveTaxpayer = (taxpayer: Taxpayer) => {
+    toast.info(`Archive is not available yet for ${taxpayer.owner_name}.`);
+  };
+
+  const handleDeleteTaxpayer = (taxpayer: Taxpayer) => {
+    toast.info(`Delete is not available yet for ${taxpayer.owner_name}.`);
+  };
+
   const ownerTypeColor: Record<string, string> = {
     Individual: "bg-blue-50 text-blue-700",
     Corporate: "bg-amber-50 text-amber-700",
@@ -506,7 +517,23 @@ export default function TaxpayerListPage() {
                           title="Edit"
                           className="text-slate-400 hover:text-amber-600 transition-colors cursor-pointer"
                         >
-                          <Pencil size={14} />
+                          <SquarePen size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleArchiveTaxpayer(t)}
+                          title="Archive"
+                          className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                        >
+                          <Archive size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTaxpayer(t)}
+                          title="Delete"
+                          className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </td>
