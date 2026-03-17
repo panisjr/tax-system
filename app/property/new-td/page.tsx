@@ -3,9 +3,19 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Save, MapPin, Layers, Home, BarChart3, FileText, User, Printer,
+  ArrowLeft, Save, MapPin, Layers, Home, BarChart3, FileText, User, Printer, ChevronDown,
 } from 'lucide-react';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
+import {
+  Select,
+  SelectContent,
+  SelectIcon,
+  SelectItem,
+  SelectItemText,
+  SelectTrigger,
+  SelectValue,
+  SelectViewport,
+} from '@/components/ui/select';
 import {
   TaxDeclarationPrint,
   type TaxDeclarationData,
@@ -29,6 +39,19 @@ const CLASSIFICATIONS: ComboboxOption[] = [
   { value: 'Mineral',      label: 'Mineral' },
 ];
 
+const ACTUAL_USE_OPTIONS: ComboboxOption[] = [
+  { value: 'Single-Family Dwelling', label: 'Single-Family Dwelling' },
+  { value: 'Multi-Family Dwelling', label: 'Multi-Family Dwelling' },
+  { value: 'Vacant Residential Lot', label: 'Vacant Residential Lot' },
+  { value: 'Retail', label: 'Retail' },
+  { value: 'Office', label: 'Office' },
+  { value: 'Warehouse', label: 'Warehouse' },
+  { value: 'Rice Land', label: 'Rice Land' },
+  { value: 'Corn Land', label: 'Corn Land' },
+  { value: 'Coconut Land', label: 'Coconut Land' },
+  { value: 'Industrial Plant Site', label: 'Industrial Plant Site' },
+];
+
 const STRUCTURAL_TYPES: ComboboxOption[] = [
   { value: 'Type I Wood',            label: 'Type I Wood' },
   { value: 'Type II Mixed',          label: 'Type II Mixed' },
@@ -36,6 +59,28 @@ const STRUCTURAL_TYPES: ComboboxOption[] = [
   { value: 'Type IV Steel/RC',       label: 'Type IV Steel/RC' },
   { value: 'Type V RC',              label: 'Type V RC' },
 ];
+
+const BUILDING_KINDS: ComboboxOption[] = [
+  { value: 'Single Detached', label: 'Single Detached' },
+  { value: 'Duplex', label: 'Duplex' },
+  { value: 'Apartment', label: 'Apartment' },
+  { value: 'Townhouse', label: 'Townhouse' },
+  { value: 'Commercial Building', label: 'Commercial Building' },
+  { value: 'Warehouse', label: 'Warehouse' },
+  { value: 'Office Building', label: 'Office Building' },
+  { value: 'Industrial Building', label: 'Industrial Building' },
+  { value: 'Institutional Building', label: 'Institutional Building' },
+  { value: 'Mixed-Use Building', label: 'Mixed-Use Building' },
+];
+
+const CURRENT_YEAR = new Date().getFullYear();
+
+const TAX_YEAR_OPTIONS: ComboboxOption[] = Array.from({ length: 21 }, (_, index) => {
+  const year = String(CURRENT_YEAR + 5 - index);
+  return { value: year, label: year };
+});
+
+const QUARTER_OPTIONS = ['1st', '2nd', '3rd', '4th'] as const;
 
 const STA_RITA_BARANGAY_COORDINATES: Array<{ name: string; coordinates: [number, number] }> = [
   { name: 'Alegria', coordinates: [11.3753963, 124.9942696] },
@@ -115,6 +160,83 @@ function sanitizeNumericInput(raw: string, options: NumericInputOptions): string
   return `${intPart}.${decPart}`;
 }
 
+function formatNumericInput(raw: string, options: NumericInputOptions): string {
+  const sanitized = sanitizeNumericInput(raw, options);
+  if (!sanitized) return '';
+
+  const hasTrailingDot = sanitized.endsWith('.');
+  const [intPart = '', decPart] = sanitized.split('.');
+  const groupedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  if (!options.allowDecimal) return groupedInt;
+  if (hasTrailingDot) return `${groupedInt}.`;
+  if (decPart !== undefined) return `${groupedInt}.${decPart}`;
+  return groupedInt;
+}
+
+function parseNumericString(value: string): number {
+  return Number(value.replace(/,/g, '').trim());
+}
+
+function normalizeTdInput(raw: string): string {
+  return raw.replace(/^\s*[Tt][Dd]-?\s*/, '').trimStart();
+}
+
+function formatTdInput(raw: string): string {
+  const digits = normalizeTdInput(raw).replace(/\D/g, '').slice(0, 20);
+  if (!digits) return '';
+
+  const parts: string[] = [];
+  for (let i = 0; i < digits.length; i += 4) {
+    parts.push(digits.slice(i, i + 4));
+  }
+  return parts.join('-');
+}
+
+function formatPinInput(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 13);
+  if (!digits) return '';
+
+  const groups = [3, 2, 3, 2, 3];
+  const parts: string[] = [];
+  let index = 0;
+
+  for (const group of groups) {
+    if (index >= digits.length) break;
+    parts.push(digits.slice(index, index + group));
+    index += group;
+  }
+
+  return parts.join('-');
+}
+
+function formatArpInput(raw: string): string {
+  const normalized = raw
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 16);
+
+  if (!normalized) return '';
+
+  const parts: string[] = [];
+  for (let i = 0; i < normalized.length; i += 4) {
+    parts.push(normalized.slice(i, i + 4));
+  }
+
+  return parts.join('-');
+}
+
+function formatLotInput(raw: string): string {
+  const normalized = raw
+    .toUpperCase()
+    .replace(/[^A-Z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-/, '')
+    .slice(0, 12);
+
+  return normalized;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function NewTaxDeclarationPage() {
@@ -191,7 +313,7 @@ export default function NewTaxDeclarationPage() {
   const [prevTd,           setPrevTd]           = useState('');
   const [declarationType,  setDeclarationType]  = useState('New');
   const [arpNumber,        setArpNumber]        = useState('');
-  const [taxYear,          setTaxYear]          = useState('2024');
+  const [taxYear,          setTaxYear]          = useState('');
 
   // Owner Info — taxpayerId links to the selected taxpayer in the DB
   const [taxpayerId,   setTaxpayerId]   = useState('');
@@ -225,8 +347,17 @@ export default function NewTaxDeclarationPage() {
   const [bldgAssessedValue, setBldgAssessedValue] = useState('');
 
   // Effectivity
-  const [effectivityYear,    setEffectivityYear]    = useState('2024');
+  const [effectivityYear,    setEffectivityYear]    = useState('');
   const [effectivityQuarter, setEffectivityQuarter] = useState('1st');
+
+  // ── Auto-generate TD prefixes on mount ───────────────────────────────────
+  useEffect(() => {
+    const year = new Date().getFullYear();
+    setTdNumber(`${year}-`);
+    setPrevTd('');
+  }, []);
+
+  const fullTdNumber = tdNumber.trim() ? `TD-${tdNumber.trim()}` : '';
 
   // ── Derived: auto-fill owner details when a taxpayer is selected ─────────
   useEffect(() => {
@@ -238,6 +369,53 @@ export default function NewTaxDeclarationPage() {
     setOwnerAddress(found.address ?? '');
     setOwnerType((found.owner_type as 'Individual' | 'Corporation' | 'Government' | null) ?? 'Individual');
   }, [taxpayerId, taxpayerMap]);
+
+  // ── Derived: auto-calculate land market value ────────────────────────────
+  useEffect(() => {
+    const area = parseNumericString(landArea);
+    const unitValue = parseNumericString(landUnitValue);
+
+    if (!Number.isFinite(area) || !Number.isFinite(unitValue) || area <= 0 || unitValue <= 0) {
+      setLandMarketValue('');
+      return;
+    }
+
+    setLandMarketValue((area * unitValue).toFixed(2));
+  }, [landArea, landUnitValue]);
+
+  // ── Derived: auto-calculate land assessed value ──────────────────────────
+  useEffect(() => {
+    const marketValue = parseNumericString(landMarketValue);
+    const assessmentLevel = parseNumericString(landAssessLevel);
+
+    if (!Number.isFinite(marketValue) || !Number.isFinite(assessmentLevel) || marketValue <= 0 || assessmentLevel <= 0) {
+      setLandAssessedValue('');
+      return;
+    }
+
+    setLandAssessedValue((marketValue * (assessmentLevel / 100)).toFixed(2));
+  }, [landMarketValue, landAssessLevel]);
+
+  // ── Derived: auto-calculate building assessed value ─────────────────────
+  useEffect(() => {
+    const buildingArea = parseNumericString(floorArea);
+    const marketValue = parseNumericString(bldgMarketValue);
+    const assessmentLevel = parseNumericString(bldgAssessLevel);
+
+    if (
+      !Number.isFinite(buildingArea)
+      || !Number.isFinite(marketValue)
+      || !Number.isFinite(assessmentLevel)
+      || buildingArea <= 0
+      || marketValue <= 0
+      || assessmentLevel <= 0
+    ) {
+      setBldgAssessedValue('');
+      return;
+    }
+
+    setBldgAssessedValue((marketValue * (assessmentLevel / 100)).toFixed(2));
+  }, [floorArea, bldgMarketValue, bldgAssessLevel]);
 
   // ── Derived: display labels for summary sidebar ──────────────────────────
   const selectedBarangayLabel  = barangayOptions.find((b) => b.value === barangayId)?.label ?? '';
@@ -267,7 +445,7 @@ export default function NewTaxDeclarationPage() {
   function buildPrintSnapshot(): TaxDeclarationData {
     return {
       id: 0,
-      td_number:             tdNumber   || '(DRAFT)',
+      td_number:             fullTdNumber || '(DRAFT)',
       arp_number:            arpNumber  || null,
       declaration_type:      (declarationType as TaxDeclarationData['declaration_type']) || 'New',
       tax_year:              parseInt(taxYear)          || new Date().getFullYear(),
@@ -354,7 +532,7 @@ export default function NewTaxDeclarationPage() {
       );
 
       const payload = {
-        td_number: tdNumber.trim(),
+        td_number: fullTdNumber,
         arp_number: arpNumber.trim() || null,
         declaration_type: declarationType,
         tax_year: Number(taxYear) || new Date().getFullYear(),
@@ -410,7 +588,7 @@ export default function NewTaxDeclarationPage() {
       }
 
       setSaveSuccess('Tax Declaration saved successfully.');
-      router.push(`/property?td=${encodeURIComponent(tdNumber.trim())}`);
+      router.push(`/property?td=${encodeURIComponent(fullTdNumber)}`);
     } catch {
       setSaveError('Unable to save tax declaration. Please try again.');
     } finally {
@@ -444,43 +622,6 @@ export default function NewTaxDeclarationPage() {
         </div>
       )}
 
-      {/* Sticky Action Buttons */}
-      <div className="lg:sticky lg:top-0 lg:z-40 lg:bg-white lg:border-b lg:border-gray-200 lg:py-3 lg:-mt-2">
-        <div className="flex justify-end">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => router.push('/property')}
-              className="font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            {/* ── Print Review ─────────────────────────────────────────────
-                Renders the hidden TaxDeclarationPrint with current form data,
-                then calls window.print(). The @media print CSS in that component
-                hides everything except the A4 layout automatically.
-            ───────────────────────────────────────────────────────────────── */}
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded border border-gray-300 bg-white px-4 text-xs font-medium text-slate-600 transition-colors hover:bg-gray-50 print:hidden"
-            >
-              <Printer className="h-4 w-4" />
-              Print Review
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              <Save className="h-4 w-4" />
-              {saving ? 'Saving...' : 'Save Tax Declaration'}
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Mounted only while printing — unmounted by the afterprint event */}
       {printData && (
         <div className="sr-only print:not-sr-only">
@@ -492,11 +633,31 @@ export default function NewTaxDeclarationPage() {
         <div className="space-y-6 lg:col-span-2">
 
           {/* Declaration Information */}
-          <Section icon={<FileText className="h-5 w-5 text-[#00154A]" />} title="Declaration Information">
+          <div className="lg:-mt-3">
+            <Section icon={<FileText className="h-5 w-5 text-[#00154A]" />} title="Declaration Information">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="TD Number" placeholder="e.g. TD-2024-0001" value={tdNumber} onChange={setTdNumber} required />
-              <Field label="Property Index Number (PIN)" placeholder="e.g. 088-01-001-01-001" value={pin} onChange={setPin} required />
-              <Field label="Previous TD Number" placeholder="If revision or cancellation" value={prevTd} onChange={setPrevTd} />
+              <Field
+                label="TD Number"
+                placeholder="e.g. 2024-0001"
+                value={tdNumber}
+                onChange={(v) => setTdNumber(formatTdInput(v))}
+                prefix="TD-"
+                required
+              />
+              <Field
+                label="Property Index Number (PIN)"
+                placeholder="e.g. 088-01-001-01-001"
+                value={pin}
+                onChange={(v) => setPin(formatPinInput(v))}
+                required
+              />
+              <Field
+                label="Previous TD Number"
+                placeholder="If revision or cancellation"
+                value={prevTd}
+                onChange={(v) => setPrevTd(formatTdInput(v))}
+                prefix="TD-"
+              />
 
               {/* Declaration Type — Combobox */}
               <Combobox
@@ -509,18 +670,24 @@ export default function NewTaxDeclarationPage() {
                 required
               />
 
-              <Field label="ARP Number" placeholder="Assessment Roll of Property #" value={arpNumber} onChange={setArpNumber} />
               <Field
+                label="ARP Number"
+                placeholder="Assessment Roll of Property #"
+                value={arpNumber}
+                onChange={(v) => setArpNumber(formatArpInput(v))}
+              />
+              <Combobox
                 label="Tax Year"
-                placeholder="e.g. 2024"
+                placeholder="Select tax year"
+                searchPlaceholder="Search year..."
+                options={TAX_YEAR_OPTIONS}
                 value={taxYear}
-                onChange={(v) => setTaxYear(sanitizeNumericInput(v, { maxIntegerDigits: 4 }))}
-                inputMode="numeric"
-                maxLength={4}
+                onChange={setTaxYear}
                 required
               />
             </div>
-          </Section>
+            </Section>
+          </div>
 
           {/* Owner Information */}
           <Section icon={<User className="h-5 w-5 text-[#00154A]" />} title="Owner Information">
@@ -551,9 +718,9 @@ export default function NewTaxDeclarationPage() {
                 </p>
               </div>
 
-              <Field label="Tax Identification Number (TIN)" placeholder="Auto-filled from taxpayer" value={tin} onChange={setTin} />
+              <Field label="Tax Identification Number (TIN)" placeholder="Auto-filled from taxpayer" value={tin} onChange={setTin} readOnly />
               <div className="sm:col-span-2">
-                <Field label="Owner Address" placeholder="Complete address of owner" value={ownerAddress} onChange={setOwnerAddress} required />
+                <Field label="Owner Address" placeholder="Complete address of owner" value={ownerAddress} onChange={setOwnerAddress} required readOnly />
               </div>
 
               {/* Owner Type — toggle buttons (3 options, no search needed) */}
@@ -566,8 +733,8 @@ export default function NewTaxDeclarationPage() {
                     <button
                       key={t}
                       type="button"
-                      onClick={() => setOwnerType(t)}
-                      className={`font-inter rounded-md border px-3 py-2 text-xs transition cursor-pointer ${ownerType === t ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-gray-200 bg-white text-slate-600 hover:bg-gray-50'}`}
+                      disabled
+                      className={`font-inter rounded-md border px-3 py-2 text-xs transition ${ownerType === t ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-gray-200 bg-white text-slate-600'} cursor-not-allowed opacity-80`}
                     >
                       {t}
                     </button>
@@ -603,9 +770,9 @@ export default function NewTaxDeclarationPage() {
               />
 
               <Field label="Street / Road" placeholder="Street or road name" value={street} onChange={setStreet} />
-              <Field label="Lot Number" placeholder="e.g. Lot 12" value={lotNumber} onChange={setLotNumber} />
-              <Field label="Block Number" placeholder="e.g. Block 5" value={blockNumber} onChange={setBlockNumber} />
-              <Field label="Survey / Cadastral Number" placeholder="e.g. Cad. 088-D" value={surveyNumber} onChange={setSurveyNumber} />
+              <Field label="Lot Number" placeholder="e.g. 12" value={lotNumber} onChange={(v) => setLotNumber(formatLotInput(v))} prefix="Lot" />
+              <Field label="Block Number" placeholder="e.g. 5" value={blockNumber} onChange={setBlockNumber} prefix="Block" />
+              <Field label="Survey / Cadastral Number" placeholder="e.g. 088-D" value={surveyNumber} onChange={setSurveyNumber} prefix="Cad." />
             </div>
           </Section>
 
@@ -624,12 +791,20 @@ export default function NewTaxDeclarationPage() {
                 required
               />
 
-              <Field label="Actual Use" placeholder="e.g. Single-Family Dwelling" value={actualUse} onChange={setActualUse} required />
+              <Combobox
+                label="Actual Use"
+                placeholder="Select actual use"
+                searchPlaceholder="Search actual use..."
+                options={ACTUAL_USE_OPTIONS}
+                value={actualUse}
+                onChange={setActualUse}
+                required
+              />
               <Field
                 label="Land Area (sqm)"
                 placeholder="e.g. 250.00"
                 value={landArea}
-                onChange={(v) => setLandArea(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 10, maxDecimalDigits: 4 }))}
+                onChange={(v) => setLandArea(formatNumericInput(v, { allowDecimal: true, maxIntegerDigits: 10, maxDecimalDigits: 4 }))}
                 inputMode="decimal"
                 maxLength={15}
                 required
@@ -638,7 +813,7 @@ export default function NewTaxDeclarationPage() {
                 label="Unit Value (₱ per sqm)"
                 placeholder="e.g. 5,000.00"
                 value={landUnitValue}
-                onChange={(v) => setLandUnitValue(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 12, maxDecimalDigits: 2 }))}
+                onChange={(v) => setLandUnitValue(formatNumericInput(v, { allowDecimal: true, maxIntegerDigits: 12, maxDecimalDigits: 2 }))}
                 inputMode="decimal"
                 maxLength={15}
                 required
@@ -647,26 +822,29 @@ export default function NewTaxDeclarationPage() {
                 label="Land Market Value (₱)"
                 placeholder="Auto-computed"
                 value={landMarketValue}
-                onChange={(v) => setLandMarketValue(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 12, maxDecimalDigits: 2 }))}
+                onChange={setLandMarketValue}
                 inputMode="decimal"
                 maxLength={15}
+                readOnly
               />
               <Field
                 label="Assessment Level (%)"
                 placeholder="e.g. 20"
                 value={landAssessLevel}
-                onChange={(v) => setLandAssessLevel(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 3, maxDecimalDigits: 2 }))}
+                onChange={(v) => setLandAssessLevel(formatNumericInput(v, { allowDecimal: true, maxIntegerDigits: 3, maxDecimalDigits: 2 }))}
                 inputMode="decimal"
                 maxLength={6}
+                suffix="%"
                 required
               />
               <Field
                 label="Land Assessed Value (₱)"
                 placeholder="Auto-computed"
                 value={landAssessedValue}
-                onChange={(v) => setLandAssessedValue(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 12, maxDecimalDigits: 2 }))}
+                onChange={setLandAssessedValue}
                 inputMode="decimal"
                 maxLength={15}
+                readOnly
               />
             </div>
           </Section>
@@ -675,7 +853,14 @@ export default function NewTaxDeclarationPage() {
           <Section icon={<Home className="h-5 w-5 text-[#00154A]" />} title="Building / Improvement Details">
             <p className="font-inter mb-4 text-xs text-slate-400">Leave blank if land only.</p>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <Field label="Kind of Building" placeholder="e.g. Single Detached, Apartment" value={buildingKind} onChange={setBuildingKind} />
+              <Combobox
+                label="Kind of Building"
+                placeholder="Select kind of building"
+                searchPlaceholder="Search building kind..."
+                options={BUILDING_KINDS}
+                value={buildingKind}
+                onChange={setBuildingKind}
+              />
 
               {/* Structural Type — Combobox */}
               <Combobox
@@ -691,23 +876,23 @@ export default function NewTaxDeclarationPage() {
                 label="Floor Area (sqm)"
                 placeholder="e.g. 120.00"
                 value={floorArea}
-                onChange={(v) => setFloorArea(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 10, maxDecimalDigits: 4 }))}
+                onChange={(v) => setFloorArea(formatNumericInput(v, { allowDecimal: true, maxIntegerDigits: 10, maxDecimalDigits: 4 }))}
                 inputMode="decimal"
                 maxLength={15}
               />
-              <Field
+              <Combobox
                 label="Year Built"
-                placeholder="e.g. 2010"
+                placeholder="Select year built"
+                searchPlaceholder="Search year..."
+                options={TAX_YEAR_OPTIONS}
                 value={yearBuilt}
-                onChange={(v) => setYearBuilt(sanitizeNumericInput(v, { maxIntegerDigits: 4 }))}
-                inputMode="numeric"
-                maxLength={4}
+                onChange={setYearBuilt}
               />
               <Field
                 label="Building Market Value (₱)"
                 placeholder="e.g. 1,200,000.00"
                 value={bldgMarketValue}
-                onChange={(v) => setBldgMarketValue(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 12, maxDecimalDigits: 2 }))}
+                onChange={(v) => setBldgMarketValue(formatNumericInput(v, { allowDecimal: true, maxIntegerDigits: 12, maxDecimalDigits: 2 }))}
                 inputMode="decimal"
                 maxLength={15}
               />
@@ -715,17 +900,19 @@ export default function NewTaxDeclarationPage() {
                 label="Assessment Level (%)"
                 placeholder="e.g. 20"
                 value={bldgAssessLevel}
-                onChange={(v) => setBldgAssessLevel(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 3, maxDecimalDigits: 2 }))}
+                onChange={(v) => setBldgAssessLevel(formatNumericInput(v, { allowDecimal: true, maxIntegerDigits: 3, maxDecimalDigits: 2 }))}
                 inputMode="decimal"
                 maxLength={6}
+                suffix="%"
               />
               <Field
                 label="Building Assessed Value (₱)"
                 placeholder="Auto-computed"
                 value={bldgAssessedValue}
-                onChange={(v) => setBldgAssessedValue(sanitizeNumericInput(v, { allowDecimal: true, maxIntegerDigits: 12, maxDecimalDigits: 2 }))}
+                onChange={setBldgAssessedValue}
                 inputMode="decimal"
                 maxLength={15}
+                readOnly
               />
             </div>
           </Section>
@@ -733,26 +920,40 @@ export default function NewTaxDeclarationPage() {
           {/* Effectivity & Total Valuation */}
           <Section icon={<BarChart3 className="h-5 w-5 text-[#00154A]" />} title="Effectivity & Total Valuation">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field
+              <Combobox
                 label="Year of Effectivity"
-                placeholder="e.g. 2024"
+                placeholder="Select effectivity year"
+                searchPlaceholder="Search year..."
+                options={TAX_YEAR_OPTIONS}
                 value={effectivityYear}
-                onChange={(v) => setEffectivityYear(sanitizeNumericInput(v, { maxIntegerDigits: 4 }))}
-                inputMode="numeric"
-                maxLength={4}
+                onChange={setEffectivityYear}
                 required
               />
               <div>
                 <label className="font-inter text-xs font-medium text-slate-600">
                   Quarter <span className="text-rose-500">*</span>
                 </label>
-                <select
-                  value={effectivityQuarter}
-                  onChange={(e) => setEffectivityQuarter(e.target.value)}
-                  className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 font-inter text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-200"
-                >
-                  {['1st', '2nd', '3rd', '4th'].map((q) => <option key={q}>{q}</option>)}
-                </select>
+                <Select value={effectivityQuarter} onValueChange={setEffectivityQuarter}>
+                  <SelectTrigger className="cursor-pointer font-inter mt-1 flex h-10 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-slate-900 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-slate-200">
+                    <SelectValue placeholder="Select quarter" />
+                    <SelectIcon>
+                      <ChevronDown className="h-4 w-4 opacity-60" />
+                    </SelectIcon>
+                  </SelectTrigger>
+                  <SelectContent className="z-50 min-w-(--radix-select-trigger-width) rounded-md border border-gray-200 bg-white shadow-sm">
+                    <SelectViewport className="p-1">
+                      {QUARTER_OPTIONS.map((quarter) => (
+                        <SelectItem
+                          key={quarter}
+                          value={quarter}
+                          className="font-inter cursor-pointer rounded px-3 py-2 text-sm text-slate-700 outline-none data-highlighted:bg-slate-100"
+                        >
+                          <SelectItemText>{quarter}</SelectItemText>
+                        </SelectItem>
+                      ))}
+                    </SelectViewport>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="mt-6 rounded-md border border-gray-200 bg-gray-50 p-4">
@@ -775,12 +976,34 @@ export default function NewTaxDeclarationPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-6 lg:sticky lg:top-8 lg:self-start flex flex-col-reverse lg:flex-col">
+          <div className="sticky top-0 z-40 mb-6 flex justify-end py-1.5 w-full px-4 md:px-0">
+            <div className="flex w-full items-center gap-2 mb-2 mt-4 md:mt-0 md:w-auto">
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="flex-1 justify-center md:flex-none font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded border border-gray-300 bg-white px-4 text-xs font-medium text-slate-600 transition-colors hover:bg-gray-50 print:hidden"
+              >
+                <Printer className="h-4 w-4" />
+                Print Review
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 justify-center md:flex-none font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                <Save className="h-4 w-4" />
+                {saving ? 'Saving...' : 'Save Tax Declaration'}
+              </button>
+            </div>
+          </div>
+
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="font-inter text-sm font-semibold text-[#848794]">Declaration Summary</h2>
             <p className="font-inter mt-1 text-xs text-slate-400">Fields marked with * are required.</p>
             <div className="mt-4 space-y-3">
-              <SummaryRow label="TD Number"      value={tdNumber               || '(Required)'} />
+              <SummaryRow label="TD Number"      value={fullTdNumber          || '(Required)'} />
               <SummaryRow label="Owner"          value={selectedTaxpayerLabel || '(Required)'} />
               <SummaryRow label="Barangay"       value={selectedBarangayLabel || '(Required)'} />
               <SummaryRow label="Classification" value={classification} />
@@ -854,6 +1077,9 @@ function Field({
   required = false,
   inputMode,
   maxLength,
+  readOnly = false,
+  prefix,
+  suffix,
 }: {
   label: string;
   placeholder?: string;
@@ -862,21 +1088,27 @@ function Field({
   required?: boolean;
   inputMode?: 'text' | 'numeric' | 'decimal' | 'tel' | 'search' | 'email' | 'url';
   maxLength?: number;
+  readOnly?: boolean;
+  prefix?: string;
+  suffix?: string;
 }) {
   return (
     <div>
       <label className="font-inter text-xs font-medium text-slate-600">
         {label}{required && <span className="ml-1 text-rose-500">*</span>}
       </label>
-      <div className="mt-1 flex items-center rounded-md border border-gray-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-slate-200">
+      <div className={`mt-1 flex items-center rounded-md border px-3 py-2 ${readOnly ? 'border-gray-200 bg-gray-100' : 'border-gray-200 bg-white focus-within:ring-2 focus-within:ring-slate-200'}`}>
+        {prefix && <span className="mr-2 shrink-0 font-inter text-sm text-slate-500">{prefix}</span>}
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           inputMode={inputMode}
           maxLength={maxLength}
-          className="w-full bg-transparent font-inter text-sm text-slate-900 outline-none placeholder:text-slate-400"
+          readOnly={readOnly}
+          className={`w-full bg-transparent font-inter text-sm outline-none placeholder:text-slate-400 ${readOnly ? 'text-slate-900 cursor-not-allowed' : 'text-slate-900'} ${prefix ? 'pl-1' : ''} ${suffix ? 'pr-2' : ''}`}
         />
+        {suffix && <span className="ml-2 shrink-0 font-inter text-sm text-slate-500">{suffix}</span>}
       </div>
     </div>
   );
