@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Search, Plus, Eye, SquarePen, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
+import { toast } from 'sonner';
 
 const STATUS_OPTIONS: ComboboxOption[] = [
   { value: 'Active',    label: 'Active' },
@@ -55,6 +56,74 @@ const statusColors: Record<string, string> = {
   Revised: 'bg-yellow-50 text-yellow-700',
 };
 
+type NumericInputOptions = {
+  allowDecimal?: boolean;
+  maxIntegerDigits: number;
+  maxDecimalDigits?: number;
+};
+
+function sanitizeNumericInput(raw: string, options: NumericInputOptions): string {
+  const { allowDecimal = false, maxIntegerDigits, maxDecimalDigits = 0 } = options;
+  const cleaned = raw.replace(/,/g, '').replace(allowDecimal ? /[^\d.]/g : /\D/g, '');
+
+  if (!allowDecimal) return cleaned.slice(0, maxIntegerDigits);
+
+  const firstDot = cleaned.indexOf('.');
+  const normalized = firstDot >= 0
+    ? `${cleaned.slice(0, firstDot)}.${cleaned.slice(firstDot + 1).replace(/\./g, '')}`
+    : cleaned;
+
+  const [intPartRaw = '', decPartRaw = ''] = normalized.split('.');
+  const intPart = intPartRaw.slice(0, maxIntegerDigits);
+  const hasDot = normalized.includes('.');
+  const decPart = decPartRaw.slice(0, maxDecimalDigits);
+
+  if (!hasDot) return intPart;
+  return `${intPart}.${decPart}`;
+}
+
+function formatNumericInput(raw: string, options: NumericInputOptions): string {
+  const sanitized = sanitizeNumericInput(raw, options);
+  if (!sanitized) return '';
+
+  const hasTrailingDot = sanitized.endsWith('.');
+  const [intPart = '', decPart] = sanitized.split('.');
+  const groupedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+  if (!options.allowDecimal) return groupedInt;
+  if (hasTrailingDot) return `${groupedInt}.`;
+  if (decPart !== undefined) return `${groupedInt}.${decPart}`;
+  return groupedInt;
+}
+
+function formatTdInput(raw: string): string {
+  const digits = raw.replace(/^\s*[Tt][Dd]-?\s*/, '').replace(/\D/g, '').slice(0, 20);
+  if (!digits) return 'TD-';
+
+  const parts: string[] = [];
+  for (let i = 0; i < digits.length; i += 4) {
+    parts.push(digits.slice(i, i + 4));
+  }
+  return `TD-${parts.join('-')}`;
+}
+
+function formatPinInput(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 13);
+  if (!digits) return '';
+
+  const groups = [3, 2, 3, 2, 3];
+  const parts: string[] = [];
+  let index = 0;
+
+  for (const group of groups) {
+    if (index >= digits.length) break;
+    parts.push(digits.slice(index, index + group));
+    index += group;
+  }
+
+  return parts.join('-');
+}
+
 export default function PropertyListingPage() {
   const router = useRouter();
   const [search, setSearch] = useState('');
@@ -65,6 +134,20 @@ export default function PropertyListingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingPropertyId, setEditingPropertyId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<Omit<Property, 'id'>>({
+    tdNumber: '',
+    pin: '',
+    owner: '',
+    classification: '',
+    barangay: '',
+    landArea: '',
+    marketValue: '',
+    assessLevel: '',
+    assessedValue: '',
+    status: 'Active',
+  });
 
   const pageSize = 20;
 
@@ -151,6 +234,55 @@ export default function PropertyListingPage() {
   const totalResidential = properties.filter((p) => p.classification === 'Residential').length;
   const totalCommercial = properties.filter((p) => p.classification === 'Commercial').length;
   const totalAgricultural = properties.filter((p) => p.classification === 'Agricultural').length;
+
+  function openEditModal(property: Property) {
+    setEditingPropertyId(property.id);
+    setEditForm({
+      tdNumber: property.tdNumber,
+      pin: property.pin,
+      owner: property.owner,
+      classification: property.classification,
+      barangay: property.barangay,
+      landArea: property.landArea,
+      marketValue: property.marketValue.replace(/[^\d.,]/g, ''),
+      assessLevel: property.assessLevel.replace(/[^\d.,]/g, ''),
+      assessedValue: property.assessedValue.replace(/[^\d.,]/g, ''),
+      status: property.status,
+    });
+    setIsEditOpen(true);
+  }
+
+  function closeEditModal() {
+    setIsEditOpen(false);
+    setEditingPropertyId(null);
+  }
+
+  function updateEditField<K extends keyof Omit<Property, 'id'>>(key: K, value: Omit<Property, 'id'>[K]) {
+    setEditForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function saveEditModal() {
+    if (editingPropertyId == null) return;
+
+    const marketValueDisplay = editForm.marketValue.trim() ? `₱${editForm.marketValue.trim()}` : '—';
+    const assessLevelDisplay = editForm.assessLevel.trim() ? `${editForm.assessLevel.trim()}%` : '—';
+    const assessedValueDisplay = editForm.assessedValue.trim() ? `₱${editForm.assessedValue.trim()}` : '—';
+
+    setProperties((prev) =>
+      prev.map((item) => (item.id === editingPropertyId
+        ? {
+            id: editingPropertyId,
+            ...editForm,
+            marketValue: marketValueDisplay,
+            assessLevel: assessLevelDisplay,
+            assessedValue: assessedValueDisplay,
+          }
+        : item))
+    );
+
+    toast.success('Property details updated in list.');
+    closeEditModal();
+  }
 
   return (
     <div className="w-full">
@@ -294,7 +426,13 @@ export default function PropertyListingPage() {
                     <td className="sticky right-0 z-10 border-l border-gray-100 bg-white px-4 py-3 group-hover:bg-gray-50">
                       <div className="flex items-center justify-center gap-2">
                         <button title="View" className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"><Eye size={14} /></button>
-                        <button title="Edit" className="text-slate-400 hover:text-amber-600 transition-colors cursor-pointer"><SquarePen size={14} /></button>
+                        <button
+                          title="Edit"
+                          onClick={() => openEditModal(p)}
+                          className="text-slate-400 hover:text-amber-600 transition-colors cursor-pointer"
+                        >
+                          <SquarePen size={14} />
+                        </button>
                         <button title="Print" className="text-slate-400 hover:text-green-600 transition-colors cursor-pointer"><Printer size={14} /></button>
                       </div>
                     </td>
@@ -328,6 +466,133 @@ export default function PropertyListingPage() {
             </button>
           </div>
         </div>
+      </div>
+
+      {isEditOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={closeEditModal}>
+          <div className="swal2-show w-full max-w-lg rounded-xl bg-white p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
+              <h2 className="font-lexend mb-2 text-lg font-semibold text-[#0F172A]">Edit Property</h2>
+              <p className="font-inter mb-4 text-sm text-slate-500">Update property details and click save to apply changes.</p>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <ModalField
+                  label="TD Number"
+                  value={editForm.tdNumber}
+                  onChange={(v) => updateEditField('tdNumber', formatTdInput(v))}
+                  required
+                />
+                <ModalField
+                  label="Property Index Number (PIN)"
+                  value={editForm.pin}
+                  onChange={(v) => updateEditField('pin', formatPinInput(v))}
+                  required
+                />
+                <ModalField
+                  label="Owner Name"
+                  value={editForm.owner}
+                  onChange={(v) => updateEditField('owner', v)}
+                  required
+                  readOnly
+                />
+                <ModalField
+                  label="Classification"
+                  value={editForm.classification}
+                  onChange={(v) => updateEditField('classification', v)}
+                />
+                <ModalField
+                  label="Barangay"
+                  value={editForm.barangay}
+                  onChange={(v) => updateEditField('barangay', v)}
+                />
+                <ModalField
+                  label="Land Area (sqm)"
+                  value={editForm.landArea}
+                  onChange={(v) => updateEditField('landArea', formatNumericInput(v, { allowDecimal: true, maxIntegerDigits: 10, maxDecimalDigits: 4 }))}
+                />
+                <ModalField
+                  label="Market Value (P)"
+                  value={editForm.marketValue}
+                  onChange={(v) => updateEditField('marketValue', formatNumericInput(v, { allowDecimal: true, maxIntegerDigits: 12, maxDecimalDigits: 2 }))}
+                />
+                <ModalField
+                  label="Assess. Level"
+                  value={editForm.assessLevel}
+                  onChange={(v) => updateEditField('assessLevel', formatNumericInput(v, { allowDecimal: true, maxIntegerDigits: 3, maxDecimalDigits: 2 }))}
+                  suffix="%"
+                />
+                <ModalField
+                  label="Assessed Value (P)"
+                  value={editForm.assessedValue}
+                  onChange={(v) => updateEditField('assessedValue', formatNumericInput(v, { allowDecimal: true, maxIntegerDigits: 12, maxDecimalDigits: 2 }))}
+                />
+                <div>
+                  <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
+                    Status
+                    <span className="ml-1 text-rose-500">*</span>
+                  </label>
+                  <Combobox
+                    placeholder="Select status"
+                    searchPlaceholder="Search status..."
+                    options={STATUS_OPTIONS}
+                    value={editForm.status}
+                    onChange={(v) => updateEditField('status', v)}
+                    triggerClassName="rounded-md text-sm py-2 text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  className="border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={saveEditModal}
+                  className="bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition cursor-pointer"
+                >
+                  Save Changes
+                </button>
+              </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ModalField({
+  label,
+  value,
+  onChange,
+  required = false,
+  readOnly = false,
+  suffix,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  required?: boolean;
+  readOnly?: boolean;
+  suffix?: string;
+}) {
+  return (
+    <div>
+      <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
+        {label}
+        {required && <span className="ml-1 text-rose-500">*</span>}
+      </label>
+      <div className="flex items-center gap-2">
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          readOnly={readOnly}
+          className={`w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-slate-700 outline-none ${readOnly ? 'bg-gray-100 cursor-not-allowed' : 'focus:ring-2 focus:ring-slate-200'}`}
+        />
+        {suffix && <span className="font-inter text-sm text-slate-500">{suffix}</span>}
       </div>
     </div>
   );
