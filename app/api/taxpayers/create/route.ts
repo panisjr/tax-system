@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
         suffix: suffix?.trim() || null,
         tin: tin?.trim() || null,
         owner_type: normalizedOwnerType,
+        status: 'Active',
         barangay_id: normalizedBarangayId,
         address_details: address_details.trim(),
         phone: phone?.trim() || null,

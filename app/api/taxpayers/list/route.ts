@@ -12,6 +12,7 @@ type TaxpayerRow = {
   suffix: string | null;
   tin: string | null;
   owner_type: string | null;
+  status: string | null;
   phone: string | null;
   email: string | null;
   address_details: string | null;
@@ -24,7 +25,7 @@ export async function GET() {
     const { data, error } = await supabaseAdmin
       .from('taxpayers')
       .select(
-        'id, owner_name, first_name, middle_name, last_name, suffix, tin, owner_type, phone, email, address_details, barangay_id, barangays(name)',
+        'id, owner_name, first_name, middle_name, last_name, suffix, tin, owner_type, status, phone, email, address_details, barangay_id, barangays(name)',
       )
       .order('owner_name', { ascending: true });
 

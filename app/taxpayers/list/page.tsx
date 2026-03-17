@@ -13,9 +13,9 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  UsersRound,
 } from "lucide-react";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
+import { confirmArchive, confirmDelete } from "@/components/DeleteUserAction";
 import { ValidatedInput } from "@/components/ui/ValidatedInput";
 import { VALIDATORS } from "@/components/ui/validators";
 import {
@@ -33,7 +33,12 @@ const OWNER_TYPE_OPTIONS: ComboboxOption[] = [
   { value: "Individual", label: "Individual" },
   { value: "Corporate", label: "Corporate" },
   { value: "Government", label: "Government" },
+];
+
+const STATUS_FILTER_OPTIONS: ComboboxOption[] = [
+  { value: "Active", label: "Active" },
   { value: "Archived", label: "Archived" },
+  { value: "__all__", label: "All Statuses" },
 ];
 
 const SUFFIX_OPTIONS: ComboboxOption[] = [
@@ -57,6 +62,7 @@ type Taxpayer = {
   barangay_id?: number | null;
   address_details?: string | null;
   owner_type: string | null;
+  status?: string | null;
   phone: string | null;
   email: string | null;
 };
@@ -77,6 +83,7 @@ export default function TaxpayerListPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("Active");
   const [page, setPage] = useState(1);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
@@ -147,18 +154,26 @@ export default function TaxpayerListPage() {
     return taxpayers.filter((t) => {
       const normalizedOwnerType =
         t.owner_type === "Corporation" ? "Corporate" : t.owner_type;
+      const normalizedStatus =
+        t.status?.trim() === "Archived" ? "Archived" : "Active";
       const matchSearch =
         !q ||
         t.owner_name.toLowerCase().includes(q) ||
         (t.tin ?? "").toLowerCase().includes(q) ||
         (t.address ?? "").toLowerCase().includes(q);
       const matchType = !typeFilter || normalizedOwnerType === typeFilter;
-      return matchSearch && matchType;
+      const matchStatus =
+        statusFilter === "__all__" || normalizedStatus === statusFilter;
+      return matchSearch && matchType && matchStatus;
     });
-  }, [taxpayers, search, typeFilter]);
+  }, [taxpayers, search, typeFilter, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => {
+    setPage((prev) => Math.min(prev, totalPages));
+  }, [totalPages]);
 
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -167,6 +182,11 @@ export default function TaxpayerListPage() {
 
   const handleTypeFilter = (value: string) => {
     setTypeFilter(value);
+    setPage(1);
+  };
+
+  const handleStatusFilter = (value: string) => {
+    setStatusFilter(value || "Active");
     setPage(1);
   };
 
@@ -309,19 +329,83 @@ export default function TaxpayerListPage() {
     }
   };
 
-  const handleArchiveTaxpayer = (taxpayer: Taxpayer) => {
-    toast.info(`Archive is not available yet for ${taxpayer.owner_name}.`);
+  const handleArchiveTaxpayer = async (taxpayer: Taxpayer) => {
+    const confirmed = await confirmArchive(taxpayer.owner_name, "Taxpayer");
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch("/api/taxpayers/archive", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: taxpayer.id }),
+      });
+
+      const data = (await res.json()) as { error?: string; taxpayer?: Taxpayer };
+
+      if (!res.ok || !data.taxpayer) {
+        toast.error(data.error ?? "Failed to archive taxpayer.");
+        return;
+      }
+
+      setTaxpayers((prev) =>
+        prev.map((currentTaxpayer) =>
+          String(currentTaxpayer.id) === String(taxpayer.id)
+            ? data.taxpayer!
+            : currentTaxpayer,
+        ),
+      );
+
+      toast.success("Taxpayer archived successfully.");
+    } catch {
+      toast.error("Unable to connect to server.");
+    }
   };
 
-  const handleDeleteTaxpayer = (taxpayer: Taxpayer) => {
-    toast.info(`Delete is not available yet for ${taxpayer.owner_name}.`);
+  const handleDeleteTaxpayer = async (taxpayer: Taxpayer) => {
+    const confirmed = await confirmDelete(taxpayer.owner_name, "Taxpayer");
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch("/api/taxpayers/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: taxpayer.id }),
+      });
+
+      const data = (await res.json()) as { error?: string };
+
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed to delete taxpayer.");
+        return;
+      }
+
+      setTaxpayers((prev) =>
+        prev.filter((currentTaxpayer) => String(currentTaxpayer.id) !== String(taxpayer.id)),
+      );
+
+      toast.success("Taxpayer deleted successfully.");
+    } catch {
+      toast.error("Unable to connect to server.");
+    }
   };
+
+  const getTaxpayerStatus = (taxpayer: Taxpayer) =>
+    taxpayer.status?.trim() === "Archived" ? "Archived" : "Active";
 
   const ownerTypeColor: Record<string, string> = {
     Individual: "bg-blue-50 text-blue-700",
     Corporate: "bg-amber-50 text-amber-700",
     Corporation: "bg-amber-50 text-amber-700",
     Government: "bg-emerald-50 text-emerald-700",
+  };
+
+  const statusColor: Record<string, string> = {
+    Active: "bg-sky-50 text-sky-700",
+    Archived: "bg-slate-100 text-slate-700",
   };
 
   return (
@@ -422,6 +506,16 @@ export default function TaxpayerListPage() {
               triggerClassName="rounded-sm text-xs py-1.5 text-slate-500"
             />
           </div>
+          <div className="min-w-40">
+            <Combobox
+              placeholder="Status"
+              searchPlaceholder="Search status..."
+              options={STATUS_FILTER_OPTIONS}
+              value={statusFilter}
+              onChange={handleStatusFilter}
+              triggerClassName="rounded-sm text-xs py-1.5 text-slate-500"
+            />
+          </div>
         </div>
       </div>
 
@@ -436,6 +530,7 @@ export default function TaxpayerListPage() {
                   "Full Name",
                   "TIN",
                   "Type",
+                  "Status",
                   "Address",
                   "Phone",
                   "Email",
@@ -459,13 +554,13 @@ export default function TaxpayerListPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-10 text-center text-slate-400">
+                  <td colSpan={9} className="py-10 text-center text-slate-400">
                     Loading taxpayers...
                   </td>
                 </tr>
               ) : paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-10 text-center text-slate-400">
+                  <td colSpan={9} className="py-10 text-center text-slate-400">
                     {search || typeFilter
                       ? "No taxpayers match your filters."
                       : "No taxpayers registered yet."}
@@ -499,6 +594,15 @@ export default function TaxpayerListPage() {
                       ) : (
                         <span className="text-slate-300">—</span>
                       )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          statusColor[getTaxpayerStatus(t)] ?? "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {getTaxpayerStatus(t)}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-slate-500 max-w-48 truncate">
                       {t.address ?? <span className="text-slate-300">—</span>}
