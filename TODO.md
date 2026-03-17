@@ -1,29 +1,20 @@
-<<<<<<< HEAD
-# Taxpayers Register Layout Integration Plan
-✅ **Step 1**: User approved the edit plan for `app/taxpayers/register/page.tsx` 
+## TODO: Implement Taxpayers Payments Page
 
-✅ **Step 2**: Updated `app/taxpayers/register/page.tsx` 
-   - Integrated 3-column layout with sticky sidebar
-   - Added icon sections (Taxpayer Info, Contact & Address)
-   - Upgraded to ValidatedInput (names, TIN, phone, email)
-   - Converted owner_type to BooleanChip buttons
-   - Upgraded suffix to Combobox
-   - Copied Field helper, exact button/summary styling
-   - Preserved all original logic (barangays, API, validation)
+### Plan Summary
+Replace dashboard with TanStack table payments list (like taxpayers/list):
+- Header + Back button
+- Stats cards (Total Payments, Monthly, Overdue)
+- Search/Filter: date/status/method
+- Table: Date, Taxpayer, OR#, Amount, Method, Status, Actions
+- Pagination
 
-✅ **Step 3**: Verified file contents - layout matches user/create patterns perfectly
+✅ **Step 1: Create TODO.md** (completed)
 
-## Remaining Steps:
-- [ ] **Step 4**: Attempt completion
-=======
-# Tax System TODO - Incoming Documents Page
+✅ **Step 2: Install @tanstack/react-table if missing** (assumed present, already used elsewhere)
 
-## Plan Steps
-- [x] 1. Create app/api/documents/incoming/list/route.ts (API with mock data)
-- [x] 2. Update app/document/incoming_documents/page.tsx (full TanStack Table page)
-- [ ] 3. Test page loads with data, search, pagination
-- [x] 4. Mark complete
+✅ **Step 3: Implement full payments page in app/taxpayers/payments/page.tsx with mock data** (completed - TanStack table, filters, stats, pagination)
 
-Current progress: Files created. Page ready at /document/incoming_documents with full table, search, pagination using existing components and design patterns.
->>>>>>> 174db29efa3ad72e60fb76038ead64ce7bea9cf8
+### Step 4: Test page
+Run `npm run dev` and navigate to /taxpayers/payments
 
+**Step 5: Mark complete**
