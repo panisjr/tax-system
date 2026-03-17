@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import {
   ArrowLeft, Save, MapPin, Layers, Home, BarChart3, FileText, User, Printer, ChevronDown,
 } from 'lucide-react';
@@ -247,8 +248,6 @@ export default function NewTaxDeclarationPage() {
   const [taxpayerOptions, setTaxpayerOptions] = useState<ComboboxOption[]>([]);
   const [loading, setLoading]                 = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState('');
-  const [saveSuccess, setSaveSuccess] = useState('');
   
   type TaxpayerRecord = {
     tin: string | null;
@@ -513,14 +512,11 @@ export default function NewTaxDeclarationPage() {
   };
 
   async function handleSave() {
-    setSaveError('');
-    setSaveSuccess('');
-
     const selectedBarangayId = Number(barangayId);
     const isBarangayIdNumeric = Number.isFinite(selectedBarangayId) && selectedBarangayId > 0;
 
     if (!tdNumber.trim() || !pin.trim() || !taxpayerId || !barangayId) {
-      setSaveError('Please fill in TD Number, PIN, Owner/Taxpayer, and Barangay.');
+      toast.error('Please fill in TD Number, PIN, Owner/Taxpayer, and Barangay.');
       return;
     }
 
@@ -583,14 +579,14 @@ export default function NewTaxDeclarationPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setSaveError(data?.error || 'Unable to save tax declaration.');
+        toast.error(data?.error || 'Unable to save tax declaration.');
         return;
       }
 
-      setSaveSuccess('Tax Declaration saved successfully.');
+      toast.success('Tax Declaration saved successfully.');
       router.push(`/property?td=${encodeURIComponent(fullTdNumber)}`);
     } catch {
-      setSaveError('Unable to save tax declaration. Please try again.');
+      toast.error('Unable to save tax declaration. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -615,12 +611,6 @@ export default function NewTaxDeclarationPage() {
           </p>
         </div>
       </header>
-
-      {(saveError || saveSuccess) && (
-        <div className={`mb-4 rounded-md border px-3 py-2 text-sm ${saveError ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
-          {saveError || saveSuccess}
-        </div>
-      )}
 
       {/* Mounted only while printing — unmounted by the afterprint event */}
       {printData && (

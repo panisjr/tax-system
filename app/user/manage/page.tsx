@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -10,7 +11,6 @@ import {
   KeyRound,
   Pencil,
   Trash2,
-  ChevronsUpDown,
   Search,
   ChevronLeft,
   ChevronRight,
@@ -20,7 +20,7 @@ import {
   useReactTable,
   getCoreRowModel,
   getPaginationRowModel,
-  getFilteredRowModel, 
+  getFilteredRowModel,
   flexRender,
 } from "@tanstack/react-table";
 
@@ -33,6 +33,8 @@ import {
   TableHead,
   TableCell,
 } from "@/components/table";
+
+import { AddRoleDialog } from "@/components/AddRoleDialog";
 
 type ApiUser = {
   firstname?: string;
@@ -51,7 +53,6 @@ type ApiPermission = {
   created_at?: string;
 };
 
-// Updated ApiRole to handle all possible Supabase response shapes
 type ApiRole = {
   id?: string | number;
   name?: string;
@@ -81,8 +82,9 @@ type ListedRole = {
   createdAt: string;
 };
 
-const normalizeRole = (role: string) => {
-  const value = role.trim().toLowerCase();
+// Fix 1: Cleaned up the nested normalizeRole declaration
+const normalizeRole = (role?: string) => {
+  const value = (role ?? "").trim().toLowerCase();
 
   if (value === "admin" || value === "administrator") return "administrator";
   if (value === "treasurer") return "treasurer";
@@ -101,29 +103,18 @@ export default function ManageRolePage() {
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [isLoadingRoles, setIsLoadingRoles] = useState(true);
 
-  // --- ADDED 1: State for TanStack Table global search filter
   const [globalFilter, setGlobalFilter] = useState("");
 
-  // Modal states
-  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
-  const [editingRoleId, setEditingRoleId] = useState<string | number | null>(
-    null,
-  );
-  const [newRoleName, setNewRoleName] = useState("");
-  const [newPermissionIds, setNewPermissionIds] = useState<string[]>([]);
+  // Clean dialog states
+  const [isAddRoleDialogOpen, setIsAddRoleDialogOpen] = useState(false);
+  const [selectedRoleForEdit, setSelectedRoleForEdit] = useState<ListedRole | null>(null);
 
-  const [permissionPickerOpen, setPermissionPickerOpen] = useState(false);
-  const [permissionSearch, setPermissionSearch] = useState("");
-  const [isSavingRole, setIsSavingRole] = useState(false);
   const [isDeletingRole, setIsDeletingRole] = useState(false);
   const [selectedRoleUsers, setSelectedRoleUsers] = useState<{
     roleName: string;
     names: string[];
   } | null>(null);
-  const [rolePendingDelete, setRolePendingDelete] = useState<string | null>(
-    null,
-  );
-  const permissionPickerRef = useRef<HTMLDivElement | null>(null);
+  const [rolePendingDelete, setRolePendingDelete] = useState<string | null>(null);
 
   const mapRole = (role: ApiRole, index: number): ListedRole => {
     const rawName = role.name ?? "";
@@ -135,12 +126,10 @@ export default function ManageRolePage() {
     let extractedNames: string[] = [];
     let extractedIds: string[] = [];
 
-    // 1. Extract from permission_names string array
     if (Array.isArray(role.permission_names)) {
       extractedNames.push(...role.permission_names);
     }
 
-    // 2. Extract from role_permissions mapping table (junction table)
     if (Array.isArray(role.role_permissions)) {
       role.role_permissions.forEach((mapping) => {
         if (mapping.permission_id)
@@ -152,7 +141,6 @@ export default function ManageRolePage() {
       });
     }
 
-    // 3. Extract from nested permissions object OR array
     if (Array.isArray(role.permissions)) {
       role.permissions.forEach((p) => {
         if (p.id) extractedIds.push(String(p.id));
@@ -163,12 +151,10 @@ export default function ManageRolePage() {
       if (role.permissions.name) extractedNames.push(role.permissions.name);
     }
 
-    // 4. Extract from legacy top-level permission_id
     if (role.permission_id) {
       extractedIds.push(String(role.permission_id));
     }
 
-    // Clean up duplicates and empty strings
     const permissionNames = [
       ...new Set(extractedNames.map((n) => n.trim()).filter(Boolean)),
     ];
@@ -269,18 +255,6 @@ export default function ManageRolePage() {
     fetchPermissions();
   }, []);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (!permissionPickerRef.current) return;
-      if (!permissionPickerRef.current.contains(event.target as Node)) {
-        setPermissionPickerOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const usersByRole = useMemo(() => {
     const grouped = new Map<string, string[]>();
 
@@ -307,126 +281,21 @@ export default function ManageRolePage() {
 
   const handleBack = () => router.push("/user");
 
-  // --- MODAL CONTROLS ---
+  const openRoleDialog = useCallback((editRole: ListedRole | null = null) => {
+    setSelectedRoleForEdit(editRole);
+    setIsAddRoleDialogOpen(true);
+  }, []);
 
-  const handleAddRole = () => {
-    setEditingRoleId(null);
-    setNewRoleName("");
-    setNewPermissionIds([]);
-    setPermissionPickerOpen(false);
-    setPermissionSearch("");
-    setIsRoleModalOpen(true);
-  };
+  // Fix 3: Updated handleDialogClose to actually close the dialog modal correctly
+  const handleDialogClose = useCallback(() => {
+    setIsAddRoleDialogOpen(false);
+    setSelectedRoleForEdit(null);
+  }, []);
 
-  const handleEditRole = (role: ListedRole) => {
-    setEditingRoleId(role.id);
-    setNewRoleName(role.name);
-
-    // NUCLEAR FIX: We can see the permission names in your table perfectly. 
-    // We will take those names, force them to lowercase, and match them directly 
-    // against the master permissions list to guarantee we get the correct IDs.
-    const normalizedNames = role.permissionNames.map(name => name.trim().toLowerCase());
-    
-    const matchedIds = permissions
-      .filter(p => normalizedNames.includes(p.name.trim().toLowerCase()))
-      .map(p => String(p.id));
-
-    // Combine the matched IDs with any IDs the API actually managed to send
-    const finalIds = Array.from(new Set([...matchedIds, ...role.permissionIds.map(String)]));
-
-    setNewPermissionIds(finalIds);
-    setPermissionPickerOpen(false);
-    setPermissionSearch("");
-    setIsRoleModalOpen(true);
-  };
-
-  // ----------------------
-
-  const togglePermission = (permissionId: string) => {
-    setNewPermissionIds((prev) =>
-      prev.includes(permissionId)
-        ? prev.filter((id) => id !== permissionId)
-        : [...prev, permissionId],
-    );
-  };
-
-  const removeSelectedPermission = (permissionId: string) => {
-    setNewPermissionIds((prev) => prev.filter((id) => id !== permissionId));
-  };
-
-  const sortedPermissions = permissions
-    .slice()
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  const filteredPermissions = sortedPermissions.filter((permission) =>
-    permission.name.toLowerCase().includes(permissionSearch.toLowerCase()),
-  );
-
-  const selectedPermissions = permissions
-    .filter((permission) => newPermissionIds.includes(String(permission.id)))
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  const handleSaveRole = async () => {
-    const roleName = newRoleName.trim();
-    const roleNameKey = roleName.toLowerCase();
-    const permissionIds = [
-      ...new Set(newPermissionIds.map((value) => Number(value))),
-    ].filter((value) => Number.isInteger(value) && value > 0);
-
-    const hasDuplicateRole = roles.some(
-      (role) =>
-        role.name.trim().toLowerCase() === roleNameKey &&
-        role.id !== editingRoleId,
-    );
-
-    if (!roleName) {
-      toast.warning("Role name is required.");
-      return;
-    }
-
-    if (hasDuplicateRole) {
-      toast.warning("Role already exists.");
-      return;
-    }
-
-    setIsSavingRole(true);
-
-    const isEditMode = editingRoleId !== null;
-    const apiUrl = isEditMode ? "/api/roles/update" : "/api/roles/create";
-    const payload = isEditMode
-      ? { id: editingRoleId, name: roleName, permission_ids: permissionIds }
-      : { name: roleName, permission_ids: permissionIds };
-
-    try {
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        toast.error(
-          data.error ?? `Failed to ${isEditMode ? "update" : "create"} role.`,
-        );
-        return;
-      }
-
-      setIsRoleModalOpen(false);
-      await fetchRoles();
-      toast.success(isEditMode ? "Role updated" : "Role added", {
-        description: isEditMode
-          ? "Changes have been saved."
-          : "The new role has been added successfully.",
-      });
-    } catch {
-      toast.error("Unable to connect to server.");
-    } finally {
-      setIsSavingRole(false);
-    }
+  const handleDialogSuccess = async () => {
+    await fetchRoles();
+    toast.success("Role saved successfully");
+    handleDialogClose();
   };
 
   const handleViewRoleUsers = (roleName: string) => {
@@ -466,9 +335,7 @@ export default function ManageRolePage() {
 
       setRolePendingDelete(null);
       await fetchRoles();
-      toast.success("Role deleted", {
-        description: data.message ?? "Role deleted successfully.",
-      });
+      toast.success("Role deleted successfully");
     } catch {
       toast.error("Unable to connect to server.");
     } finally {
@@ -476,8 +343,6 @@ export default function ManageRolePage() {
     }
   };
 
-  // --- ADDED 2: Define TanStack Columns in a useMemo.
-  // We include `usersByRole` and `isLoadingUsers` in the dependency array so the "Users" count column updates properly!
   const columns = useMemo(() => [
     {
       accessorKey: "name",
@@ -490,7 +355,6 @@ export default function ManageRolePage() {
       ),
     },
     {
-      // Using permissionNames as the accessorKey so TanStack's global filter searches inside the permission bubbles!
       accessorKey: "permissionNames",
       header: "Permissions",
       cell: ({ row }: any) => {
@@ -502,9 +366,10 @@ export default function ManageRolePage() {
                 Unassigned
               </span>
             ) : (
-              role.permissionNames.map((permissionName: string) => (
+              // Fix 2: Added index parameter to the map function
+              role.permissionNames.map((permissionName: string, index: number) => (
                 <span
-                  key={`${role.key}-${permissionName}`}
+                  key={`${role.key}-${permissionName}-${index}`}
                   className="rounded bg-slate-50 px-2 py-1 text-xs text-slate-600 border border-gray-200"
                 >
                   {permissionName}
@@ -556,7 +421,7 @@ export default function ManageRolePage() {
           <div className="flex justify-end gap-2">
             <button
               type="button"
-              onClick={() => handleEditRole(role)}
+              onClick={() => openRoleDialog(row.original)}
               className="font-inter inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:bg-gray-50 cursor-pointer"
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -575,23 +440,27 @@ export default function ManageRolePage() {
         );
       },
     },
-  ], [usersByRole, isLoadingUsers]); // <-- Dependencies required so the cell renders have fresh data
+  ], [usersByRole, isLoadingUsers, openRoleDialog]);
 
-  // --- ADDED 3: Initialize the TanStack Table Hook ---
   const table = useReactTable({
     data: roles,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    onGlobalFilterChange: setGlobalFilter,
-    initialState: {
-      pagination: {
-        pageSize: 5,
-      },
+
+    globalFilterFn: (row, _, filterValue) => {
+      const search = String(filterValue).toLowerCase();
+      const roleName = row.original.name.toLowerCase();
+      const permissions = row.original.permissionNames.join(" ").toLowerCase();
+      return roleName.includes(search) || permissions.includes(search);
     },
-    state: {
-      globalFilter,
+
+    onGlobalFilterChange: setGlobalFilter,
+    state: { globalFilter },
+
+    initialState: {
+      pagination: { pageSize: 5 },
     },
   });
 
@@ -620,7 +489,7 @@ export default function ManageRolePage() {
 
             <button
               type="button"
-              onClick={handleAddRole}
+              onClick={() => openRoleDialog()}
               className={`font-lexend h-10 rounded bg-[#0F172A] px-5 text-xs font-medium text-white transition-colors hover:bg-slate-800 cursor-pointer`}
             >
               Add New Role
@@ -630,7 +499,6 @@ export default function ManageRolePage() {
 
         <section className="w-full rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           
-          {/* --- ADDED 4: Built a flex container holding the title and Search bar side-by-side --- */}
           <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <div className="rounded-md bg-slate-100 p-2">
@@ -641,7 +509,6 @@ export default function ManageRolePage() {
               </h2>
             </div>
 
-            {/* Global Search Input */}
             <div className="relative w-full sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
@@ -695,7 +562,6 @@ export default function ManageRolePage() {
                   </TableRow>
                 )}
 
-                {/* Empty Search Results Message */}
                 {!isLoadingRoles && table.getRowModel().rows.length === 0 && roles.length > 0 && (
                     <TableRow>
                         <TableCell colSpan={5} className="py-10 text-center text-slate-400">
@@ -704,7 +570,6 @@ export default function ManageRolePage() {
                     </TableRow>
                 )}
 
-                {/* --- ADDED 6: Mapping dynamic Table Rows using table.getRowModel().rows --- */}
                 {!isLoadingRoles &&
                   table.getRowModel().rows.map((row) => (
                     <TableRow key={row.id} className="hover:bg-slate-50 transition-colors">
@@ -725,7 +590,6 @@ export default function ManageRolePage() {
             </Table>
           </TableContainer>
 
-          {/* --- ADDED 7: Pagination Controls below the table --- */}
           {!isLoadingRoles && roles.length > 0 && (
               <div className="flex items-center justify-between px-2 mt-4">
                   <div className="font-inter text-xs text-slate-500">
@@ -755,172 +619,21 @@ export default function ManageRolePage() {
           )}
         </section>
 
-        {isRoleModalOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-            onClick={() => setIsRoleModalOpen(false)}
-          >
-            <div
-              className="swal2-show w-full max-w-md rounded-xl bg-white p-6 shadow-lg"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 className="font-lexend mb-2 text-lg font-semibold text-[#0F172A]">
-                {editingRoleId ? "Edit Role" : "Add New Role"}
-              </h2>
-              <p className="font-inter mb-4 text-sm text-slate-500">
-                {editingRoleId
-                  ? "Update role details and permissions."
-                  : "Create a new role for role management."}
-              </p>
-
-              <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
-                Role Name
-              </label>
-              <input
-                value={newRoleName}
-                onChange={(e) => setNewRoleName(e.target.value)}
-                disabled={editingRoleId !== null} // Optional: Disable changing the name of existing roles
-                className={`w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 ${
-                  editingRoleId
-                    ? "bg-gray-100 text-slate-500 cursor-not-allowed"
-                    : "bg-white text-slate-700"
-                }`}
-                placeholder="Enter role name"
-              />
-
-              <div className="mt-3">
-                <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
-                  Permissions
-                </label>
-                <div ref={permissionPickerRef} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setPermissionPickerOpen((prev) => !prev)}
-                    className="flex w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 font-inter text-sm text-slate-700 transition-colors hover:border-gray-300"
-                  >
-                    <span
-                      className={
-                        newPermissionIds.length > 0 ? "" : "text-slate-400"
-                      }
-                    >
-                      {newPermissionIds.length > 0
-                        ? `${newPermissionIds.length} permission(s) selected`
-                        : "Select permissions"}
-                    </span>
-                    <ChevronsUpDown className="h-4 w-4 text-slate-400" />
-                  </button>
-
-                  {permissionPickerOpen && (
-                    <div className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
-                      <div className="flex items-center border-b border-gray-100 px-3 py-2">
-                        <Search className="mr-2 h-3.5 w-3.5 text-slate-400" />
-                        <input
-                          value={permissionSearch}
-                          onChange={(e) => setPermissionSearch(e.target.value)}
-                          placeholder="Search permission..."
-                          className="w-full bg-transparent font-inter text-xs text-slate-700 outline-none placeholder:text-slate-400"
-                        />
-                      </div>
-
-                      <div className="max-h-48 overflow-y-auto p-1">
-                        {filteredPermissions.length === 0 ? (
-                          <p className="px-2 py-4 text-center font-inter text-xs text-slate-400">
-                            No permissions available.
-                          </p>
-                        ) : (
-                          filteredPermissions.map((permission) => {
-                            const value = String(permission.id);
-                            const checked = newPermissionIds.includes(value);
-
-                            return (
-                              <label
-                                key={permission.id}
-                                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-gray-50"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={() => togglePermission(value)}
-                                  className="h-3.5 w-3.5 rounded border-gray-300 text-slate-700 focus:ring-slate-300"
-                                />
-                                <span className="font-inter text-xs text-slate-700">
-                                  {permission.name}
-                                </span>
-                              </label>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-2">
-                  {selectedPermissions.length === 0 ? (
-                    <span className="font-inter text-xs text-slate-400">
-                      No permissions selected.
-                    </span>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {selectedPermissions.map((permission) => (
-                        <button
-                          key={permission.id}
-                          type="button"
-                          onClick={() =>
-                            removeSelectedPermission(String(permission.id))
-                          }
-                          className="rounded bg-slate-50 px-2 py-1 text-xs font-inter text-slate-600 transition-colors hover:bg-slate-100 cursor-pointer border border-gray-200"
-                          title="Remove permission"
-                        >
-                          {permission.name} ×
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-5 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsRoleModalOpen(false)}
-                  className="border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition mr-2 cursor-pointer"
-                  disabled={isSavingRole}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveRole}
-                  className="bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={isSavingRole}
-                >
-                  {isSavingRole
-                    ? "Saving..."
-                    : editingRoleId
-                      ? "Update Role"
-                      : "Save Role"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
+        {/* View Role Users Modal */}
         {selectedRoleUsers && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
             onClick={() => setSelectedRoleUsers(null)}
           >
             <div
-              className="swal2-show w-full max-w-md rounded-xl bg-white p-6 shadow-lg"
+              className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg"
               onClick={(e) => e.stopPropagation()}
             >
               <h2 className="font-lexend mb-1 text-lg font-semibold text-[#0F172A]">
                 {selectedRoleUsers.roleName} Users
               </h2>
               <p className="font-inter mb-3 text-xs text-slate-500">
-                Total assigned users:{" "}
-                <span className="font-semibold text-[#0F172A]">
+                Total assigned users: <span className="font-semibold text-[#0F172A]">
                   {selectedRoleUsers.names.length}
                 </span>
               </p>
@@ -932,9 +645,9 @@ export default function ManageRolePage() {
               ) : (
                 <div className="max-h-64 overflow-y-auto rounded-md border border-gray-100">
                   <ul className="divide-y divide-gray-100">
-                    {selectedRoleUsers.names.map((name) => (
+                    {selectedRoleUsers.names.map((name, index) => (
                       <li
-                        key={name}
+                        key={index}
                         className="px-3 py-2 font-inter text-sm text-slate-700"
                       >
                         {name}
@@ -957,24 +670,23 @@ export default function ManageRolePage() {
           </div>
         )}
 
+        {/* Delete Confirm Modal */}
         {rolePendingDelete && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
             onClick={() => setRolePendingDelete(null)}
           >
             <div
-              className="swal2-show w-full max-w-md rounded-xl bg-white p-6 shadow-lg"
+              className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg"
               onClick={(e) => e.stopPropagation()}
             >
               <h2 className="font-lexend mb-2 text-lg font-semibold text-[#0F172A]">
                 Delete Role?
               </h2>
               <p className="font-inter text-sm text-slate-500">
-                You are about to remove{" "}
-                <span className="font-semibold text-[#0F172A]">
+                You are about to remove <span className="font-semibold text-[#0F172A]">
                   {rolePendingDelete}
-                </span>
-                .
+                </span>.
               </p>
               <p className="font-inter mt-2 text-xs text-rose-500">
                 This action cannot be undone.
@@ -1001,6 +713,14 @@ export default function ManageRolePage() {
             </div>
           </div>
         )}
+s
+        <AddRoleDialog 
+          isOpen={isAddRoleDialogOpen}
+          onClose={handleDialogClose}
+          onSuccess={handleDialogSuccess}
+          role={selectedRoleForEdit || undefined}
+          permissions={permissions}
+        />
       </main>
     </div>
   );
