@@ -116,7 +116,7 @@ export async function PUT(req: NextRequest) {
       .update(updatePayload)
       .eq('id', id)
       .select(
-        'id, owner_name, first_name, middle_name, last_name, suffix, tin, owner_type, phone, email, address_details, barangay_id, barangays(name)',
+        'id, owner_name, first_name, middle_name, last_name, suffix, tin, owner_type, status, phone, email, address_details, barangay_id, barangays(name)',
       )
       .single();
 

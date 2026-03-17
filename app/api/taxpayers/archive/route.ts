@@ -1,0 +1,54 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+
+type ArchiveTaxpayerPayload = {
+  id: number | string;
+};
+
+type BarangayRecord = { name: string };
+
+export async function PUT(req: NextRequest) {
+  try {
+    const body = (await req.json()) as Partial<ArchiveTaxpayerPayload>;
+
+    const rawId = body.id;
+    const id = typeof rawId === 'string' ? rawId.trim() : rawId;
+
+    const hasInvalidId =
+      (typeof id !== 'string' && typeof id !== 'number') ||
+      (typeof id === 'string' && id.length === 0) ||
+      (typeof id === 'number' && !Number.isFinite(id));
+
+    if (hasInvalidId) {
+      return NextResponse.json({ error: 'Taxpayer ID is required.' }, { status: 400 });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('taxpayers')
+      .update({ status: 'Archived' })
+      .eq('id', id)
+      .select(
+        'id, owner_name, first_name, middle_name, last_name, suffix, tin, owner_type, status, phone, email, address_details, barangay_id, barangays(name)',
+      )
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    const barangayRecord = Array.isArray(data?.barangays)
+      ? (data?.barangays[0] as BarangayRecord | undefined)
+      : (data?.barangays as BarangayRecord | null | undefined);
+    const formattedTaxpayer = {
+      ...data,
+      address:
+        [data?.address_details?.trim() || '', barangayRecord?.name?.trim() || '']
+          .filter(Boolean)
+          .join(', ') || null,
+    };
+
+    return NextResponse.json({ message: 'Taxpayer archived successfully.', taxpayer: formattedTaxpayer });
+  } catch {
+    return NextResponse.json({ error: 'Unable to archive taxpayer.' }, { status: 500 });
+  }
+}
