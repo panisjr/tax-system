@@ -142,3 +142,48 @@ export async function confirmArchive(name: string, entityType = "Record"): Promi
 
   return result.isConfirmed;
 }
+
+/**
+ * Show a confirmation dialog for restoring an archived entity and return
+ * whether the user confirmed the action.
+ */
+export async function confirmRestore(name: string, entityType = "Record"): Promise<boolean> {
+  const cautionIcon = renderToStaticMarkup(
+    <AlertTriangle size={14} className="text-emerald-500 mr-2" />,
+  );
+
+  const result = await Swal.fire({
+    width: 300,
+    html: `
+      <div class="text-left">
+        <h2 class="font-lexend text-lg font-semibold text-[#0F172A] mb-2">
+          Restore ${entityType}?
+        </h2>
+        <p class="font-inter text-sm text-slate-500 mb-4">
+          You are about to restore
+          <span class="font-lexend font-semibold text-[#0F172A]"><br>${name}</span>.
+        </p>
+        <div class="flex items-start font-inter text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-md px-3 py-2">
+            ${cautionIcon}
+            <span>This will make it active again.</span>
+        </div>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: `Restore ${entityType}`,
+    cancelButtonText: "Cancel",
+    reverseButtons: true,
+    focusCancel: true,
+    background: "#ffffff",
+    buttonsStyling: false,
+    customClass: {
+      popup: "rounded-xl p-6 shadow-lg",
+      confirmButton:
+        "bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition cursor-pointer",
+      cancelButton:
+        "cursor-pointer border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition mr-2",
+    },
+  });
+
+  return result.isConfirmed;
+}

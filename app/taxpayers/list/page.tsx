@@ -10,12 +10,17 @@ import {
   SquarePen,
   Trash2,
   Archive,
+  ArchiveRestore,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { confirmArchive, confirmDelete } from "@/components/DeleteUserAction";
+import {
+  confirmArchive,
+  confirmDelete,
+  confirmRestore,
+} from "@/components/DeleteUserAction";
 import { ValidatedInput } from "@/components/ui/ValidatedInput";
 import { VALIDATORS } from "@/components/ui/validators";
 import {
@@ -393,6 +398,40 @@ export default function TaxpayerListPage() {
     }
   };
 
+  const handleRestoreTaxpayer = async (taxpayer: Taxpayer) => {
+    const confirmed = await confirmRestore(taxpayer.owner_name, "Taxpayer");
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch("/api/taxpayers/restore", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: taxpayer.id }),
+      });
+
+      const data = (await res.json()) as { error?: string; taxpayer?: Taxpayer };
+
+      if (!res.ok || !data.taxpayer) {
+        toast.error(data.error ?? "Failed to restore taxpayer.");
+        return;
+      }
+
+      setTaxpayers((prev) =>
+        prev.map((currentTaxpayer) =>
+          String(currentTaxpayer.id) === String(taxpayer.id)
+            ? data.taxpayer!
+            : currentTaxpayer,
+        ),
+      );
+
+      toast.success("Taxpayer restored successfully.");
+    } catch {
+      toast.error("Unable to connect to server.");
+    }
+  };
+
   const getTaxpayerStatus = (taxpayer: Taxpayer) =>
     taxpayer.status?.trim() === "Archived" ? "Archived" : "Active";
 
@@ -623,14 +662,25 @@ export default function TaxpayerListPage() {
                         >
                           <SquarePen size={14} />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleArchiveTaxpayer(t)}
-                          title="Archive"
-                          className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
-                        >
-                          <Archive size={14} />
-                        </button>
+                        {getTaxpayerStatus(t) === "Archived" ? (
+                          <button
+                            type="button"
+                            onClick={() => handleRestoreTaxpayer(t)}
+                            title="Restore"
+                            className="text-slate-400 hover:text-emerald-600 transition-colors cursor-pointer"
+                          >
+                            <ArchiveRestore size={14} />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleArchiveTaxpayer(t)}
+                            title="Archive"
+                            className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                          >
+                            <Archive size={14} />
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => handleDeleteTaxpayer(t)}
