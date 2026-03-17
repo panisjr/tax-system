@@ -7,7 +7,7 @@ type InitialSplashGateProps = {
   children: React.ReactNode;
 };
 
-const SPLASH_DURATION_MS = 1000;
+const SPLASH_DURATION_MS = 5000;
 
 export default function InitialSplashGate({ children }: InitialSplashGateProps) {
   const [showSplash, setShowSplash] = useState(true);

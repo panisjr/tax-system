@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Search, Plus, Eye, Pencil, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Search, Plus, Eye, SquarePen, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
 
 const STATUS_OPTIONS: ComboboxOption[] = [
@@ -252,7 +252,12 @@ export default function PropertyListingPage() {
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
                 {['TD Number', 'PIN', 'Owner Name', 'Classification', 'Barangay', 'Land Area (sqm)', 'Market Value (₱)', 'Assess. Level', 'Assessed Value (₱)', 'Status', 'Actions'].map((h) => (
-                  <th key={h} className="whitespace-nowrap px-4 py-3 text-left text-[#595a5d] font-semibold uppercase tracking-wide">{h}</th>
+                  <th
+                    key={h}
+                    className={`whitespace-nowrap px-4 py-3 text-left text-[#595a5d] font-semibold uppercase tracking-wide ${h === 'Actions' ? 'sticky right-0 z-20 bg-gray-50 border-l border-gray-200' : ''}`}
+                  >
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -267,7 +272,7 @@ export default function PropertyListingPage() {
                 </tr>
               ) : (
                 pageRows.map((p) => (
-                  <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <tr key={p.id} className="group border-b border-gray-100 hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-[#595a5d] whitespace-nowrap">{p.tdNumber}</td>
                     <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{p.pin}</td>
                     <td className="px-4 py-3 text-slate-700 whitespace-nowrap">{p.owner}</td>
@@ -286,10 +291,10 @@ export default function PropertyListingPage() {
                         {p.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="sticky right-0 z-10 border-l border-gray-100 bg-white px-4 py-3 group-hover:bg-gray-50">
                       <div className="flex items-center justify-center gap-2">
                         <button title="View" className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"><Eye size={14} /></button>
-                        <button title="Edit" className="text-slate-400 hover:text-amber-600 transition-colors cursor-pointer"><Pencil size={14} /></button>
+                        <button title="Edit" className="text-slate-400 hover:text-amber-600 transition-colors cursor-pointer"><SquarePen size={14} /></button>
                         <button title="Print" className="text-slate-400 hover:text-green-600 transition-colors cursor-pointer"><Printer size={14} /></button>
                       </div>
                     </td>
