@@ -444,43 +444,6 @@ export default function NewTaxDeclarationPage() {
         </div>
       )}
 
-      {/* Sticky Action Buttons */}
-      <div className="lg:sticky lg:top-0 lg:z-40 lg:bg-white lg:border-b lg:border-gray-200 lg:py-3 lg:-mt-2">
-        <div className="flex justify-end">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => router.push('/property')}
-              className="font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            {/* ── Print Review ─────────────────────────────────────────────
-                Renders the hidden TaxDeclarationPrint with current form data,
-                then calls window.print(). The @media print CSS in that component
-                hides everything except the A4 layout automatically.
-            ───────────────────────────────────────────────────────────────── */}
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded border border-gray-300 bg-white px-4 text-xs font-medium text-slate-600 transition-colors hover:bg-gray-50 print:hidden"
-            >
-              <Printer className="h-4 w-4" />
-              Print Review
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              <Save className="h-4 w-4" />
-              {saving ? 'Saving...' : 'Save Tax Declaration'}
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Mounted only while printing — unmounted by the afterprint event */}
       {printData && (
         <div className="sr-only print:not-sr-only">
@@ -492,7 +455,8 @@ export default function NewTaxDeclarationPage() {
         <div className="space-y-6 lg:col-span-2">
 
           {/* Declaration Information */}
-          <Section icon={<FileText className="h-5 w-5 text-[#00154A]" />} title="Declaration Information">
+          <div className="lg:-mt-3">
+            <Section icon={<FileText className="h-5 w-5 text-[#00154A]" />} title="Declaration Information">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="TD Number" placeholder="e.g. TD-2024-0001" value={tdNumber} onChange={setTdNumber} required />
               <Field label="Property Index Number (PIN)" placeholder="e.g. 088-01-001-01-001" value={pin} onChange={setPin} required />
@@ -520,7 +484,8 @@ export default function NewTaxDeclarationPage() {
                 required
               />
             </div>
-          </Section>
+            </Section>
+          </div>
 
           {/* Owner Information */}
           <Section icon={<User className="h-5 w-5 text-[#00154A]" />} title="Owner Information">
@@ -775,7 +740,29 @@ export default function NewTaxDeclarationPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-6 lg:sticky lg:top-8 lg:self-start flex flex-col-reverse lg:flex-col">
+          <div className="sticky top-0 z-40 mb-6 flex justify-end py-1.5 w-full px-4 md:px-0">
+            <div className="flex w-full items-center gap-2 mb-2 mt-4 md:mt-0 md:w-auto">
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="flex-1 justify-center md:flex-none font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded border border-gray-300 bg-white px-4 text-xs font-medium text-slate-600 transition-colors hover:bg-gray-50 print:hidden"
+              >
+                <Printer className="h-4 w-4" />
+                Print Review
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 justify-center md:flex-none font-inter inline-flex h-10 cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                <Save className="h-4 w-4" />
+                {saving ? 'Saving...' : 'Save Tax Declaration'}
+              </button>
+            </div>
+          </div>
+
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="font-inter text-sm font-semibold text-[#848794]">Declaration Summary</h2>
             <p className="font-inter mt-1 text-xs text-slate-400">Fields marked with * are required.</p>
