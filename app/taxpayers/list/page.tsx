@@ -2,26 +2,51 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Search,
   Plus,
-  Eye,
-  Pencil,
+  SquarePen,
+  Trash2,
+  Archive,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   UsersRound,
 } from "lucide-react";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
+import { ValidatedInput } from "@/components/ui/ValidatedInput";
+import { VALIDATORS } from "@/components/ui/validators";
+import {
+  Select,
+  SelectContent,
+  SelectIcon,
+  SelectItem,
+  SelectItemText,
+  SelectTrigger,
+  SelectValue,
+  SelectViewport,
+} from "@/components/ui/select";
 
 const OWNER_TYPE_OPTIONS: ComboboxOption[] = [
   { value: "Individual", label: "Individual" },
   { value: "Corporate", label: "Corporate" },
   { value: "Government", label: "Government" },
+  { value: "Archived", label: "Archived" },
+];
+
+const SUFFIX_OPTIONS: ComboboxOption[] = [
+  { value: "Jr.", label: "Jr." },
+  { value: "Sr.", label: "Sr." },
+  { value: "II", label: "II" },
+  { value: "III", label: "III" },
+  { value: "IV", label: "IV" },
+  { value: "V", label: "V" },
 ];
 
 type Taxpayer = {
-  id: number;
+  id: number | string;
   owner_name: string;
   first_name: string;
   middle_name: string | null;
@@ -29,9 +54,16 @@ type Taxpayer = {
   suffix: string | null;
   tin: string | null;
   address: string | null;
+  barangay_id?: number | null;
+  address_details?: string | null;
   owner_type: string | null;
   phone: string | null;
   email: string | null;
+};
+
+type BarangayOption = {
+  id: number;
+  name: string;
 };
 
 const PAGE_SIZE = 20;
@@ -40,10 +72,27 @@ export default function TaxpayerListPage() {
   const router = useRouter();
 
   const [taxpayers, setTaxpayers] = useState<Taxpayer[]>([]);
+  const [barangays, setBarangays] = useState<BarangayOption[]>([]);
+  const [isLoadingBarangays, setIsLoadingBarangays] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editingTaxpayer, setEditingTaxpayer] = useState<Taxpayer | null>(null);
+  const [editForm, setEditForm] = useState({
+    first_name: "",
+    middle_name: "",
+    last_name: "",
+    suffix: "",
+    tin: "",
+    owner_type: "",
+    barangay_id: "",
+    address_details: "",
+    phone: "",
+    email: "",
+  });
 
   useEffect(() => {
     const fetchTaxpayers = async () => {
@@ -62,15 +111,48 @@ export default function TaxpayerListPage() {
     fetchTaxpayers();
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchBarangays = async () => {
+      setIsLoadingBarangays(true);
+      try {
+        const res = await fetch("/api/barangays/list", { cache: "no-store" });
+        const data = (await res.json()) as { barangays?: BarangayOption[] };
+
+        if (!res.ok) {
+          if (isMounted) setBarangays([]);
+          return;
+        }
+
+        if (isMounted) {
+          setBarangays(data.barangays ?? []);
+        }
+      } catch {
+        if (isMounted) setBarangays([]);
+      } finally {
+        if (isMounted) setIsLoadingBarangays(false);
+      }
+    };
+
+    fetchBarangays();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return taxpayers.filter((t) => {
+      const normalizedOwnerType =
+        t.owner_type === "Corporation" ? "Corporate" : t.owner_type;
       const matchSearch =
         !q ||
         t.owner_name.toLowerCase().includes(q) ||
         (t.tin ?? "").toLowerCase().includes(q) ||
         (t.address ?? "").toLowerCase().includes(q);
-      const matchType = !typeFilter || t.owner_type === typeFilter;
+      const matchType = !typeFilter || normalizedOwnerType === typeFilter;
       return matchSearch && matchType;
     });
   }, [taxpayers, search, typeFilter]);
@@ -88,9 +170,157 @@ export default function TaxpayerListPage() {
     setPage(1);
   };
 
+  const normalizedOwnerTypeCount = useMemo(() => {
+    return taxpayers.reduce(
+      (acc, taxpayer) => {
+        const normalizedType =
+          taxpayer.owner_type === "Corporation"
+            ? "Corporate"
+            : taxpayer.owner_type;
+
+        if (normalizedType === "Individual") acc.Individual += 1;
+        if (normalizedType === "Corporate") acc.Corporate += 1;
+        if (normalizedType === "Government") acc.Government += 1;
+
+        return acc;
+      },
+      { Individual: 0, Corporate: 0, Government: 0 },
+    );
+  }, [taxpayers]);
+
+  const hasRequiredEditFields =
+    editForm.first_name.trim().length > 0 &&
+    editForm.last_name.trim().length > 0 &&
+    editForm.owner_type.length > 0 &&
+    editForm.barangay_id.trim().length > 0 &&
+    editForm.address_details.trim().length > 0;
+
+  const barangayOptions = useMemo<ComboboxOption[]>(
+    () =>
+      barangays.map((barangay) => ({
+        value: String(barangay.id),
+        label: barangay.name,
+      })),
+    [barangays],
+  );
+
+  const hasInvalidOptionalFields =
+    (editForm.tin.trim().length > 0 && !VALIDATORS.tin.validate(editForm.tin)) ||
+    (editForm.phone.trim().length > 0 &&
+      !VALIDATORS.phone.validate(editForm.phone)) ||
+    (editForm.email.trim().length > 0 &&
+      !VALIDATORS.email.validate(editForm.email));
+
+  const canSaveEdit = hasRequiredEditFields && !hasInvalidOptionalFields;
+
+  const handleOpenEditModal = (taxpayer: Taxpayer) => {
+    setEditingTaxpayer(taxpayer);
+
+    const fallbackBarangayId =
+      taxpayer.barangay_id != null ? String(taxpayer.barangay_id) : "";
+    const fallbackAddressDetails = taxpayer.address_details ?? taxpayer.address ?? "";
+
+    setEditForm({
+      first_name: taxpayer.first_name ?? "",
+      middle_name: taxpayer.middle_name ?? "",
+      last_name: taxpayer.last_name ?? "",
+      suffix: taxpayer.suffix ?? "",
+      tin: taxpayer.tin ?? "",
+      owner_type:
+        taxpayer.owner_type === "Corporation"
+          ? "Corporate"
+          : (taxpayer.owner_type ?? ""),
+      barangay_id: fallbackBarangayId,
+      address_details: fallbackAddressDetails,
+      phone: taxpayer.phone ?? "",
+      email: taxpayer.email ?? "",
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    if (isSavingEdit) return;
+    setIsEditModalOpen(false);
+    setEditingTaxpayer(null);
+  };
+
+  const handleSaveTaxpayer = async () => {
+    if (!editingTaxpayer) return;
+
+    const updatedFirstName = editForm.first_name.trim();
+    const updatedLastName = editForm.last_name.trim();
+    if (!canSaveEdit || !updatedFirstName || !updatedLastName) return;
+
+    const updatedOwnerName = [
+      updatedFirstName,
+      editForm.middle_name.trim(),
+      updatedLastName,
+      editForm.suffix.trim(),
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    setIsSavingEdit(true);
+
+    try {
+      const res = await fetch("/api/taxpayers/update", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: editingTaxpayer.id,
+          first_name: updatedFirstName,
+          middle_name: editForm.middle_name.trim() || null,
+          last_name: updatedLastName,
+          suffix: editForm.suffix.trim() || null,
+          owner_name: updatedOwnerName,
+          tin: editForm.tin.trim() || null,
+          owner_type: editForm.owner_type,
+          barangay_id: Number(editForm.barangay_id),
+          address_details: editForm.address_details.trim(),
+          phone: editForm.phone.trim() || null,
+          email: editForm.email.trim() || null,
+        }),
+      });
+
+      const data = (await res.json()) as { error?: string; taxpayer?: Taxpayer };
+
+      if (!res.ok || !data.taxpayer) {
+        toast.error(data.error ?? "Failed to update taxpayer.");
+        return;
+      }
+
+      setTaxpayers((prev) =>
+        prev.map((taxpayer) =>
+          String(taxpayer.id) === String(editingTaxpayer.id)
+            ? data.taxpayer!
+            : taxpayer,
+        ),
+      );
+
+      toast.success("Taxpayer updated successfully.");
+      setIsEditModalOpen(false);
+      setEditingTaxpayer(null);
+    } catch {
+      toast.error("Unable to connect to server.");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  const handleArchiveTaxpayer = (taxpayer: Taxpayer) => {
+    toast.info(`Archive is not available yet for ${taxpayer.owner_name}.`);
+  };
+
+  const handleDeleteTaxpayer = (taxpayer: Taxpayer) => {
+    toast.info(`Delete is not available yet for ${taxpayer.owner_name}.`);
+  };
+
   const ownerTypeColor: Record<string, string> = {
     Individual: "bg-blue-50 text-blue-700",
     Corporate: "bg-amber-50 text-amber-700",
+    Corporation: "bg-amber-50 text-amber-700",
     Government: "bg-emerald-50 text-emerald-700",
   };
 
@@ -136,27 +366,21 @@ export default function TaxpayerListPage() {
             label: "Individual",
             value: isLoading
               ? "—"
-              : taxpayers
-                  .filter((t) => t.owner_type === "Individual")
-                  .length.toLocaleString(),
+              : normalizedOwnerTypeCount.Individual.toLocaleString(),
             color: "text-blue-600",
           },
           {
             label: "Corporate",
             value: isLoading
               ? "—"
-              : taxpayers
-                  .filter((t) => t.owner_type === "Corporate")
-                  .length.toLocaleString(),
+              : normalizedOwnerTypeCount.Corporate.toLocaleString(),
             color: "text-amber-600",
           },
           {
             label: "Government",
             value: isLoading
               ? "—"
-              : taxpayers
-                  .filter((t) => t.owner_type === "Government")
-                  .length.toLocaleString(),
+              : normalizedOwnerTypeCount.Government.toLocaleString(),
             color: "text-emerald-600",
           },
         ].map((s) => (
@@ -288,16 +512,28 @@ export default function TaxpayerListPage() {
                     <td className="px-4 py-3 md:sticky right-0 bg-white">
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          title="View"
-                          className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
-                        >
-                          <Eye size={14} />
-                        </button>
-                        <button
+                          type="button"
+                          onClick={() => handleOpenEditModal(t)}
                           title="Edit"
                           className="text-slate-400 hover:text-amber-600 transition-colors cursor-pointer"
                         >
-                          <Pencil size={14} />
+                          <SquarePen size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleArchiveTaxpayer(t)}
+                          title="Archive"
+                          className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                        >
+                          <Archive size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTaxpayer(t)}
+                          title="Delete"
+                          className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </td>
@@ -333,6 +569,265 @@ export default function TaxpayerListPage() {
           </div>
         </div>
       </div>
+
+      {isEditModalOpen && editingTaxpayer && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={handleCloseEditModal}
+        >
+          <div
+            className="swal2-show w-full max-w-lg rounded-xl bg-white p-6 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="font-lexend mb-2 text-lg font-semibold text-[#0F172A]">
+              Edit Taxpayer
+            </h2>
+            <p className="font-inter mb-4 text-sm text-slate-500">
+              Update taxpayer details and click save to apply changes.
+            </p>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
+                  First Name
+                  <span className="ml-1 text-rose-500">*</span>
+                </label>
+                <input
+                  value={editForm.first_name}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      first_name: e.target.value
+                        .replace(/[^a-zA-Z\s\-\.']/g, "")
+                        .slice(0, 50),
+                    }))
+                  }
+                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
+                  placeholder="Enter first name"
+                />
+              </div>
+
+              <div>
+                <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
+                  Middle Name
+                </label>
+                <input
+                  value={editForm.middle_name}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      middle_name: e.target.value
+                        .replace(/[^a-zA-Z\s\-\.']/g, "")
+                        .slice(0, 50),
+                    }))
+                  }
+                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
+                  placeholder="Enter middle name"
+                />
+              </div>
+
+              <div>
+                <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
+                  Last Name
+                  <span className="ml-1 text-rose-500">*</span>
+                </label>
+                <input
+                  value={editForm.last_name}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      last_name: e.target.value
+                        .replace(/[^a-zA-Z\s\-\.']/g, "")
+                        .slice(0, 50),
+                    }))
+                  }
+                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
+                  placeholder="Enter last name"
+                />
+              </div>
+
+              <div>
+                <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
+                  Suffix
+                </label>
+                <Select
+                  value={editForm.suffix}
+                  onValueChange={(value) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      suffix: value === "__none__" ? "" : value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="cursor-pointer font-inter flex h-9 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-1 text-sm text-slate-900 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-slate-200">
+                    <SelectValue placeholder="Select suffix" />
+                    <SelectIcon>
+                      <ChevronDown className="h-4 w-4 opacity-60" />
+                    </SelectIcon>
+                  </SelectTrigger>
+
+                  <SelectContent className="z-50 min-w-(--radix-select-trigger-width) rounded-md border border-gray-200 bg-white shadow-sm">
+                    <SelectViewport className="p-1">
+                      <SelectItem
+                        value="__none__"
+                        className="font-inter cursor-pointer rounded px-3 py-2 text-sm text-slate-700 outline-none data-highlighted:bg-slate-100"
+                      >
+                        <SelectItemText>None</SelectItemText>
+                      </SelectItem>
+                      {SUFFIX_OPTIONS.map((option) => (
+                        <SelectItem
+                          key={option.value}
+                          value={option.value}
+                          className="font-inter cursor-pointer rounded px-3 py-2 text-sm text-slate-700 outline-none data-highlighted:bg-slate-100"
+                        >
+                          <SelectItemText>{option.label}</SelectItemText>
+                        </SelectItem>
+                      ))}
+                    </SelectViewport>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <ValidatedInput
+                  label="TIN"
+                  type="tin"
+                  placeholder="000-000-000 or 000-000-000-000"
+                  value={editForm.tin}
+                  onChange={(value) =>
+                    setEditForm((prev) => ({ ...prev, tin: value }))
+                  }
+                  showValidationIcon
+                />
+              </div>
+
+              <div>
+                <label className="font-inter mt-2 block text-xs font-medium text-slate-600">
+                  Owner Type
+                  <span className="ml-1 text-rose-500">*</span>
+                </label>
+                <Select
+                  value={editForm.owner_type}
+                  onValueChange={(value) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      owner_type: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="cursor-pointer font-inter mt-1 flex h-9 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-1 text-sm text-slate-900 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-slate-200">
+                    <SelectValue placeholder="Select owner type" />
+                    <SelectIcon>
+                      <ChevronDown className="h-4 w-4 opacity-60" />
+                    </SelectIcon>
+                  </SelectTrigger>
+                  
+                  <SelectContent className="z-50 min-w-(--radix-select-trigger-width) rounded-md border border-gray-200 bg-white shadow-sm">
+                    <SelectViewport className="p-1">
+                      {OWNER_TYPE_OPTIONS.map((option) => (
+                        <SelectItem
+                          key={option.value}
+                          value={option.value}
+                          className="font-inter cursor-pointer rounded px-3 py-2 text-sm text-slate-700 outline-none data-highlighted:bg-slate-100"
+                        >
+                          <SelectItemText>{option.label}</SelectItemText>
+                        </SelectItem>
+                      ))}
+                    </SelectViewport>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
+                  Barangay
+                  <span className="ml-1 text-rose-500">*</span>
+                </label>
+                <Combobox
+                  value={editForm.barangay_id}
+                  onChange={(value) =>
+                    setEditForm((prev) => ({ ...prev, barangay_id: value }))
+                  }
+                  options={barangayOptions}
+                  disabled={isLoadingBarangays}
+                  placeholder={isLoadingBarangays ? "Loading barangays..." : "Select barangay"}
+                  searchPlaceholder="Search barangay..."
+                  emptyLabel="No barangay found."
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
+                  Other Address Details
+                  <span className="ml-1 text-rose-500">*</span>
+                </label>
+                <input
+                  value={editForm.address_details}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      address_details: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-200"
+                  placeholder="Street, Purok, Sitio, Landmark"
+                />
+              </div>
+
+              <div>
+                <ValidatedInput
+                  type="phone"
+                  label="Phone"
+                  placeholder="e.g. 912 345 6789"
+                  value={editForm.phone}
+                  onChange={(value) =>
+                    setEditForm((prev) => ({ ...prev, phone: value }))
+                  }
+                  showValidationIcon
+                />
+              </div>
+
+              <div>
+                <ValidatedInput
+                  type="email"
+                  label="Email"
+                  placeholder="example@email.com"
+                  value={editForm.email}
+                  onChange={(value) =>
+                    setEditForm((prev) => ({ ...prev, email: value }))
+                  }
+                  showValidationIcon
+                />
+              </div>
+            </div>
+
+            {!hasRequiredEditFields && (
+              <p className="font-inter mt-3 text-xs text-rose-600">
+                Required fields: First Name, Last Name, Owner Type, Barangay, and Other Address Details.
+              </p>
+            )}
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleCloseEditModal}
+                disabled={isSavingEdit}
+                className="border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveTaxpayer}
+                disabled={!canSaveEdit || isSavingEdit}
+                className="bg-[#0F172A] text-white text-xs font-inter px-4 py-2 rounded-md hover:bg-slate-800 transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSavingEdit ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

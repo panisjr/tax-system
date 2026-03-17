@@ -34,6 +34,15 @@ type MenuItem = {
   subtitle?: string;
 };
 
+type SessionUser = {
+  empID: string;
+  username: string;
+  name: string;
+  email: string;
+  role: string;
+  role_id: string | number;
+};
+
 const menuItems: MenuItem[] = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { name: "Property Registry", path: "/property", icon: Building2, },
@@ -46,7 +55,11 @@ const menuItems: MenuItem[] = [
   { name: "User & Role Management", path: "/user", icon: UserCog },
 ];
 
-export default function AppSidebar() {
+export default function AppSidebar({
+  sessionUser,
+}: {
+  sessionUser: SessionUser | null;
+}) {
   const pathname = usePathname();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -131,8 +144,12 @@ export default function AppSidebar() {
                   )}
                 >
                   <div className="flex min-w-0 flex-col">
-                    <span className="text-sm font-medium text-slate-700">System Administrator</span>
-                    <span className="text-xs text-slate-400">admin@starita.gov.ph</span>
+                    <span className="text-sm font-medium text-slate-700">
+                      {sessionUser?.name || sessionUser?.username || "Guest User"}
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      {sessionUser?.email || sessionUser?.role || "No active session"}
+                    </span>
                   </div>
                 </div>
               </Link>

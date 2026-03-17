@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 type UpdateUserPayload = {
 	originalEmpID: string;
 	empID: string;
+	username: string;
 	firstname: string;
 	middlename: string;
 	lastname: string;
@@ -11,6 +12,8 @@ type UpdateUserPayload = {
 	birthdate: string;
 	age: string;
 	sex: boolean;
+	temp_pass?: string;
+	password?: string;
 	email: string;
 	phone: string;
 	role_id: number;
@@ -31,6 +34,12 @@ export async function PUT(request: Request) {
 	try {
 		const body = (await request.json()) as Partial<UpdateUserPayload>;
 		const roleId = Number(body.role_id);
+		const normalizedUsername =
+			body.username?.trim() || body.empID?.trim() || '';
+		const normalizedTempPass = body.temp_pass?.trim() || '';
+		const normalizedPassword = body.password?.trim() || '';
+		const hasTempPass = normalizedTempPass.length > 0;
+		const hasPassword = normalizedPassword.length > 0;
 
 		const requiredTextFields: Array<keyof UpdateUserPayload> = [
 			'originalEmpID',
@@ -83,6 +92,20 @@ export async function PUT(request: Request) {
 			);
 		}
 
+		if (hasTempPass !== hasPassword) {
+			return NextResponse.json(
+				{ error: 'Both temp_pass and password are required when updating credentials.' },
+				{ status: 400 },
+			);
+		}
+
+		if (hasTempPass && normalizedTempPass !== normalizedPassword) {
+			return NextResponse.json(
+				{ error: 'temp_pass and password must match.' },
+				{ status: 400 },
+			);
+		}
+
 		const { data: existingUser, error: existingError } = await supabaseAdmin
 			.from('users')
 			.select('empID')
@@ -97,6 +120,7 @@ export async function PUT(request: Request) {
 			.from('users')
 			.update({
 				empID: body.empID!.trim(),
+				username: normalizedUsername,
 				firstname: body.firstname!.trim(),
 				middlename: body.middlename?.trim() || '',
 				lastname: body.lastname!.trim(),
@@ -104,6 +128,8 @@ export async function PUT(request: Request) {
 				birthdate: body.birthdate!.trim(),
 				age: body.age!.trim(),
 				sex: body.sex,
+				...(hasTempPass ? { temp_pass: normalizedTempPass } : {}),
+				...(hasPassword ? { password: normalizedPassword } : {}),
 				email: body.email!.trim(),
 				phone: body.phone!.trim(),
 				role_id: roleId,

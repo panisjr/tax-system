@@ -35,6 +35,7 @@ const Suffix = ["Jr.", "Sr.", "II", "III", "IV", "V", "VI"] as const;
 
 type FormState = {
   empID: string;
+  username: string;
   firstname: string;
   middlename: string;
   lastname: string;
@@ -60,12 +61,13 @@ type RoleOption = {
 
 type ApiUserDetails = {
   empID?: string;
+  username?: string;
   firstname?: string;
   middlename?: string;
   lastname?: string;
   suffix?: string;
   birthdate?: string;
-  age?: string;
+  age?: string | number;
   sex?: boolean;
   email?: string;
   phone?: string;
@@ -81,6 +83,7 @@ type ApiUserDetails = {
 
 const initialFormState: FormState = {
   empID: "",
+  username: "",
   firstname: "",
   middlename: "",
   lastname: "",
@@ -243,15 +246,18 @@ function CreateUserForm() {
         }
 
         const user = data.user;
+        const resolvedEmpID = user?.empID?.trim() ?? "";
+        const resolvedUsername = user?.username?.trim() || resolvedEmpID;
         const mapped: FormState = {
-          empID: user?.empID?.trim() ?? "",
+          empID: resolvedEmpID,
+          username: resolvedUsername,
           firstname: user?.firstname?.trim() ?? "",
           middlename: user?.middlename?.trim() ?? "",
           lastname: user?.lastname?.trim() ?? "",
           suffix: user?.suffix?.trim() ?? "",
           // FIX 2: Safely parse birthdate string back into a Date object
           birthdate: user?.birthdate ? new Date(user.birthdate) : undefined,
-          age: user?.age?.trim() ?? "",
+          age: user?.age != null ? String(user.age) : "",
           sex: typeof user?.sex === "boolean" ? user.sex : true,
           temp_pass: "",
           password: "",
@@ -289,21 +295,23 @@ function CreateUserForm() {
   }, [editingEmpID, isEditMode]);
 
   const missingRequiredFields = useMemo(() => {
-    return (
+    const baseRequired =
       !form.empID.trim() ||
+      !form.username.trim() ||
       !form.firstname.trim() ||
       !form.lastname.trim() ||
       !form.birthdate ||
       !form.age.trim() ||
-      !form.temp_pass.trim() ||
-      !form.password.trim() ||
       !form.email.trim() ||
       !form.phone.trim() ||
-      !form.role_id.trim() || // FIX 3: Changed form.role to form.role_id
+      !form.role_id.trim() ||
       !form.department.trim() ||
-      !form.position.trim()
-    );
-  }, [form]);
+      !form.position.trim();
+
+    if (isEditMode) return baseRequired;
+
+    return baseRequired || !form.temp_pass.trim() || !form.password.trim();
+  }, [form, isEditMode]);
 
   const isBirthdateValid = useMemo(() => {
     if (!form.birthdate) return true;
@@ -325,6 +333,7 @@ function CreateUserForm() {
     // FIX 4: Prevent calling .trim() on Date object which causes crashes
     const normalize = (value: FormState) => ({
       empID: value.empID.trim(),
+      username: value.username.trim(),
       firstname: value.firstname.trim(),
       middlename: value.middlename.trim(),
       lastname: value.lastname.trim(),
@@ -363,11 +372,28 @@ function CreateUserForm() {
 
     // REMOVED: Length, Uppercase, and Number restrictions.
     // KEPT: Match check to ensure the user didn't make a typo.
-    if (form.temp_pass !== form.password) {
+    if (!isEditMode && form.temp_pass !== form.password) {
       toast.error("Password Error", {
         description: "Temporary password and password must match.",
       });
       return;
+    }
+
+    if (isEditMode && passwordTouched) {
+      if (!form.temp_pass.trim() || !form.password.trim()) {
+        toast.error("Password Error", {
+          description:
+            "Enter both Temp Pass and Password to update credentials.",
+        });
+        return;
+      }
+
+      if (!passwordsMatch) {
+        toast.error("Password Error", {
+          description: "Temporary password and password must match.",
+        });
+        return;
+      }
     }
 
     if (isEditMode && !hasFormChanges) {
@@ -384,6 +410,7 @@ function CreateUserForm() {
         ? {
             originalEmpID: initialLoadedForm?.empID ?? editingEmpID,
             empID: form.empID,
+            username: form.username,
             firstname: form.firstname,
             middlename: form.middlename,
             lastname: form.lastname,
@@ -399,8 +426,13 @@ function CreateUserForm() {
             department: form.department,
             position: form.position,
             status: form.status,
-            // Only send password if user typed something (useful for edits)
-            ...(form.password ? { password: form.password } : {}),
+            // Only send credentials if user typed both fields (useful for edits)
+            ...(passwordTouched
+              ? {
+                  temp_pass: form.temp_pass,
+                  password: form.password,
+                }
+              : {}),
           }
         : {
             ...form,
@@ -507,7 +539,12 @@ function CreateUserForm() {
                 onChange={(v) => updateField("empID", v)}
                 errorMessage={empIDError}
               />
-
+              <Field
+                label="Username"
+                required
+                value={form.username}
+                onChange={(v) => updateField("username", v)}
+              />
               <ValidatedInput
                 label="First Name"
                 required
@@ -791,6 +828,10 @@ function CreateUserForm() {
                 }
               />
               <SummaryRow label="Emp ID" value={form.empID || "(Required)"} />
+              <SummaryRow
+                label="Username"
+                value={form.username || "(Required)"}
+              />
 
               {/* FIX 8: Display the dynamic role name instead of the ID */}
               <SummaryRow

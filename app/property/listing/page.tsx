@@ -1,24 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Search, Plus, Eye, Pencil, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
-
-const CLASS_OPTIONS: ComboboxOption[] = [
-  { value: 'Residential',  label: 'Residential' },
-  { value: 'Commercial',   label: 'Commercial' },
-  { value: 'Agricultural', label: 'Agricultural' },
-  { value: 'Industrial',   label: 'Industrial' },
-  { value: 'Special',      label: 'Special' },
-];
-
-const BARANGAY_OPTIONS: ComboboxOption[] = [
-  'Bacubac', 'Bagacay', 'Balonga-as', 'Barayong', 'Binalayan', 'Buenavista',
-  'Cagbigti', 'Calunangan', 'Caluwayan', 'Camumucmuc', 'Capacuhan', 'Corocawayan',
-  'Cotmon', 'Dao', 'Flores', 'Gabas', 'Ilag', 'Pinamorotan', 'Poblacion',
-  'San Jose', 'Tagalag', 'Urdaneta', 'Zaragoza',
-].map((b) => ({ value: b, label: b }));
 
 const STATUS_OPTIONS: ComboboxOption[] = [
   { value: 'Active',    label: 'Active' },
@@ -26,7 +11,6 @@ const STATUS_OPTIONS: ComboboxOption[] = [
   { value: 'Revised',   label: 'Revised' },
 ];
 
-// TODO: fetch from Supabase — query tax_declarations joined with taxpayers, properties, barangays
 type Property = {
   id: number;
   tdNumber: string;
@@ -40,7 +24,22 @@ type Property = {
   assessedValue: string;
   status: string;
 };
-const properties: Property[] = [];
+
+type ListingApiRow = {
+  id: number;
+  td_number: string | null;
+  classification: string | null;
+  land_area: number | null;
+  total_market_value: number | null;
+  land_assessment_level: number | null;
+  total_assessed_value: number | null;
+  status: string | null;
+  taxpayers: { owner_name: string | null } | { owner_name: string | null }[] | null;
+  properties:
+    | { pin: string | null; barangays: { name: string | null } | { name: string | null }[] | null }
+    | { pin: string | null; barangays: { name: string | null } | { name: string | null }[] | null }[]
+    | null;
+};
 
 const classificationColors: Record<string, string> = {
   Residential: 'bg-blue-50 text-blue-700',
@@ -62,6 +61,71 @@ export default function PropertyListingPage() {
   const [classFilter, setClassFilter] = useState('');
   const [barangayFilter, setBarangayFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+
+  const pageSize = 20;
+
+  useEffect(() => {
+    async function loadListing() {
+      setLoading(true);
+      setError('');
+
+      try {
+        const res = await fetch('/api/properties/listing', { cache: 'no-store' });
+        const body = await res.json();
+
+        if (!res.ok) {
+          setError(body?.error || 'Unable to load property listing.');
+          setProperties([]);
+          return;
+        }
+
+        const rows: ListingApiRow[] = Array.isArray(body?.rows) ? body.rows : [];
+        const mapped: Property[] = rows.map((row) => {
+          const taxpayer = Array.isArray(row.taxpayers) ? row.taxpayers[0] : row.taxpayers;
+          const property = Array.isArray(row.properties) ? row.properties[0] : row.properties;
+          const barangayRaw = property?.barangays;
+          const barangay = Array.isArray(barangayRaw) ? barangayRaw[0] : barangayRaw;
+
+          return {
+            id: row.id,
+            tdNumber: row.td_number || '—',
+            pin: property?.pin || '—',
+            owner: taxpayer?.owner_name || '—',
+            classification: row.classification || '—',
+            barangay: barangay?.name || '—',
+            landArea: row.land_area == null ? '—' : row.land_area.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            marketValue: row.total_market_value == null ? '—' : `₱${row.total_market_value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            assessLevel: row.land_assessment_level == null ? '—' : `${Number(row.land_assessment_level).toFixed(2)}%`,
+            assessedValue: row.total_assessed_value == null ? '—' : `₱${row.total_assessed_value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            status: row.status || '—',
+          };
+        });
+
+        setProperties(mapped);
+      } catch {
+        setError('Unable to load property listing.');
+        setProperties([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadListing();
+  }, []);
+
+  const classOptions = useMemo<ComboboxOption[]>(() => {
+    const values = [...new Set(properties.map((p) => p.classification).filter((v) => v && v !== '—'))].sort();
+    return values.map((v) => ({ value: v, label: v }));
+  }, [properties]);
+
+  const barangayOptions = useMemo<ComboboxOption[]>(() => {
+    const values = [...new Set(properties.map((p) => p.barangay).filter((v) => v && v !== '—'))].sort();
+    return values.map((v) => ({ value: v, label: v }));
+  }, [properties]);
 
   const filtered = properties.filter((p) =>
     (p.tdNumber.toLowerCase().includes(search.toLowerCase()) ||
@@ -71,6 +135,22 @@ export default function PropertyListingPage() {
     (barangayFilter ? p.barangay === barangayFilter : true) &&
     (statusFilter ? p.status === statusFilter : true)
   );
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, classFilter, barangayFilter, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const startIdx = (safePage - 1) * pageSize;
+  const pageRows = filtered.slice(startIdx, startIdx + pageSize);
+  const summaryStart = filtered.length === 0 ? 0 : startIdx + 1;
+  const summaryEnd = Math.min(startIdx + pageSize, filtered.length);
+
+  const totalProperties = properties.length;
+  const totalResidential = properties.filter((p) => p.classification === 'Residential').length;
+  const totalCommercial = properties.filter((p) => p.classification === 'Commercial').length;
+  const totalAgricultural = properties.filter((p) => p.classification === 'Agricultural').length;
 
   return (
     <div className="w-full">
@@ -98,13 +178,19 @@ export default function PropertyListingPage() {
         </button>
       </header>
 
+      {error && (
+        <div className="mb-4 rounded-sm border border-red-200 bg-red-50 px-4 py-2 font-inter text-xs text-red-700">
+          {error}
+        </div>
+      )}
+
       {/* Stats */}
       <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
-          { label: 'Total Properties', value: '3,482', color: 'text-[#595a5d]' },
-          { label: 'Residential', value: '2,104', color: 'text-blue-600' },
-          { label: 'Commercial', value: '648', color: 'text-amber-600' },
-          { label: 'Agricultural', value: '730', color: 'text-green-600' },
+          { label: 'Total Properties', value: totalProperties.toLocaleString('en-PH'), color: 'text-[#595a5d]' },
+          { label: 'Residential', value: totalResidential.toLocaleString('en-PH'), color: 'text-blue-600' },
+          { label: 'Commercial', value: totalCommercial.toLocaleString('en-PH'), color: 'text-amber-600' },
+          { label: 'Agricultural', value: totalAgricultural.toLocaleString('en-PH'), color: 'text-green-600' },
         ].map((s) => (
           <div key={s.label} className="rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
             <p className="font-inter text-xs text-slate-400">{s.label}</p>
@@ -130,7 +216,7 @@ export default function PropertyListingPage() {
             <Combobox
               placeholder="All Classifications"
               searchPlaceholder="Search classification..."
-              options={CLASS_OPTIONS}
+              options={classOptions}
               value={classFilter}
               onChange={setClassFilter}
               triggerClassName="rounded-sm text-xs py-1.5 text-slate-500"
@@ -140,7 +226,7 @@ export default function PropertyListingPage() {
             <Combobox
               placeholder="All Barangays"
               searchPlaceholder="Search barangay..."
-              options={BARANGAY_OPTIONS}
+              options={barangayOptions}
               value={barangayFilter}
               onChange={setBarangayFilter}
               triggerClassName="rounded-sm text-xs py-1.5 text-slate-500"
@@ -171,12 +257,16 @@ export default function PropertyListingPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={11} className="py-10 text-center text-slate-400">Loading property records...</td>
+                </tr>
+              ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="py-10 text-center text-slate-400">No properties found matching your filters.</td>
                 </tr>
               ) : (
-                filtered.map((p) => (
+                pageRows.map((p) => (
                   <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-[#595a5d] whitespace-nowrap">{p.tdNumber}</td>
                     <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{p.pin}</td>
@@ -210,11 +300,27 @@ export default function PropertyListingPage() {
           </table>
         </div>
         <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3">
-          <p className="font-inter text-xs text-slate-400">Showing {filtered.length} of 3,482 properties</p>
+          <p className="font-inter text-xs text-slate-400">
+            Showing {summaryStart}-{summaryEnd} of {filtered.length} properties
+          </p>
           <div className="flex items-center gap-1">
-            <button className="cursor-pointer p-1 text-slate-400 hover:text-slate-600"><ChevronLeft size={14} /></button>
-            <span className="font-inter px-2 text-xs text-slate-500">Page 1 of 116</span>
-            <button className="cursor-pointer p-1 text-slate-400 hover:text-slate-600"><ChevronRight size={14} /></button>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage <= 1}
+              className="cursor-pointer p-1 text-slate-400 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span className="font-inter px-2 text-xs text-slate-500">Page {safePage} of {totalPages}</span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage >= totalPages}
+              className="cursor-pointer p-1 text-slate-400 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ChevronRight size={14} />
+            </button>
           </div>
         </div>
       </div>

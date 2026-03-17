@@ -1,13 +1,30 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ValidatedInput } from "@/components/ui/ValidatedInput";
-import { ArrowLeft, Save, UserRound, MapPin, Phone, Mail } from "lucide-react";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
+import {
+  Select,
+  SelectContent,
+  SelectIcon,
+  SelectItem,
+  SelectItemText,
+  SelectTrigger,
+  SelectValue,
+  SelectViewport,
+} from "@/components/ui/select";
+import { ArrowLeft, Save, UserRound, MapPin, Phone, Mail, ChevronDown } from "lucide-react";
 
-const OWNER_TYPE_OPTIONS = ["Individual", "Corporate", "Government"] as const;
+const OWNER_TYPE_OPTIONS = ["Individual", "Corporation", "Government"] as const;
+const SUFFIX_OPTIONS = ["Jr.", "Sr.", "II", "III", "IV", "V"] as const;
 type OwnerType = (typeof OWNER_TYPE_OPTIONS)[number];
+
+type BarangayOption = {
+  id: number;
+  name: string;
+};
 
 type FormState = {
   first_name: string;
@@ -16,7 +33,8 @@ type FormState = {
   suffix: string;
   tin: string;
   owner_type: OwnerType | "";
-  address: string;
+  barangay_id: string;
+  address_details: string;
   phone: string;
   email: string;
 };
@@ -28,7 +46,8 @@ const initialForm: FormState = {
   suffix: "",
   tin: "",
   owner_type: "",
-  address: "",
+  barangay_id: "",
+  address_details: "",
   phone: "",
   email: "",
 };
@@ -36,6 +55,8 @@ const initialForm: FormState = {
 export default function RegisterTaxpayerPage() {
   const router = useRouter();
   const [form, setForm] = useState<FormState>(initialForm);
+  const [barangays, setBarangays] = useState<BarangayOption[]>([]);
+  const [isLoadingBarangays, setIsLoadingBarangays] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -47,13 +68,78 @@ export default function RegisterTaxpayerPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchBarangays = async () => {
+      setIsLoadingBarangays(true);
+
+      try {
+        const response = await fetch("/api/barangays/list", {
+          cache: "no-store",
+        });
+        const data = (await response.json()) as {
+          error?: string;
+          barangays?: BarangayOption[];
+        };
+
+        if (!response.ok) {
+          if (isMounted) {
+            setBarangays([]);
+          }
+          return;
+        }
+
+        if (isMounted) {
+          setBarangays(data.barangays ?? []);
+        }
+      } catch {
+        if (isMounted) {
+          setBarangays([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingBarangays(false);
+        }
+      }
+    };
+
+    fetchBarangays();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const missingRequired = useMemo(
     () =>
       !form.first_name.trim() ||
       !form.last_name.trim() ||
       !form.owner_type ||
-      !form.address.trim(),
+      !form.barangay_id.trim() ||
+      !form.address_details.trim(),
     [form],
+  );
+
+  const selectedBarangayName = useMemo(
+    () =>
+      barangays.find((barangay) => String(barangay.id) === form.barangay_id)
+        ?.name || "",
+    [barangays, form.barangay_id],
+  );
+
+  const composedAddress = useMemo(
+    () => [form.address_details.trim(), selectedBarangayName].filter(Boolean).join(", "),
+    [form.address_details, selectedBarangayName],
+  );
+
+  const barangayOptions = useMemo<ComboboxOption[]>(
+    () =>
+      barangays.map((barangay) => ({
+        value: String(barangay.id),
+        label: barangay.name,
+      })),
+    [barangays],
   );
 
   let previewName =
@@ -77,10 +163,23 @@ export default function RegisterTaxpayerPage() {
 
     setIsSubmitting(true);
     try {
+      const payload = {
+        first_name: form.first_name,
+        middle_name: form.middle_name,
+        last_name: form.last_name,
+        suffix: form.suffix,
+        tin: form.tin,
+        owner_type: form.owner_type,
+        barangay_id: Number(form.barangay_id),
+        address_details: form.address_details,
+        phone: form.phone,
+        email: form.email,
+      };
+
       const res = await fetch("/api/taxpayers/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
       const data = (await res.json()) as { error?: string; message?: string };
@@ -120,25 +219,6 @@ export default function RegisterTaxpayerPage() {
             <p className="font-inter mt-1 text-xs text-slate-400">
               Create a new taxpayer profile in the system.
             </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => router.push("/taxpayers")}
-              className="font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={isSubmitting}
-              className="font-inter h-10 inline-flex cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <Save className="h-4 w-4" />
-              {isSubmitting ? "Saving..." : "Save Taxpayer"}
-            </button>
           </div>
         </div>
       </header>
@@ -186,12 +266,44 @@ export default function RegisterTaxpayerPage() {
                 value={form.last_name}
                 onChange={(v) => updateField("last_name", v)}
               />
-              <Field
-                label="Suffix"
-                placeholder="Jr., Sr., III…"
-                value={form.suffix}
-                onChange={(v) => updateField("suffix", v)}
-              />
+              <div>
+                <label className="font-inter mb-1 block text-xs font-medium text-slate-600">
+                  Suffix
+                </label>
+                <Select
+                  value={form.suffix}
+                  onValueChange={(value) =>
+                    updateField("suffix", value === "__none__" ? "" : value)
+                  }
+                >
+                  <SelectTrigger className="cursor-pointer font-inter flex h-9 w-full items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-1 text-sm text-slate-900 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-slate-200">
+                    <SelectValue placeholder="Select suffix" />
+                    <SelectIcon>
+                      <ChevronDown className="h-4 w-4 opacity-60" />
+                    </SelectIcon>
+                  </SelectTrigger>
+
+                  <SelectContent className="z-50 min-w-(--radix-select-trigger-width) rounded-md border border-gray-200 bg-white shadow-sm">
+                    <SelectViewport className="p-1">
+                      <SelectItem
+                        value="__none__"
+                        className="font-inter cursor-pointer rounded px-3 py-2 text-sm text-slate-700 outline-none data-highlighted:bg-slate-100"
+                      >
+                        <SelectItemText>None</SelectItemText>
+                      </SelectItem>
+                      {SUFFIX_OPTIONS.map((suffix) => (
+                        <SelectItem
+                          key={suffix}
+                          value={suffix}
+                          className="font-inter cursor-pointer rounded px-3 py-2 text-sm text-slate-700 outline-none data-highlighted:bg-slate-100"
+                        >
+                          <SelectItemText>{suffix}</SelectItemText>
+                        </SelectItem>
+                      ))}
+                    </SelectViewport>
+                  </SelectContent>
+                </Select>
+              </div>
               <ValidatedInput
                 label="Tin No."
                 type="tin"
@@ -237,12 +349,25 @@ export default function RegisterTaxpayerPage() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <Field
-                  label="Address"
+                <Combobox
+                  label="Barangay"
                   required
-                  placeholder="Street, Barangay, Municipality"
-                  value={form.address}
-                  onChange={(v) => updateField("address", v)}
+                  value={form.barangay_id}
+                  onChange={(value) => updateField("barangay_id", value)}
+                  options={barangayOptions}
+                  disabled={isLoadingBarangays}
+                  placeholder={isLoadingBarangays ? "Loading barangays..." : "Select barangay"}
+                  searchPlaceholder="Search barangay..."
+                  emptyLabel="No barangay found."
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Field
+                  label="Other Address Details"
+                  required
+                  placeholder="Street, Purok, Sitio, Landmark"
+                  value={form.address_details}
+                  onChange={(v) => updateField("address_details", v)}
                 />
               </div>
               <ValidatedInput
@@ -268,13 +393,34 @@ export default function RegisterTaxpayerPage() {
         </div>
 
         {/* Summary */}
-        <div>
+        <div className="space-y-6 lg:sticky lg:top-8 lg:self-start flex flex-col-reverse lg:flex-col">
+          <div className="sticky top-0 z-40 mb-6 flex justify-end py-1.5 w-full px-4 md:px-0">
+            <div className="flex w-full items-center gap-2 mb-2 mt-4 md:mt-0 md:w-auto">
+              <button
+                type="button"
+                onClick={() => router.push("/taxpayers")}
+                className="flex-1 justify-center md:flex-none font-inter inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isSubmitting}
+                className="flex-1 justify-center md:flex-none font-inter h-10 inline-flex cursor-pointer items-center gap-2 rounded bg-[#0F172A] px-5 text-xs font-medium text-[#8A9098] transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Save className="h-4 w-4" />
+                {isSubmitting ? "Saving..." : "Save Taxpayer"}
+              </button>
+            </div>
+          </div>
+
           <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="font-inter text-sm font-semibold text-[#848794]">
               Summary
             </h2>
             <p className="font-inter mt-1 text-xs text-slate-400">
-              Required fields: First Name, Last Name, Owner Type, Address.
+              Required fields: First Name, Last Name, Owner Type, Barangay, Other Address Details.
             </p>
 
             <div className="mt-4 space-y-3">
@@ -285,8 +431,12 @@ export default function RegisterTaxpayerPage() {
                 value={form.owner_type || "(Required)"}
               />
               <SummaryRow
+                label="Barangay"
+                value={selectedBarangayName || "(Required)"}
+              />
+              <SummaryRow
                 label="Address"
-                value={form.address.trim() ? form.address.trim() : "(Required)"}
+                value={composedAddress || "(Required)"}
               />
             </div>
 
