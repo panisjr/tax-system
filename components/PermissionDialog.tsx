@@ -21,7 +21,7 @@ interface PermissionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  permission?: Permission | null; // If present, we are in EDIT mode
+  permission?: Permission | null; 
 }
 
 export function PermissionDialog({
@@ -42,7 +42,6 @@ export function PermissionDialog({
   }, [permission, isOpen]);
 
   const handleScrubbedChange = (val: string) => {
-    // Allow alphanumeric, spaces, apostrophes, dots, underscores, hyphens. Blocks emojis.
     const clean = val.replace(/[^a-zA-Z0-9 .\_\-']/g, ""); 
     setName(clean);
   };
@@ -102,13 +101,13 @@ export function PermissionDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} className="font-inter">
+          <Button variant="outline" onClick={onClose} className="font-inter cursor-pointer">
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting || !name}
-            className="bg-[#0F172A] hover:bg-slate-800 font-inter text-white"
+            className="bg-[#0F172A] hover:bg-slate-800 font-inter text-white cursor-pointer"
           >
             {isSubmitting
               ? "Processing..."
