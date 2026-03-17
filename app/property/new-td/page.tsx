@@ -516,9 +516,9 @@ export default function NewTaxDeclarationPage() {
                 </p>
               </div>
 
-              <Field label="Tax Identification Number (TIN)" placeholder="Auto-filled from taxpayer" value={tin} onChange={setTin} />
+              <Field label="Tax Identification Number (TIN)" placeholder="Auto-filled from taxpayer" value={tin} onChange={setTin} readOnly />
               <div className="sm:col-span-2">
-                <Field label="Owner Address" placeholder="Complete address of owner" value={ownerAddress} onChange={setOwnerAddress} required />
+                <Field label="Owner Address" placeholder="Complete address of owner" value={ownerAddress} onChange={setOwnerAddress} required readOnly />
               </div>
 
               {/* Owner Type — toggle buttons (3 options, no search needed) */}
@@ -841,6 +841,7 @@ function Field({
   required = false,
   inputMode,
   maxLength,
+  readOnly = false,
 }: {
   label: string;
   placeholder?: string;
@@ -849,20 +850,22 @@ function Field({
   required?: boolean;
   inputMode?: 'text' | 'numeric' | 'decimal' | 'tel' | 'search' | 'email' | 'url';
   maxLength?: number;
+  readOnly?: boolean;
 }) {
   return (
     <div>
       <label className="font-inter text-xs font-medium text-slate-600">
         {label}{required && <span className="ml-1 text-rose-500">*</span>}
       </label>
-      <div className="mt-1 flex items-center rounded-md border border-gray-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-slate-200">
+      <div className={`mt-1 flex items-center rounded-md border px-3 py-2 ${readOnly ? 'border-gray-200 bg-gray-100' : 'border-gray-200 bg-white focus-within:ring-2 focus-within:ring-slate-200'}`}>
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           inputMode={inputMode}
           maxLength={maxLength}
-          className="w-full bg-transparent font-inter text-sm text-slate-900 outline-none placeholder:text-slate-400"
+          readOnly={readOnly}
+          className={`w-full bg-transparent font-inter text-sm outline-none placeholder:text-slate-400 ${readOnly ? 'text-slate-500 cursor-not-allowed' : 'text-slate-900'}`}
         />
       </div>
     </div>
