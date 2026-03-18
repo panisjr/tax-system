@@ -1,24 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
   Clock,
   Download,
   Search,
 } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/table";
+import { 
+  ColumnDef, 
+} from "@tanstack/react-table";
+import { DataTable } from "@/components/ui/tanstack-table";
 
 type DelinquentTaxpayer = {
   id: number;
@@ -30,6 +24,14 @@ type DelinquentTaxpayer = {
   total_due: string;
   years_due: string;
 };
+
+type DelinquentsResponse = {
+  data: DelinquentTaxpayer[];
+  meta: {
+    totalItems: number;
+    totalPages: number;
+  };
+} | null;
 
 const bucketColors: Record<DelinquentTaxpayer["bucket"], string> = {
   Current: "bg-emerald-50 text-emerald-700 border-emerald-100",
@@ -47,60 +49,117 @@ const bucketPanels = [
   { bucket: "5+ Years", total: "348", balance: "PHP 13.5M", accent: "border-rose-200 bg-rose-50/40" },
 ];
 
-function TableSkeleton() {
-  return (
-    <div className="w-full space-y-4">
-      <div className="grid grid-cols-5 gap-4">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-24 animate-pulse rounded-lg bg-gray-100" />
-        ))}
-      </div>
-      <div className="h-96 animate-pulse rounded-lg bg-gray-50" />
-    </div>
-  );
+function fetchDelinquents(
+  search: string, 
+  pageIndex: number, 
+  pageSize: number
+): Promise<DelinquentsResponse> {
+  const params = new URLSearchParams({
+    search,
+    page: (pageIndex + 1).toString(),
+    limit: pageSize.toString(),
+  });
+
+  return fetch(`/api/taxpayers/delinquents?${params}`)
+    .then(res => {
+      if (!res.ok) {
+        throw new Error("Failed to fetch");
+      }
+      return res.json();
+    });
 }
 
 export default function ViewDelinquenciesPage() {
   const router = useRouter();
-  const [delinquents, setDelinquents] = useState<DelinquentTaxpayer[]>([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0); 
-  const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 10; // Added missing constant
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({
-          search: search,
-          page: currentPage.toString(),
-          limit: itemsPerPage.toString(),
-        });
+  const { 
+    data: delinquentsData, 
+    isLoading, 
+    error 
+  } = useQuery({
+    queryKey: ["delinquents", { search, pagination: pagination.pageIndex }],
+    queryFn: () => fetchDelinquents(search, pagination.pageIndex, pagination.pageSize),
+    staleTime: 5 * 60 * 1000,
+  });
 
-        const response = await fetch(`/api/taxpayers/delinquents?${params}`);
-        const result = await response.json();
+  const totalCount = delinquentsData?.meta?.totalItems ?? 0;
+  const totalPages = delinquentsData?.meta?.totalPages ?? 1;
+  const delinquents = delinquentsData?.data ?? [];
 
-        setDelinquents(result.data);
-        setTotalPages(result.meta.totalPages);
-        setTotalCount(result.meta.totalItems);
-      } catch (error) {
-        console.error("Error fetching delinquents:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const columns = useMemo<ColumnDef<DelinquentTaxpayer>[]>(
+    () => [
+      {
+        accessorKey: "full_name",
+        header: "Taxpayer Name",
+      },
+      {
+        accessorKey: "tin",
+        header: "TIN",
+        cell: ({ row }) => (
+          <span className="text-xs font-mono">{row.original.tin}</span>
+        ),
+      },
+      {
+        accessorKey: "barangay_name",
+        header: "Barangay",
+      },
+      {
+        accessorKey: "property_count",
+        header: () => <span className="text-center">Prop.</span>,
+        cell: ({ row }) => (
+          <div className="text-center font-medium">
+            {row.original.property_count}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "bucket",
+        header: "Aging Bucket",
+        cell: ({ row }) => {
+          const bucket = row.original.bucket as DelinquentTaxpayer["bucket"];
+          return (
+            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${bucketColors[bucket]}`}>
+              {bucket}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "total_due",
+        header: () => <span className="text-right">Total Due</span>,
+        cell: ({ row }) => (
+          <div className="text-right font-bold text-slate-900">
+            {row.original.total_due}
+          </div>
+        ),
+      },
+      {
+        id: "actions",
+        header: () => <span className="text-center">Actions</span>,
+        cell: () => (
+          <div className="text-center">
+            <button className="rounded-lg px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors">
+              View Details
+            </button>
+          </div>
+        ),
+      },
+    ],
+    []
+  );
 
-    const timer = setTimeout(() => {
-      fetchData();
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [search, currentPage]);
-
-  if (loading) return <TableSkeleton />;
+  if (error) {
+    return (
+      <div className="flex h-64 items-center justify-center text-slate-500">
+        Error loading delinquents. Please try again.
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -125,7 +184,7 @@ export default function ViewDelinquenciesPage() {
       </header>
 
       {/* Aging Buckets */}
-      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3 xl:grid-cols-5">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3 xl:grid-cols-5 text-center">
         {bucketPanels.map((panel) => (
           <div key={panel.bucket} className={`rounded-xl border p-5 shadow-sm transition-transform hover:scale-[1.02] ${panel.accent}`}>
             <div className="flex items-center justify-between">
@@ -151,7 +210,7 @@ export default function ViewDelinquenciesPage() {
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
-                setCurrentPage(1); // Reset to page 1 on new search
+                setPagination(prev => ({ ...prev, pageIndex: 0 }));
               }}
               className="w-full rounded-lg border border-gray-200 bg-slate-50 py-2 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-slate-200 transition-all"
             />
@@ -163,76 +222,18 @@ export default function ViewDelinquenciesPage() {
         </div>
       </div>
 
-      {/* Table Section */}
+      {/* TanStack DataTable - Fully replaces old manual implementation */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <TableContainer>
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-slate-50/50">
-                <TableHead>Taxpayer Name</TableHead>
-                <TableHead>TIN</TableHead>
-                <TableHead>Barangay</TableHead>
-                <TableHead align="center">Prop.</TableHead>
-                <TableHead>Aging Bucket</TableHead>
-                <TableHead align="right">Total Due</TableHead>
-                <TableHead align="center">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {delinquents.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-32 text-center text-slate-400 font-inter">No matching records found.</TableCell>
-                </TableRow>
-              ) : (
-                delinquents.map((taxpayer) => (
-                  <TableRow key={taxpayer.id} className="hover:bg-slate-50/50 transition-colors">
-                    <TableCell className="font-semibold text-slate-700">{taxpayer.full_name}</TableCell>
-                    <TableCell className="text-xs text-slate-500 font-mono">{taxpayer.tin}</TableCell>
-                    <TableCell className="text-slate-600">{taxpayer.barangay_name}</TableCell>
-                    <TableCell align="center" className="font-medium">{taxpayer.property_count}</TableCell>
-                    <TableCell>
-                      <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${bucketColors[taxpayer.bucket]}`}>
-                        {taxpayer.bucket}
-                      </span>
-                    </TableCell>
-                    <TableCell align="right" className="font-bold text-slate-900">{taxpayer.total_due}</TableCell>
-                    <TableCell align="center">
-                      <button className="rounded-lg px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 cursor-pointer">View Details</button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        {/* Pagination Footer */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4 bg-white font-inter">
-            <p className="text-xs text-slate-500">
-              Showing <span className="font-bold text-slate-700">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
-              <span className="font-bold text-slate-700">{Math.min(currentPage * itemsPerPage, totalCount)}</span> of {totalCount}
-            </p>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                disabled={currentPage === 1}
-                className="p-1.5 rounded-lg border border-gray-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <span className="text-xs font-bold text-slate-600">Page {currentPage} of {totalPages}</span>
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="p-1.5 rounded-lg border border-gray-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
+        <DataTable
+          columns={columns}
+          data={delinquents}
+          pageCount={totalPages}
+          loading={isLoading}
+          pagination={pagination}
+          onPaginationChange={setPagination}
+        />
       </div>
     </div>
   );
 }
+
