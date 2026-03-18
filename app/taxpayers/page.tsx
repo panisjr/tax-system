@@ -61,6 +61,7 @@ export default function TaxPayersPage() {
             description='Taxpayers with unpaid or overdue RPT'
             buttonText='View Delinquencies'
             variant='secondary'
+            onButtonClick={() => router.push('/taxpayers/view-delinquencies')}
           />
           <RegistryCard
             icon={FileText}
