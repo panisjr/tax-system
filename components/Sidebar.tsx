@@ -50,7 +50,7 @@ const menuItems: MenuItem[] = [
   { name: "Assessment & Billing", path: "/assessment", icon: Wallet, },
   { name: "Payments & OR Monitoring", path: "/payments", icon: FileText },
   { name: "Barangay Performance", path: "/barangay", icon: MapPin },
-  { name: "Delinquencies & Notices", path: "/deliquencies", icon: Bell },
+  { name: "Delinquencies & Notices", path: "/delinquencies", icon: Bell },
   { name: "Document Tracking", path: "/document", icon: Folder },
   { name: "User & Role Management", path: "/user", icon: UserCog },
 ];
@@ -102,7 +102,7 @@ export default function AppSidebar({
               <SidebarMenuItem key={item.name}>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === item.path}
+                  isActive={pathname === item.path || pathname.startsWith(`${item.path}/`)}
                   tooltip={item.name}
                   className="h-auto px-3 text-[#A0A5B2] hover:font-semibold data-[active=true]:bg-blue-50! data-[active=true]:text-blue-600!"
                 >
