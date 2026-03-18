@@ -5,7 +5,7 @@ import MonthlyCollectionComponent from "@/components/MonthlyCollectionComponent"
 
 export default function Dashboard() {
   return (
-    <main className="bg-[#f0f4f7]">
+    <main>
       <div className="w-full mb-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className={`font-lexend gi text-2xl font-bold text-[#595a5d]`}>
