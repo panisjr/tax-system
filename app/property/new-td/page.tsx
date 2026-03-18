@@ -724,28 +724,27 @@ export default function NewTaxDeclarationPage() {
         </button>
       </header>
 
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <div className="space-y-6 lg:col-span-2">
-        <div className="flex mb-11 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="font-lexend text-2xl font-bold text-[#595a5d]">
-              New Tax Declaration
-            </h1>
-            <p className="font-inter mt-1 text-xs text-slate-400">
-              Create Tax Declaration for Newly Declared Properties –
-              Municipality of Sta. Rita, Samar
-            </p>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <div className="flex mb-11 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="font-lexend text-2xl font-bold text-[#595a5d]">
+                New Tax Declaration
+              </h1>
+              <p className="font-inter mt-1 text-xs text-slate-400">
+                Create Tax Declaration for Newly Declared Properties –
+                Municipality of Sta. Rita, Samar
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Mounted only while printing — unmounted by the afterprint event */}
-        {printData && (
-          <div className="sr-only print:not-sr-only">
-            <TaxDeclarationPrint data={printData} />
-          </div>
-        )}
+          {/* Mounted only while printing — unmounted by the afterprint event */}
+          {printData && (
+            <div className="sr-only print:not-sr-only">
+              <TaxDeclarationPrint data={printData} />
+            </div>
+          )}
 
-        
           <div className="space-y-6 lg:col-span-2">
             {/* Declaration Information */}
             <div className="lg:-mt-3">
@@ -1354,9 +1353,7 @@ export default function NewTaxDeclarationPage() {
           </div>
         </div>
       </div>
-      
     </div>
-    
   );
 }
 
