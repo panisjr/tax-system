@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -30,69 +30,6 @@ type DelinquentTaxpayer = {
   total_due: string;
   years_due: string;
 };
-
-const mockDelinquents: DelinquentTaxpayer[] = [
-  {
-    id: 1,
-    full_name: "Ramon C. Dela Cruz",
-    tin: "123-456-789-000",
-    barangay_name: "San Isidro",
-    property_count: 2,
-    bucket: "1 Year",
-    total_due: "PHP 184,320",
-    years_due: "2025",
-  },
-  {
-    id: 2,
-    full_name: "Lourdes M. Angeles",
-    tin: "234-567-890-000",
-    barangay_name: "Mabini",
-    property_count: 1,
-    bucket: "2 Years",
-    total_due: "PHP 312,880",
-    years_due: "2024-2025",
-  },
-  {
-    id: 3,
-    full_name: "Golden Fields Realty Corp",
-    tin: "345-678-901-000",
-    barangay_name: "Poblacion East",
-    property_count: 5,
-    bucket: "3 Years",
-    total_due: "PHP 1,240,000",
-    years_due: "2023-2025",
-  },
-  {
-    id: 4,
-    full_name: "Teresita P. Navarro",
-    tin: "456-789-012-000",
-    barangay_name: "Sta. Elena",
-    bucket: "5+ Years",
-    property_count: 1,
-    total_due: "PHP 402,150",
-    years_due: "2020-2025",
-  },
-  {
-    id: 5,
-    full_name: "Northpoint Agri Ventures",
-    tin: "567-890-123-000",
-    barangay_name: "Bagong Silang",
-    property_count: 3,
-    bucket: "5+ Years",
-    total_due: "PHP 918,540",
-    years_due: "2019-2025",
-  },
-  ...Array.from({ length: 20 }, (_, i) => ({
-    id: 6 + i,
-    full_name: `Taxpayer ${6 + i}`,
-    tin: `789-${i}12-${345 + i}00`,
-    barangay_name: "Demo Barangay",
-    property_count: 1 + Math.floor(Math.random() * 4),
-    bucket: ["Current", "1 Year", "2 Years", "3 Years", "5+ Years"][Math.floor(Math.random() * 5)] as DelinquentTaxpayer["bucket"],
-    total_due: `PHP ${Math.floor(Math.random() * 500000) + 50000}`,
-    years_due: "2024-2025",
-  })),
-];
 
 const bucketColors: Record<DelinquentTaxpayer["bucket"], string> = {
   Current: "bg-emerald-50 text-emerald-700 border-emerald-100",
@@ -129,33 +66,39 @@ export default function ViewDelinquenciesPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [totalCount, setTotalCount] = useState(0); 
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 10; // Added missing constant
 
   useEffect(() => {
-    const loadData = async () => {
+    const fetchData = async () => {
       setLoading(true);
-      await new Promise(r => setTimeout(r, 800)); // Smooth loading feel
-      setDelinquents(mockDelinquents);
-      setLoading(false);
+      try {
+        const params = new URLSearchParams({
+          search: search,
+          page: currentPage.toString(),
+          limit: itemsPerPage.toString(),
+        });
+
+        const response = await fetch(`/api/taxpayers/delinquents?${params}`);
+        const result = await response.json();
+
+        setDelinquents(result.data);
+        setTotalPages(result.meta.totalPages);
+        setTotalCount(result.meta.totalItems);
+      } catch (error) {
+        console.error("Error fetching delinquents:", error);
+      } finally {
+        setLoading(false);
+      }
     };
-    loadData();
-  }, []);
 
-  const filtered = useMemo(() => {
-    const query = search.toLowerCase();
-    return delinquents.filter((item) =>
-      item.full_name.toLowerCase().includes(query) ||
-      item.tin.toLowerCase().includes(query) ||
-      item.barangay_name.toLowerCase().includes(query)
-    );
-  }, [search, delinquents]);
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 300);
 
-  const paginated = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filtered.slice(start, start + itemsPerPage);
-  }, [filtered, currentPage]);
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+    return () => clearTimeout(timer);
+  }, [search, currentPage]);
 
   if (loading) return <TableSkeleton />;
 
@@ -172,25 +115,21 @@ export default function ViewDelinquenciesPage() {
 
       <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-lexend text-2xl font-bold text-[#595a5d]">
-            Delinquent Accounts
-          </h1>
-          <p className="font-inter mt-1 text-xs text-slate-400">
-            Monitor and manage overdue Real Property Tax obligations
-          </p>
+          <h1 className="font-lexend text-2xl font-bold text-[#595a5d]">Delinquent Accounts</h1>
+          <p className="font-inter mt-1 text-xs text-slate-400">Monitor overdue Real Property Tax obligations</p>
         </div>
-        <button className="font-inter inline-flex items-center gap-2 rounded-lg bg-[#0f172a] px-5 py-2.5 text-xs font-medium text-white transition-colors hover:bg-slate-800 cursor-pointer">
+        <button className="font-inter inline-flex items-center gap-2 rounded-lg bg-[#0f172a] px-5 py-2.5 text-xs font-medium text-white hover:bg-slate-800 cursor-pointer">
           <Download className="h-4 w-4" />
           Export Delinquency List
         </button>
       </header>
 
-      {/* Aging Buckets Panels */}
+      {/* Aging Buckets */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3 xl:grid-cols-5">
         {bucketPanels.map((panel) => (
           <div key={panel.bucket} className={`rounded-xl border p-5 shadow-sm transition-transform hover:scale-[1.02] ${panel.accent}`}>
             <div className="flex items-center justify-between">
-              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${bucketColors[panel.bucket as DelinquentTaxpayer["bucket"]]}`}>
+              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${bucketColors[panel.bucket as DelinquentTaxpayer["bucket"]]}`}>
                 {panel.bucket}
               </span>
               <div className="font-lexend text-xl font-bold text-slate-700">{panel.total}</div>
@@ -201,7 +140,7 @@ export default function ViewDelinquenciesPage() {
         ))}
       </div>
 
-      {/* Search & Filter Bar */}
+      {/* Search Bar */}
       <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1 max-w-md">
@@ -210,17 +149,21 @@ export default function ViewDelinquenciesPage() {
               type="text"
               placeholder="Search by name, TIN, or barangay..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1); // Reset to page 1 on new search
+              }}
               className="w-full rounded-lg border border-gray-200 bg-slate-50 py-2 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-slate-200 transition-all"
             />
           </div>
           <div className="flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-50 px-3 py-2 rounded-lg border border-gray-100">
             <Clock className="h-4 w-4 text-slate-400" />
-            {filtered.length} Delinquent Accounts Found
+            {totalCount} Delinquent Accounts Found
           </div>
         </div>
       </div>
 
+      {/* Table Section */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <TableContainer>
           <Table>
@@ -236,18 +179,14 @@ export default function ViewDelinquenciesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginated.length === 0 ? (
+              {delinquents.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-32 text-center text-slate-400 font-inter">
-                    No matching records found.
-                  </TableCell>
+                  <TableCell colSpan={7} className="h-32 text-center text-slate-400 font-inter">No matching records found.</TableCell>
                 </TableRow>
               ) : (
-                paginated.map((taxpayer) => (
+                delinquents.map((taxpayer) => (
                   <TableRow key={taxpayer.id} className="hover:bg-slate-50/50 transition-colors">
-                    <TableCell className="font-semibold text-slate-700">
-                      {taxpayer.full_name}
-                    </TableCell>
+                    <TableCell className="font-semibold text-slate-700">{taxpayer.full_name}</TableCell>
                     <TableCell className="text-xs text-slate-500 font-mono">{taxpayer.tin}</TableCell>
                     <TableCell className="text-slate-600">{taxpayer.barangay_name}</TableCell>
                     <TableCell align="center" className="font-medium">{taxpayer.property_count}</TableCell>
@@ -256,13 +195,9 @@ export default function ViewDelinquenciesPage() {
                         {taxpayer.bucket}
                       </span>
                     </TableCell>
-                    <TableCell align="right" className="font-bold text-slate-900">
-                      {taxpayer.total_due}
-                    </TableCell>
+                    <TableCell align="right" className="font-bold text-slate-900">{taxpayer.total_due}</TableCell>
                     <TableCell align="center">
-                      <button className="rounded-lg px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer">
-                        View Details
-                      </button>
+                      <button className="rounded-lg px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 cursor-pointer">View Details</button>
                     </TableCell>
                   </TableRow>
                 ))
@@ -275,24 +210,22 @@ export default function ViewDelinquenciesPage() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4 bg-white font-inter">
             <p className="text-xs text-slate-500">
-              Showing <span className="font-bold text-slate-700">{((currentPage - 1) * itemsPerPage) + 1}</span> to{" "}
-              <span className="font-bold text-slate-700">{Math.min(currentPage * itemsPerPage, filtered.length)}</span> of {filtered.length}
+              Showing <span className="font-bold text-slate-700">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
+              <span className="font-bold text-slate-700">{Math.min(currentPage * itemsPerPage, totalCount)}</span> of {totalCount}
             </p>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                 disabled={currentPage === 1}
-                className="p-1.5 rounded-lg border border-gray-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 rounded-lg border border-gray-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="text-xs font-bold text-slate-600">
-                Page {currentPage} of {totalPages}
-              </span>
+              <span className="text-xs font-bold text-slate-600">Page {currentPage} of {totalPages}</span>
               <button
-                onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="p-1.5 rounded-lg border border-gray-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 rounded-lg border border-gray-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
