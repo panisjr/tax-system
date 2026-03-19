@@ -31,7 +31,8 @@ export async function GET(req: Request) {
           `id, td_number, classification, land_area,
            total_market_value, total_assessed_value, status, effectivity_year,
            taxpayers(
-             id, owner_name, tin, address, owner_type, phone, email
+             id, owner_name, tin, owner_type, phone, email, address_details, barangay_id,
+             barangays(id, name, municipality, province)
            )`,
         )
         .eq('property_id', id)
@@ -51,9 +52,38 @@ export async function GET(req: Request) {
       );
     }
 
+    const declarations = (declsResult.data ?? []).map((decl) => {
+      const taxpayerRaw = decl.taxpayers as
+        | {
+            address_details?: string | null;
+            barangays?: { name?: string | null } | { name?: string | null }[] | null;
+          }
+        | null
+        | undefined;
+
+      const barangayRecord = Array.isArray(taxpayerRaw?.barangays)
+        ? taxpayerRaw?.barangays[0]
+        : taxpayerRaw?.barangays;
+
+      const taxpayer = taxpayerRaw
+        ? {
+            ...taxpayerRaw,
+            address:
+              [taxpayerRaw.address_details?.trim() || '', barangayRecord?.name?.trim() || '']
+                .filter(Boolean)
+                .join(', ') || null,
+          }
+        : taxpayerRaw;
+
+      return {
+        ...decl,
+        taxpayers: taxpayer,
+      };
+    });
+
     return NextResponse.json({
       property: propertyResult.data,
-      declarations: declsResult.data ?? [],
+      declarations,
     });
   } catch {
     return NextResponse.json(

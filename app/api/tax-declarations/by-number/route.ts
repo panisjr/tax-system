@@ -27,7 +27,10 @@ export async function GET(req: NextRequest) {
         *,
         taxpayers (
           id, owner_name, first_name, middle_name, last_name, suffix,
-          tin, address, owner_type, phone, email
+          tin, address_details, barangay_id, owner_type, phone, email,
+          barangays (
+            id, name, municipality, province
+          )
         ),
         properties (
           id, pin, municipality, province,
@@ -57,7 +60,29 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ td: data });
+    const taxpayerRaw = data?.taxpayers as
+      | {
+          address_details?: string | null;
+          barangays?: { name?: string | null } | { name?: string | null }[] | null;
+        }
+      | null
+      | undefined;
+
+    const barangayRecord = Array.isArray(taxpayerRaw?.barangays)
+      ? taxpayerRaw?.barangays[0]
+      : taxpayerRaw?.barangays;
+
+    const taxpayer = taxpayerRaw
+      ? {
+          ...taxpayerRaw,
+          address:
+            [taxpayerRaw.address_details?.trim() || '', barangayRecord?.name?.trim() || '']
+              .filter(Boolean)
+              .join(', ') || null,
+        }
+      : null;
+
+    return NextResponse.json({ td: { ...data, taxpayers: taxpayer } });
   } catch {
     return NextResponse.json(
       { error: 'Unable to fetch tax declaration.' },
