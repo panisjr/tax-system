@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import { Toaster } from "@/components/ui/sonner";
 import InitialSplashGate from "@/components/InitialSplashGate";
+import { Providers } from "./providers";
 import { Lexend } from "next/font/google";
 
 const lexend = Lexend({
@@ -25,11 +26,13 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body className={`${lexend.variable} h-full antialiased hsansen overflow-hidden font-(--font-lexend)`}>
         <InitialSplashGate>
-          <ConditionalLayout>{children}</ConditionalLayout>
+          <Providers>
+            <ConditionalLayout>{children}</ConditionalLayout>
+          </Providers>
         </InitialSplashGate>
         <Toaster position="top-right" />
       </body>
     </html>
   );
-  
 }
+
