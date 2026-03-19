@@ -54,6 +54,7 @@ export default function TaxPayersPage() {
             description='Track payments and official receipts'
             buttonText='View Payments'
             variant='secondary'
+            onButtonClick={() => router.push('/taxpayers/payments')}
           />
           <RegistryCard
             icon={TriangleAlert}
