@@ -54,6 +54,7 @@ export default function TaxPayersPage() {
             description='Track payments and official receipts'
             buttonText='View Payments'
             variant='secondary'
+            onButtonClick={() => router.push('/taxpayers/payments')}
           />
           <RegistryCard
             icon={TriangleAlert}
@@ -61,6 +62,7 @@ export default function TaxPayersPage() {
             description='Taxpayers with unpaid or overdue RPT'
             buttonText='View Delinquencies'
             variant='secondary'
+            onButtonClick={() => router.push('/taxpayers/view-delinquencies')}
           />
           <RegistryCard
             icon={FileText}
