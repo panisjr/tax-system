@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Search, Plus, Eye, SquarePen, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
 import { toast } from 'sonner';
+import {
+  TaxDeclarationPrint,
+  type TaxDeclarationData,
+} from '@/components/print/TaxDeclarationPrint';
 
 const STATUS_OPTIONS: ComboboxOption[] = [
   { value: 'Active',    label: 'Active' },
@@ -134,6 +138,7 @@ export default function PropertyListingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
+  const [printData, setPrintData] = useState<TaxDeclarationData | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingPropertyId, setEditingPropertyId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<Omit<Property, 'id'>>({
@@ -223,6 +228,17 @@ export default function PropertyListingPage() {
     setPage(1);
   }, [search, classFilter, barangayFilter, statusFilter]);
 
+  useEffect(() => {
+    if (!printData) return;
+
+    const t = setTimeout(() => {
+      window.print();
+      window.addEventListener('afterprint', () => setPrintData(null), { once: true });
+    }, 80);
+
+    return () => clearTimeout(t);
+  }, [printData]);
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const startIdx = (safePage - 1) * pageSize;
@@ -284,6 +300,31 @@ export default function PropertyListingPage() {
     closeEditModal();
   }
 
+  async function handlePrintProperty(property: Property) {
+    const tdNumber = property.tdNumber?.trim();
+
+    if (!tdNumber || tdNumber === '—') {
+      toast.error('No TD Number available for this property.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/tax-declarations/by-number?td_number=${encodeURIComponent(tdNumber)}`, {
+        cache: 'no-store',
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data?.td) {
+        toast.error(data?.error || 'Unable to load print data.');
+        return;
+      }
+
+      setPrintData(data.td as TaxDeclarationData);
+    } catch {
+      toast.error('Unable to load print data. Please try again.');
+    }
+  }
+
   return (
     <div className="w-full">
       <button
@@ -313,6 +354,12 @@ export default function PropertyListingPage() {
       {error && (
         <div className="mb-4 rounded-sm border border-red-200 bg-red-50 px-4 py-2 font-inter text-xs text-red-700">
           {error}
+        </div>
+      )}
+
+      {printData && (
+        <div className="sr-only print:not-sr-only">
+          <TaxDeclarationPrint data={printData} />
         </div>
       )}
 
@@ -433,7 +480,13 @@ export default function PropertyListingPage() {
                         >
                           <SquarePen size={14} />
                         </button>
-                        <button title="Print" className="text-slate-400 hover:text-green-600 transition-colors cursor-pointer"><Printer size={14} /></button>
+                        <button
+                          title="Print"
+                          onClick={() => handlePrintProperty(p)}
+                          className="text-slate-400 hover:text-green-600 transition-colors cursor-pointer"
+                        >
+                          <Printer size={14} />
+                        </button>
                       </div>
                     </td>
                   </tr>

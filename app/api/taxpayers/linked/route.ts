@@ -20,7 +20,7 @@ export async function GET(req: Request) {
       supabaseAdmin
         .from('taxpayers')
         .select(
-          'id, owner_name, first_name, middle_name, last_name, suffix, tin, address, owner_type, phone, email',
+          'id, owner_name, first_name, middle_name, last_name, suffix, tin, owner_type, phone, email, address_details, barangay_id, barangays(name)',
         )
         .eq('id', id)
         .single(),
@@ -53,8 +53,29 @@ export async function GET(req: Request) {
       );
     }
 
+    const taxpayerRaw = taxpayerResult.data as
+      | {
+          address_details?: string | null;
+          barangays?: { name?: string | null } | { name?: string | null }[] | null;
+        }
+      | null;
+
+    const barangayRecord = Array.isArray(taxpayerRaw?.barangays)
+      ? taxpayerRaw?.barangays[0]
+      : taxpayerRaw?.barangays;
+
+    const taxpayer = taxpayerRaw
+      ? {
+          ...taxpayerRaw,
+          address:
+            [taxpayerRaw.address_details?.trim() || '', barangayRecord?.name?.trim() || '']
+              .filter(Boolean)
+              .join(', ') || null,
+        }
+      : null;
+
     return NextResponse.json({
-      taxpayer: taxpayerResult.data,
+      taxpayer,
       declarations: declsResult.data ?? [],
     });
   } catch {
