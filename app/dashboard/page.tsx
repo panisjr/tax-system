@@ -1,9 +1,11 @@
 "use client";
 
-import AnalyticsCard from "@/components/AnalyticsCard";
-import MonthlyCollectionComponent from "@/components/MonthlyCollectionComponent";
+import AnalyticsCard from '@/components/AnalyticsCard';
+import MonthlyCollectionComponent from '@/components/MonthlyCollectionComponent';
+import { useRouter } from 'next/navigation';
 
 export default function Dashboard() {
+  const router = useRouter();
   return (
     <main>
       <div className="w-full mb-6">
@@ -47,9 +49,7 @@ export default function Dashboard() {
           </ul>
 
           <div className="mt-10">
-            <button
-              className={`font-inter w-full bg-[#0f1729] hover:bg-slate-800 text-[#949ba3] text-xs font-semibold py-2 px-4 rounded-sm transition-colors shadow-sm cursor-pointer `}
-            >
+            <button onClick={() => router.push('/taxpayers/view-delinquencies')} className={`font-inter w-full bg-[#0f1729] hover:bg-slate-800 text-[#949ba3] text-xs font-semibold py-2 px-4 rounded-sm transition-colors shadow-sm cursor-pointer `}>
               View Delinquencies
             </button>
           </div>
