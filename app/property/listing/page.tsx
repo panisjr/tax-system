@@ -18,6 +18,7 @@ const STATUS_OPTIONS: ComboboxOption[] = [
 
 type Property = {
   id: number;
+  propertyId: number | null;
   tdNumber: string;
   pin: string;
   owner: string;
@@ -30,8 +31,11 @@ type Property = {
   status: string;
 };
 
+type EditablePropertyFields = Omit<Property, 'id' | 'propertyId'>;
+
 type ListingApiRow = {
   id: number;
+  property_id: number | null;
   td_number: string | null;
   classification: string | null;
   land_area: number | null;
@@ -44,6 +48,43 @@ type ListingApiRow = {
     | { pin: string | null; barangays: { name: string | null } | { name: string | null }[] | null }
     | { pin: string | null; barangays: { name: string | null } | { name: string | null }[] | null }[]
     | null;
+};
+
+type ViewPropertyData = {
+  id: number;
+  pin: string | null;
+  street: string | null;
+  lot_number: string | null;
+  survey_number: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  barangays: { name: string | null } | { name: string | null }[] | null;
+};
+
+type ViewTaxpayerData = {
+  owner_name?: string | null;
+  tin?: string | null;
+  owner_type?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+};
+
+type ViewDeclarationData = {
+  id: number;
+  td_number: string | null;
+  classification: string | null;
+  land_area: number | null;
+  total_market_value: number | null;
+  total_assessed_value: number | null;
+  status: string | null;
+  effectivity_year: number | null;
+  taxpayers: ViewTaxpayerData | ViewTaxpayerData[] | null;
+};
+
+type ViewLinkedResponse = {
+  property: ViewPropertyData | null;
+  declarations: ViewDeclarationData[];
 };
 
 const classificationColors: Record<string, string> = {
@@ -139,9 +180,13 @@ export default function PropertyListingPage() {
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const [printData, setPrintData] = useState<TaxDeclarationData | null>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [viewLoading, setViewLoading] = useState(false);
+  const [viewError, setViewError] = useState('');
+  const [viewData, setViewData] = useState<ViewLinkedResponse | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingPropertyId, setEditingPropertyId] = useState<number | null>(null);
-  const [editForm, setEditForm] = useState<Omit<Property, 'id'>>({
+  const [editForm, setEditForm] = useState<EditablePropertyFields>({
     tdNumber: '',
     pin: '',
     owner: '',
@@ -180,6 +225,7 @@ export default function PropertyListingPage() {
 
           return {
             id: row.id,
+            propertyId: row.property_id,
             tdNumber: row.td_number || '—',
             pin: property?.pin || '—',
             owner: taxpayer?.owner_name || '—',
@@ -268,12 +314,19 @@ export default function PropertyListingPage() {
     setIsEditOpen(true);
   }
 
+  function closeViewModal() {
+    setIsViewOpen(false);
+    setViewLoading(false);
+    setViewError('');
+    setViewData(null);
+  }
+
   function closeEditModal() {
     setIsEditOpen(false);
     setEditingPropertyId(null);
   }
 
-  function updateEditField<K extends keyof Omit<Property, 'id'>>(key: K, value: Omit<Property, 'id'>[K]) {
+  function updateEditField<K extends keyof EditablePropertyFields>(key: K, value: EditablePropertyFields[K]) {
     setEditForm((prev) => ({ ...prev, [key]: value }));
   }
 
@@ -288,6 +341,7 @@ export default function PropertyListingPage() {
       prev.map((item) => (item.id === editingPropertyId
         ? {
             id: editingPropertyId,
+          propertyId: item.propertyId,
             ...editForm,
             marketValue: marketValueDisplay,
             assessLevel: assessLevelDisplay,
@@ -322,6 +376,39 @@ export default function PropertyListingPage() {
       setPrintData(data.td as TaxDeclarationData);
     } catch {
       toast.error('Unable to load print data. Please try again.');
+    }
+  }
+
+  async function handleViewProperty(property: Property) {
+    if (property.propertyId == null) {
+      toast.error('No linked property found for this record.');
+      return;
+    }
+
+    setIsViewOpen(true);
+    setViewLoading(true);
+    setViewError('');
+    setViewData(null);
+
+    try {
+      const res = await fetch(`/api/properties/linked?id=${property.propertyId}`, {
+        cache: 'no-store',
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setViewError(data?.error || 'Unable to load property details.');
+        return;
+      }
+
+      setViewData({
+        property: data?.property ?? null,
+        declarations: Array.isArray(data?.declarations) ? data.declarations : [],
+      });
+    } catch {
+      setViewError('Unable to load property details.');
+    } finally {
+      setViewLoading(false);
     }
   }
 
@@ -472,7 +559,13 @@ export default function PropertyListingPage() {
                     </td>
                     <td className="sticky right-0 z-10 border-l border-gray-100 bg-white px-4 py-3 group-hover:bg-gray-50">
                       <div className="flex items-center justify-center gap-2">
-                        <button title="View" className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"><Eye size={14} /></button>
+                        <button
+                          title="View"
+                          onClick={() => handleViewProperty(p)}
+                          className="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                        >
+                          <Eye size={14} />
+                        </button>
                         <button
                           title="Edit"
                           onClick={() => openEditModal(p)}
@@ -520,6 +613,111 @@ export default function PropertyListingPage() {
           </div>
         </div>
       </div>
+
+      {isViewOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={closeViewModal}>
+          <div className="swal2-show max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <h2 className="font-lexend mb-1 text-lg font-semibold text-[#0F172A]">Property Details</h2>
+            <p className="font-inter mb-4 text-sm text-slate-500">Linked property, declarations, and taxpayer information.</p>
+
+            {viewLoading ? (
+              <div className="rounded-md border border-gray-200 bg-gray-50 px-4 py-6 text-center font-inter text-sm text-slate-500">
+                Loading property details...
+              </div>
+            ) : viewError ? (
+              <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 font-inter text-sm text-red-700">
+                {viewError}
+              </div>
+            ) : viewData ? (
+              <>
+                <div className="grid grid-cols-1 gap-3 rounded-md border border-gray-200 bg-gray-50 p-4 sm:grid-cols-2">
+                  <InfoRow label="PIN" value={viewData.property?.pin || '—'} />
+                  <InfoRow
+                    label="Barangay"
+                    value={
+                      (Array.isArray(viewData.property?.barangays)
+                        ? viewData.property?.barangays[0]?.name
+                        : viewData.property?.barangays?.name) || '—'
+                    }
+                  />
+                  <InfoRow label="Street" value={viewData.property?.street || '—'} />
+                  <InfoRow label="Lot Number" value={viewData.property?.lot_number || '—'} />
+                  <InfoRow label="Survey Number" value={viewData.property?.survey_number || '—'} />
+                  <InfoRow
+                    label="Coordinates"
+                    value={
+                      viewData.property?.latitude != null && viewData.property?.longitude != null
+                        ? `${viewData.property.latitude}, ${viewData.property.longitude}`
+                        : '—'
+                    }
+                  />
+                </div>
+
+                <div className="mt-4 rounded-md border border-gray-200">
+                  <div className="border-b border-gray-200 bg-gray-50 px-4 py-2 font-lexend text-sm font-semibold text-[#0F172A]">
+                    Linked Tax Declarations ({viewData.declarations.length})
+                  </div>
+
+                  {viewData.declarations.length === 0 ? (
+                    <p className="px-4 py-4 font-inter text-sm text-slate-500">No declarations found.</p>
+                  ) : (
+                    <div className="divide-y divide-gray-200">
+                      {viewData.declarations.map((decl) => {
+                        const taxpayer = Array.isArray(decl.taxpayers) ? decl.taxpayers[0] : decl.taxpayers;
+                        return (
+                          <div key={decl.id} className="px-4 py-3">
+                            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                              <p className="font-lexend text-sm font-semibold text-[#0F172A]">{decl.td_number || '—'}</p>
+                              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[decl.status || ''] ?? 'bg-gray-100 text-gray-600'}`}>
+                                {decl.status || '—'}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-1 gap-2 text-xs text-slate-600 sm:grid-cols-2">
+                              <InfoRow label="Owner" value={taxpayer?.owner_name || '—'} compact />
+                              <InfoRow label="Owner Type" value={taxpayer?.owner_type || '—'} compact />
+                              <InfoRow label="Classification" value={decl.classification || '—'} compact />
+                              <InfoRow
+                                label="Land Area"
+                                value={decl.land_area == null ? '—' : `${decl.land_area.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} sqm`}
+                                compact
+                              />
+                              <InfoRow
+                                label="Market Value"
+                                value={decl.total_market_value == null ? '—' : `₱${decl.total_market_value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                                compact
+                              />
+                              <InfoRow
+                                label="Assessed Value"
+                                value={decl.total_assessed_value == null ? '—' : `₱${decl.total_assessed_value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                                compact
+                              />
+                              <InfoRow label="Effectivity Year" value={decl.effectivity_year == null ? '—' : String(decl.effectivity_year)} compact />
+                              <InfoRow label="TIN" value={taxpayer?.tin || '—'} compact />
+                              <InfoRow label="Phone" value={taxpayer?.phone || '—'} compact />
+                              <InfoRow label="Email" value={taxpayer?.email || '—'} compact />
+                            </div>
+                            <InfoRow label="Address" value={taxpayer?.address || '—'} compact />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : null}
+
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={closeViewModal}
+                className="border border-gray-200 text-slate-600 text-xs font-inter px-4 py-2 rounded-md hover:bg-gray-50 transition cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isEditOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={closeEditModal}>
@@ -614,6 +812,22 @@ export default function PropertyListingPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function InfoRow({
+  label,
+  value,
+  compact = false,
+}: {
+  label: string;
+  value: string;
+  compact?: boolean;
+}) {
+  return (
+    <p className={`${compact ? 'font-inter text-xs' : 'font-inter text-sm'} text-slate-600`}>
+      <span className="font-medium text-slate-700">{label}:</span> {value}
+    </p>
   );
 }
 
