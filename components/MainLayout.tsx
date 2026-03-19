@@ -58,7 +58,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <HeaderComponent sessionUser={sessionUser} />
         {/* Main content scrolls */}
-        <main className="flex-1 overflow-y-auto p-6 bg-gray-100">
+        <main className="flex-1 overflow-y-auto p-6 bg-[#f0f4f7]">
           {children}
         </main>
       </div>

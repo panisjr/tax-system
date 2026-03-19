@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import AnalyticsCard from '@/components/AnalyticsCard';
 import MonthlyCollectionComponent from '@/components/MonthlyCollectionComponent';
@@ -7,40 +7,43 @@ import { useRouter } from 'next/navigation';
 export default function Dashboard() {
   const router = useRouter();
   return (
-    <main className="bg-[#f0f4f8]">
+    <main>
       <div className="w-full mb-6">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className={`font-lexend gi text-2xl font-bold text-[#595a5d]`}>
-                Dashboard Overview
-              </h1>
-              <button className={`font-inter bg-[#0f1729] text-[#9fa2aa] px-4 py-2 rounded text-sm font-medium hover:bg-gray-700 transition-colors cursor-pointer`}>
-                Generate Report
-              </button>
-            </div>
-      <AnalyticsCard />
-    </div>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className={`font-lexend gi text-2xl font-bold text-[#595a5d]`}>
+            Dashboard Overview
+          </h1>
+          <button
+            className={`font-inter bg-[#0f1729] text-[#9fa2aa] px-4 py-2 rounded text-sm font-medium hover:bg-gray-700 transition-colors cursor-pointer`}
+          >
+            Generate Report
+          </button>
+        </div>
+        <AnalyticsCard />
+      </div>
 
       {/* Main Container */}
 
-      <div className="w-full flex flex-col md:flex-row gap-4 m-0">
+      <div className="w-full flex flex-col md:flex-row gap-4 m-0 bg-[#f0f4f7]">
+        <MonthlyCollectionComponent />
 
-        <MonthlyCollectionComponent /> 
-
-       {/* Right Card: Delinquent Accounts Stats */}
+        {/* Right Card: Delinquent Accounts Stats */}
         <div className="bg-white border border-gray-200 p-8 flex flex-col mx-auto md:w-3/5 shadow-sm rounded-sm">
-          <h2 className={`font-inter text-[#80838f] text-sm font-bold mb-6`}>Delinquent Accounts</h2>
-          
+          <h2 className={`font-inter text-[#80838f] text-sm font-bold mb-6`}>
+            Delinquent Accounts
+          </h2>
+
           <ul className="text-gray-500 text-sm space-y-4">
             <li className={`font-inter text-[#989ba6] flex items-center`}>
-              <span className="text-gray-800 text-lg leading-none mr-2">•</span> 
+              <span className="text-gray-800 text-lg leading-none mr-2">•</span>
               1,245 properties overdue
             </li>
             <li className={`font-inter text-[#989ba6] flex items-center`}>
-              <span className="text-gray-800 text-lg leading-none mr-2">•</span> 
+              <span className="text-gray-800 text-lg leading-none mr-2">•</span>
               $320M unpaid taxes
             </li>
             <li className={`font-inter text-[#989ba6] flex items-center`}>
-              <span className="text-gray-800 text-lg leading-none mr-2">•</span> 
+              <span className="text-gray-800 text-lg leading-none mr-2">•</span>
               18% delinquency rate
             </li>
           </ul>
@@ -51,7 +54,6 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
-
       </div>
     </main>
   );
