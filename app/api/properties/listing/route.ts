@@ -7,6 +7,7 @@ export async function GET() {
       .from('tax_declarations')
       .select(`
         id,
+        property_id,
         td_number,
         classification,
         land_area,
